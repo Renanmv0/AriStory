@@ -26,6 +26,7 @@ import { DoisCavalosDoJeanLuc } from './world/doisCavalosDoJeanLuc';
 import { CarrinhoDeGolfeDaGina } from './world/carrinhoDeGolfeDaGina';
 import { ConversivelDaTiaLiz } from './world/conversivelDaTiaLiz';
 import { Pavao } from './entities/bichos/Pavao';
+import { LimusineDaValentina } from './world/limusineDaValentina';
 import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
@@ -206,6 +207,21 @@ if (conversivel && conversivel.length >= 2 && conversivel.slice(0, 2).every(Numb
     const andando = Number(params.get('andando') ?? 0);
     if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
     (window as unknown as { conversivel: ConversivelDaTiaLiz }).conversivel = veiculo;
+  });
+}
+// `?limusine=x,z,giro`: a limusine conversível da Valentina parada nesse ponto, com o Pietro ao volante e ela no sofá,
+// para o `scripts/limusine.mjs` fotografar (`&conversando`; `&andando=7` faz de conta que ela está a 7 m/s; `&vazio` é
+// a versão estacionada)
+const limusine = params.get('limusine')?.split(',').map(Number);
+if (limusine && limusine.length >= 2 && limusine.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const veiculo = new LimusineDaValentina(params.has('vazio'));
+    mundo.add(mundo.place(veiculo.group, limusine[0], 0, limusine[1], Number.isFinite(limusine[2]) ? limusine[2] : 0));
+    const andando = Number(params.get('andando') ?? 0);
+    if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
+    (window as unknown as { limusine: LimusineDaValentina }).limusine = veiculo;
   });
 }
 // `?pavao=x,z,giro`: o Pietro, o pavão motorista da Valentina, parado nesse ponto, para o `scripts/limusine.mjs`

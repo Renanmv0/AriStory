@@ -590,6 +590,26 @@ o mesmo molde, e deixaram três truques:
   pelo contorno escuro (um tubo na borda do pedaço de esfera) e pelo aro do
   olho.
 
+## Ave com cauda que abre (o Pietro, o pavão motorista)
+
+O Pietro (`entities/bichos/Pavao.ts`) é o motorista da limusine da Valentina. O que custou foto:
+
+- **Cauda de pavão é LOTE de penas planas** (23, de dois lados), cada uma a lâmina verde em degradê de cor por
+  vértice, a haste e o OCELO (três discos empilhados um fio acima: bronze, turquesa, miolo azul-noite). Fina demais,
+  a cauda dobrada lia como um feixe de fios: as penas são largas (0,1 na ponta), as de cima mais curtas e abertas
+  para os lados, em escama, para cada olho aparecer. A raiz fofa (coberteiras) fica EMBAIXO das penas: em cima,
+  vista de trás, era um picles.
+- **Dobrada e aberta são duas poses de cada pena**, misturadas por `slerp` (`leque`, 0 a 1, que anda devagar: abrir
+  o leque é acontecimento). Aberta, cada pena aponta em roda, em pé atrás do corpo, com a lâmina virada para a
+  frente (a base montada com `makeBasis`).
+- **Uniforme de bicho**: o quepe é da cabeça (a copa larga, a pala, o cordão e o emblema dourados) e o topete sai por
+  TRÁS dele; luva branca na PONTA DA ASA (é a asa que vai ao volante); a gravata-borboleta na base do pescoço, um
+  dedo à frente da pele.
+- **Risquinho branco embaixo da pala vira dente**: a faixa branca de cima do olho do pavão (que ele tem de verdade)
+  ficava sob a sombra da pala e lia como um dentinho. Saiu; ficou a meia-lua de baixo.
+- **Ao volante** (`aoVolante`, nasce `null`): as pernas para a frente, as asas nas dez e dez, a cabeça para onde a
+  cena manda (giro negativo é o `−X`) e a cauda para o lado da porta.
+
 ## A cor da fala (todo bicho que fala tem a sua)
 
 Sugestão do Ari: quando um personagem fala, a etiqueta do nome e o pontilhado

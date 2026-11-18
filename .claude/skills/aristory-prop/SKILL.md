@@ -1360,6 +1360,31 @@ de carro ANTIGO com QUATRO bichos dentro:
 - **O peso** é dos bichos (371 malhas com as quatro, 19 o carro vazio): os
   articulados não se juntam.
 
+## A limusine conversível da Valentina (`world/limusineDaValentina.ts`)
+
+O carro da flamingo do marketing (`docs/CARROS-DA-ESCOLA.md` §4), e o molde de carro COMPRIDO, sem teto, com um
+motorista e uma passageira que não se olham:
+
+- **A pele do conversível esticada**: as mesmas funções de fatia, com mais estações (110) e a cabine aberta de ponta a
+  ponta (`se(t, 8)` na planta do buraco: quase retangular). Comprida de propósito (6,3 m): ela ocupa duas vagas.
+- **Duas cores dos anos 50 é FITA na lateral**: a lança perolada (larga atrás, afinando para a frente, como uma pena)
+  e o rosa mais fundo de baixo dela, as duas pela `geoNaLateral` com a altura em FUNÇÃO de `z`. Nas pontas
+  extremas do carro a conta da normal da pele dá `NaN` (a lataria já fechou): a fita para antes. Uma caixa envolvente
+  `null` no teste é vértice `NaN` — ache a malha procurando `!Number.isFinite` nas posições.
+- **Rosa de bicho rosa**: o carro é um rosa mais FUNDO e mais frio que as penas dela, e o lugar dela é de couro
+  branco-pérola; o blazer azul do look termina de separar. Pele parecida contra pele parecida some.
+- **Quem conversa vira para o Bebito**: a cabine é aberta, então a passageira vai no sofá do lado de LÁ, virada para
+  o `−X` (`sentarEm(x, z, −π/2, assento)`) — de frente para a câmera do encontro, sem nada no meio.
+- **Bicho que não cabe sentado**: o pavão vai num BANCO ALTO (pé de cromo e almofada, o volante alto junto) e a
+  cauda, que atravessaria o encosto e a divisória, pende PELA PORTA do lado do Bebito, por cima dela. O teste amostra
+  cada pena da cauda (lote: `getMatrixAt` e a ponta em `(0, 0, t)`) e mede a altura dela sobre a porta, quanto passa
+  da lataria e que não encosta no chão.
+- **Faces no mesmo plano em quina arredondada** (o `zfighting.mjs` não mede `quina()`): encosto com o mesmo
+  comprimento ou largura do assento põe as pontas no mesmo plano; tapete de 1 mm sobre o piso; friso centrado na
+  beira do tapete (e não com a face na beira). Diferença de 4 cm resolve.
+- **Atalho de teste** `?limusine=x,z,giro` (`&conversando`, `&andando=7`, `&vazio`) e `?pavao=x,z,giro` (`&leque`,
+  `&volante`).
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena

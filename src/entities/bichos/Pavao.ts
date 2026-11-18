@@ -48,7 +48,7 @@ const PENAS = 23;
 /** a pose de MOTORISTA: sentado, as asas no volante (o giro dele, em radianos) e a cabeça virada para quem conversa */
 export interface PoseDoPavaoAoVolante {
   volante: number;
-  /** para onde a cabeça olha, em radianos de giro (0 em frente, positivo para a esquerda dele) */
+  /** para onde a cabeça olha, em radianos de giro (0 em frente; positivo vira para o `+X`, negativo para o `−X`) */
   olhar: number;
 }
 
@@ -455,9 +455,15 @@ export class Pavao extends Bicho {
       // DOBRADA: um vestido de penas deitado para trás até quase o chão — as mais compridas embaixo e no meio, as
       // de cima mais curtas e abrindo para os lados, em escama, para cada olho aparecer
       const fileira = i % 3, lado = (fileira - 1) * (0.35 + 0.45 * (1 - u));
-      dobrada.position.copy(base).add(new THREE.Vector3(lado * 0.06, 0.01 + i * 0.006, -i * 0.003));
       dobrada.rotation.order = 'YXZ';
-      dobrada.rotation.set(0.47 - u * 0.12, Math.PI + lado * 0.32 + balanco, lado * 0.35);
+      if (this.aoVolante) {
+        // AO VOLANTE a cauda não cabe no carro: vai para o lado da porta (o −X), por cima dela, e pende para fora
+        dobrada.position.copy(base).add(new THREE.Vector3(-0.12 - i * 0.002, 0.08 + i * 0.006, 0.05 + lado * 0.05));
+        dobrada.rotation.set(0.25 - u * 0.05, -Math.PI / 2 + lado * 0.25 + balanco, lado * 0.3);
+      } else {
+        dobrada.position.copy(base).add(new THREE.Vector3(lado * 0.06, 0.01 + i * 0.006, -i * 0.003));
+        dobrada.rotation.set(0.47 - u * 0.12, Math.PI + lado * 0.32 + balanco, lado * 0.35);
+      }
       dobrada.scale.setScalar(1.0 - u * 0.5);
       dobrada.updateMatrix();
       // ABERTA: as penas em roda, em pé atrás do corpo, viradas para a frente

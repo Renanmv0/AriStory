@@ -8,9 +8,10 @@ para os carros da escola". É o próximo passo que já estava marcado em
 
 **O estado:** o **conversível da Tia Liz e das irmãs** (§2) está FEITO e no
 jogo (2026-11-17): o carro, a interação na estrada e o estacionado na escola.
-O **Flynn** (§3) também está no jogo (2026-11-18), sem carro: a
-escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. Os
-outros (o Gatito e a Valentina) são só ideias. Este documento é o cardápio para o
+A **limusine da Valentina** (§4) está com o CARRO feito (2026-11-18), com o Pietro, o pavão motorista; a interação
+na estrada vem depois. O **Flynn** (§3) também está no jogo (2026-11-18), sem carro: a
+escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. O
+outro (o Gatito) é só ideia. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -304,6 +305,37 @@ pendurada no retrovisor.
 ---
 
 ## 4. A Valentina
+
+**O CARRO ESTÁ FEITO (2026-11-18): a limusine conversível rosa, com o Pietro ao volante.** O Renan: "quero uma
+limusine conversível! Rosa bem estilosa igual a ela", e "seria legal ela ter alguém que dirigisse pra ela?" — um
+personagem novo. A interação na estrada é a próxima etapa (a sessão de fotos e a polaroid, abaixo, para o Renan
+confirmar).
+
+- **O Pietro** (`entities/bichos/Pavao.ts`, nome PROVISÓRIO): um PAVÃO motorista, sério e educado, de quepe de chofer
+  (o topete escapando por trás), colarinho com gravata-borboleta, botões dourados e LUVAS BRANCAS nas pontas das asas.
+  Em serviço a cauda vai DOBRADA (um lote de 23 penas com os ocelos); `abrirLeque(true)` abre o leque em pé — guardado
+  para a sessão de fotos (o fundo da foto). Ao volante (`aoVolante`, nasce desligado) ele senta, as asas vão às dez e
+  dez e a cauda, que não cabe no carro, PENDE PELA PORTA do lado do Bebito.
+- **A limusine** (`world/limusineDaValentina.ts`): 6,3 m (ocupa duas vagas), a pele de fatias do conversível da Tia
+  Liz esticada, sem teto; rosa fundo com a lança perolada e o duas cores dos anos 50, cromo, rabos de peixe com as
+  lanternas de foguete, quatro faróis, a grade de barras e o FLAMINGO DOURADO num pé só no capô; a placa "Valentina —
+  Milano · Italia". Na frente, o Pietro num BANCO ALTO (para ver por cima do capô comprido) e a CÂMERA de fotógrafo
+  antiga no banco do lado; a DIVISÓRIA com o minibar e duas taças de suco de morango; atrás, a sala: o tapete
+  vermelho de friso dourado, o SOFÁ CAPITONÊ branco-pérola do lado de lá, as CHAPELEIRAS listradas no banco de trás;
+  e o TAPETE VERMELHO enrolado no porta-malas.
+- **A Valentina** vai no sofá, VIRADA PARA O BEBITO (a cabine é aberta: nada entre ela e a câmera do encontro), com
+  as perninhas penduradas na beira do sofá, num look novo (`LOOK_DE_LIMUSINE`, em `world/looksDaValentina.ts`): o
+  uniforme chique de sempre — o azul do blazer separa ela do rosa do carro — com os ÓCULOS GATINHO NO ROSTO
+  (`oculosNoRosto`).
+- **Testado:** `scripts/limusine.mjs` (SO=modelo|pietro): nada abaixo do chão, a largura na faixa (1,97), o
+  comprimento, o Pietro do lado do Bebito com a cabeça por cima do para-brisa e as luvas no aro, a cauda por cima da
+  porta e fora da lataria, a Valentina dentro da cabine, virada para o Bebito, de óculos na frente dos olhos; o pavão
+  sozinho com os pés no chão e o leque abrindo. Peso: 228 malhas e ~97 mil triângulos com os dois (o carro vazio, de
+  fundo, 20 malhas e ~50 mil).
+- **Na estrada (a fazer, a confirmar):** a sessão de fotos (o Pietro desenrola o tapete vermelho? abre o leque de
+  fundo?), a polaroid no painel do Bebito, e ela estacionada na escola, ocupando duas vagas.
+
+**As ideias de antes** (ficam para referência):
 
 **⭐ A. O conversível rosa italiano** (recomendado)
 - Um conversível pequeno e redondo, de linhas italianas antigas, cor-de-rosa

@@ -3093,6 +3093,20 @@ export const PALETTE = {
   motoristaQuepe: 0x23222c,
   motoristaDourado: 0xd8b45c,
   motoristaLuva: 0xfbf8f1,
+  /*
+   * A LIMUSINE CONVERSÍVEL DA VALENTINA (`world/limusineDaValentina.ts`): o rosa
+   * da lataria é mais FUNDO e mais frio que as penas dela (em cima de um rosa
+   * igual, ela sumiria), com a lança perolada; por dentro, couro branco-pérola
+   * (o contraste que deixa a silhueta dela ler), o tapete vermelho e o dourado
+   * só em fio, botão e no flamingo do capô.
+   */
+  limusineRosa: 0xe8578f,
+  limusineRosaFundo: 0xc93f78,
+  limusinePerola: 0xfbe0ea,
+  limusineCouro: 0xfff6f0,
+  limusineTapete: 0xc8283c,
+  limusineDourado: 0xdcb65e,
+  limusineChapeleira: 0xf7b8cf,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;
