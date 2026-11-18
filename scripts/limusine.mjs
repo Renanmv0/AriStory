@@ -88,11 +88,12 @@ try {
         const oculos = c.valentina.group.getObjectByName('oculos-no-rosto');
         const centro = cranio.getWorldPosition(new V());
         const olhos = ['olho-esquerdo', 'olho-direito'].map((n) => c.valentina.group.getObjectByName(n).getWorldPosition(new V()));
-        const lentes = oculos ? oculos.children.filter((x) => x.isGroup).map((x) => x.getWorldPosition(new V())) : [];
+        const lentes = oculos ? ['lente-esquerda', 'lente-direita'].map((n) => oculos.getObjectByName(n)).filter(Boolean).map((x) => x.getWorldPosition(new V())) : [];
         const nosOlhos = lentes.length === 2 && olhos.every((o, i) => {
           const l = lentes.reduce((a, b) => (a.distanceTo(o) < b.distanceTo(o) ? a : b));
           return l.distanceTo(o) < 0.05 && l.distanceTo(centro) > o.distanceTo(centro);
         });
+        const conta = (g) => { let n = 0; g.traverse((x) => { if (x.isMesh) n++; }); return n; };
         const ondeEsta = (g) => local(g.getWorldPosition(new V())).toArray().map((v) => +v.toFixed(2));
         return {
           tudo: caixa(c.group), lata: caixa(c.group, (x) => !dentro(x)),
@@ -100,10 +101,10 @@ try {
           valentina: { onde: ondeEsta(c.valentina.group), caixa: caixa(c.valentina.group), giro: +c.valentina.group.rotation.y.toFixed(2), look: c.valentina.lookAtual?.id, nosOlhos },
           cauda: { pontaX: +pontaX.toFixed(2), chao: +chao.toFixed(2), naPorta: +naPorta.toFixed(2) },
           pecas: ['quepe-do-motorista'].map((n) => !!c.group.getObjectByName(n)),
-          malhas, triangulos: Math.round(tri),
+          malhas, triangulos: Math.round(tri), malhasDoPietro: conta(c.pietro.group), malhasDaValentina: conta(c.valentina.group),
         };
       });
-      console.log('MODELO:', JSON.stringify({ tudo: m.tudo, lata: m.lata, malhas: m.malhas, triangulos: m.triangulos }));
+      console.log('MODELO:', JSON.stringify({ tudo: m.tudo, lata: m.lata, malhas: m.malhas, triangulos: m.triangulos, pietro: m.malhasDoPietro, valentina: m.malhasDaValentina }));
       console.log('  Pietro:', JSON.stringify(m.pietro), '| cauda:', JSON.stringify(m.cauda));
       console.log('  Valentina:', JSON.stringify(m.valentina));
       assert.ok(m.tudo.min[1] > -0.03, 'nada abaixo do chão');

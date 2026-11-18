@@ -1373,6 +1373,10 @@ motorista e uma passageira que não se olham:
   `null` no teste é vértice `NaN` — ache a malha procurando `!Number.isFinite` nas posições.
 - **Rosa de bicho rosa**: o carro é um rosa mais FUNDO e mais frio que as penas dela, e o lugar dela é de couro
   branco-pérola; o blazer azul do look termina de separar. Pele parecida contra pele parecida some.
+- **Flamingo sentado precisa de onde pôr as pernas**: a pose de sentar dela estica a coxa para a frente na altura
+  do assento (a da carteira da Sala 1), e num sofá de carro os joelhos ficavam 30 cm no ar. Um PUFE capitonê na frente
+  dela, na altura do assento, resolveu (foto de lado, ao longo do sofá, na altura do assento — de frente, a coxa
+  em escorço parece perna pendurada).
 - **Quem conversa vira para o Bebito**: a cabine é aberta, então a passageira vai no sofá do lado de LÁ, virada para
   o `−X` (`sentarEm(x, z, −π/2, assento)`) — de frente para a câmera do encontro, sem nada no meio.
 - **Bicho que não cabe sentado**: o pavão vai num BANCO ALTO (pé de cromo e almofada, o volante alto junto) e a

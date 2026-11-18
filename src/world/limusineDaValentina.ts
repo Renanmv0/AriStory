@@ -623,6 +623,20 @@ export class LimusineDaValentina {
       for (const x of [-0.41, 0.31]) por(malha(quina(0.02, 0.016, 1.95, 0.004), OURO), x, C.piso + 0.015, (C.divisoria + C.bancoDeTras) / 2 - 0.05);
       const comp = C.sofa.z1 - C.sofa.z0;
       por(sofaCapitone(comp), C.sofa.x, C.sofa.assento - 0.08, (C.sofa.z0 + C.sofa.z1) / 2);
+      // o PUFE capitonê na frente dela, na altura do sofá: as perninhas dobradas vão em cima dele (sentada, o flamingo
+      // estica a coxa para a frente na altura do assento — sem o pufe, os joelhos ficavam no ar)
+      {
+        const yTopo = C.sofa.assento - 0.003, alto = yTopo - C.piso;
+        const pufe = por(malha(new THREE.CylinderGeometry(0.19, 0.17, alto - 0.04, 24), COURO), C.valentina.x - 0.32, C.piso + (alto - 0.04) / 2, C.valentina.z);
+        void pufe;
+        const almofada = por(malha(new THREE.SphereGeometry(0.19, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), COURO), C.valentina.x - 0.32, yTopo - 0.04, C.valentina.z);
+        almofada.scale.y = 0.21;
+        por(malha(new THREE.TorusGeometry(0.19, 0.012, 6, 28).rotateX(Math.PI / 2), P.limusineRosaFundo), C.valentina.x - 0.32, yTopo - 0.042, C.valentina.z);
+        for (const [x, z] of [[0, 0], [0.09, 0], [-0.09, 0], [0, 0.09], [0, -0.09]] as const) {
+          const r = Math.hypot(x, z);
+          por(malha(new THREE.SphereGeometry(0.012, 8, 6), OURO), C.valentina.x - 0.32 + x, yTopo - 0.04 + 0.04 * Math.sqrt(1 - (r / 0.19) ** 2) + 0.003, C.valentina.z + z);
+        }
+      }
       // o banco de trás, de lado a lado, e as chapeleiras empilhadas nele
       por(malha(quina(1.4, 0.16, 0.36, 0.06), COURO), 0, C.sofa.assento - 0.08, C.bancoDeTras);
       por(malha(quina(1.36, 0.36, 0.12, 0.06), COURO), 0, C.sofa.assento + 0.15, C.bancoDeTras - 0.17);
@@ -667,10 +681,11 @@ export class LimusineDaValentina {
       this.pietro = pietro;
       // ----------------------------------------------------- a Valentina no sofá, virada para o Bebito, de óculos gatinho
       const v = new Valentina({ minX: -0.05, maxX: 0.05, minZ: -0.05, maxZ: 0.05 });
-      v.vestir(LOOK_DE_LIMUSINE);
       v.entrarEmServico();
       v.sentarEm(C.valentina.x, C.valentina.z, -Math.PI / 2, C.sofa.assento);
       this.lata.add(v.group);
+      // (o look de limusine é vestido já dentro do carro: com pai, a peça nova se junta como as de nascença)
+      v.vestir(LOOK_DE_LIMUSINE);
       this.valentina = v;
       this.update(0, 0, false);
     } else {

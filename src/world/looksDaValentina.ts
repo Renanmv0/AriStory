@@ -630,6 +630,7 @@ export function oculosNoRosto(m: MedidasDaValentina): THREE.Object3D {
   for (const lado of [-1, 1] as const) {
     const { p, n } = naCara(lado * 0.035, 0.016);
     const peca = new THREE.Group();
+    peca.name = lado < 0 ? 'lente-esquerda' : 'lente-direita';
     const aro = gatinho(1.45, lado);
     aro.holes.push(gatinho(1.15, lado));
     peca.add(new THREE.Mesh(new THREE.ExtrudeGeometry(aro, { depth: 0.004, bevelEnabled: false, curveSegments: 8 }), ouro));

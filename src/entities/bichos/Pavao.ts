@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { toon } from '../../core/materials';
+import { fundir } from '../../world/fundir';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 import type { VozDaFala } from '../../core/types';
@@ -157,6 +158,9 @@ export class Pavao extends Bicho {
       semente: 20261118,
     });
     this.montar();
+    // o que se mexe sozinho tem nome (o corpo, as pernas, as asas e as luvas, a cabeça, o topete, os olhos, a cauda):
+    // o resto se junta por material dentro de cada um
+    fundir(this.group);
     this.prontoParaAparecer('pietro');
   }
 
@@ -183,12 +187,14 @@ export class Pavao extends Bicho {
     const azulClaro = toon(P.pavaoAzulClaro);
     const branco = toon(P.pavaoRosto);
     const dourado = toon(P.motoristaDourado);
+    this.corpo.name = 'corpo-do-pavao';
     this.group.add(this.corpo);
 
     // ------------------------------------------------------------- as pernas
     const perna = toon(P.pavaoPerna);
     for (const lado of [-1, 1] as const) {
       const quadril = new THREE.Group();
+      quadril.name = lado < 0 ? 'perna-esquerda' : 'perna-direita';
       quadril.position.set(lado * M.quadril.x, M.quadril.y, M.quadril.z);
       const coxa = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), azul);
       coxa.scale.set(0.05, 0.08, 0.06);
@@ -297,6 +303,7 @@ export class Pavao extends Bicho {
       punho.position.y = 0.03;
       mao.add(punho);
       const ponta = new THREE.Object3D();
+      ponta.name = lado < 0 ? 'ponta-da-luva-esquerda' : 'ponta-da-luva-direita';
       ponta.position.y = -0.05;
       mao.add(ponta);
       ombro.add(mao);
@@ -354,6 +361,7 @@ export class Pavao extends Bicho {
     // o olho colado na cara (o molde do Flynn e da Valentina)
     for (const lado of [-1, 1] as const) {
       const olho = new THREE.Group();
+      olho.name = lado < 0 ? 'olho-esquerdo' : 'olho-direito';
       const escuro = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), toon(P.pavaoPupila));
       escuro.scale.set(0.016, 0.02, 0.004);
       olho.add(escuro);
@@ -384,6 +392,7 @@ export class Pavao extends Bicho {
     this.cabeca.add(bico);
 
     // o topete em leque, escapando por TRÁS do quepe
+    this.crista.name = 'topete-do-pavao';
     this.crista.position.set(0, 0.07, -0.045);
     this.crista.rotation.x = -0.35;
     const haste = toon(P.pavaoBronze);

@@ -324,14 +324,16 @@ confirmar).
   vermelho de friso dourado, o SOFÁ CAPITONÊ branco-pérola do lado de lá, as CHAPELEIRAS listradas no banco de trás;
   e o TAPETE VERMELHO enrolado no porta-malas.
 - **A Valentina** vai no sofá, VIRADA PARA O BEBITO (a cabine é aberta: nada entre ela e a câmera do encontro), com
-  as perninhas penduradas na beira do sofá, num look novo (`LOOK_DE_LIMUSINE`, em `world/looksDaValentina.ts`): o
+  as perninhas dobradas em cima de um PUFE capitonê (sentada, o flamingo estica a coxa para a frente na altura do
+  assento: sem o pufe, os joelhos ficavam no ar), num look novo (`LOOK_DE_LIMUSINE`, em `world/looksDaValentina.ts`): o
   uniforme chique de sempre — o azul do blazer separa ela do rosa do carro — com os ÓCULOS GATINHO NO ROSTO
   (`oculosNoRosto`).
 - **Testado:** `scripts/limusine.mjs` (SO=modelo|pietro): nada abaixo do chão, a largura na faixa (1,97), o
   comprimento, o Pietro do lado do Bebito com a cabeça por cima do para-brisa e as luvas no aro, a cauda por cima da
   porta e fora da lataria, a Valentina dentro da cabine, virada para o Bebito, de óculos na frente dos olhos; o pavão
-  sozinho com os pés no chão e o leque abrindo. Peso: 228 malhas e ~97 mil triângulos com os dois (o carro vazio, de
-  fundo, 20 malhas e ~50 mil).
+  sozinho com os pés no chão e o leque abrindo. Peso: 133 malhas e ~98 mil triângulos com os dois (o Pietro passa
+  pela `fundir()`: 32 malhas; a Valentina, 74), e a vista do parque com ela parada: ~405 desenhos por quadro; o carro
+  vazio, de fundo, 20 malhas e ~51 mil.
 - **Na estrada (a fazer, a confirmar):** a sessão de fotos (o Pietro desenrola o tapete vermelho? abre o leque de
   fundo?), a polaroid no painel do Bebito, e ela estacionada na escola, ocupando duas vagas.
 
