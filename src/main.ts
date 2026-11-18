@@ -25,6 +25,7 @@ import { CarrinhoDoCookie } from './world/carrinhoDoCookie';
 import { DoisCavalosDoJeanLuc } from './world/doisCavalosDoJeanLuc';
 import { CarrinhoDeGolfeDaGina } from './world/carrinhoDeGolfeDaGina';
 import { ConversivelDaTiaLiz } from './world/conversivelDaTiaLiz';
+import { Pavao } from './entities/bichos/Pavao';
 import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
@@ -205,6 +206,22 @@ if (conversivel && conversivel.length >= 2 && conversivel.slice(0, 2).every(Numb
     const andando = Number(params.get('andando') ?? 0);
     if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
     (window as unknown as { conversivel: ConversivelDaTiaLiz }).conversivel = veiculo;
+  });
+}
+// `?pavao=x,z,giro`: o Pietro, o pavão motorista da Valentina, parado nesse ponto, para o `scripts/limusine.mjs`
+// fotografar de perto (`&leque` abre a cauda; `&volante` põe a pose de motorista)
+const pavao = params.get('pavao')?.split(',').map(Number);
+if (pavao && pavao.length >= 2 && pavao.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const bicho = new Pavao({ minX: -0.05, maxX: 0.05, minZ: -0.05, maxZ: 0.05 });
+    bicho.entrarEmServico();
+    if (params.has('leque')) bicho.abrirLeque(true);
+    if (params.has('volante')) bicho.aoVolante = { volante: 0, olhar: 0 };
+    mundo.add(mundo.place(bicho.group, pavao[0], 0, pavao[1], Number.isFinite(pavao[2]) ? pavao[2] : 0));
+    mundo.onUpdate((dt) => bicho.update(dt));
+    (window as unknown as { pavao: Pavao }).pavao = bicho;
   });
 }
 const carro = params.get('carro')?.split(',').map(Number);

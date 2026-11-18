@@ -2179,6 +2179,7 @@ export const PALETTE = {
   falaValentina: 0xd2337a, // o fúcsia de flamingo (mais forte que o rosa do Ari)
   falaLiz: 0x7d8a2e, // o verde-oliva da blusa dela
   falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
+  falaPietro: 0x1f63c6, // o azul do pavão
 
   /*
    * AS TINTAS DO ATELIÊ DE TINGIMENTO (mezanino da boutique da Estella): a
@@ -3064,6 +3065,34 @@ export const PALETTE = {
   clubeEstacionamentoPiso: 0x647175,
   clubeEstacionamentoConcreto: 0xd5dedb,
   clubeEstacionamentoMetal: 0x42555b,
+
+  /*
+   * O PIETRO, o pavão motorista da Valentina (`entities/bichos/Pavao.ts`,
+   * `docs/CARROS-DA-ESCOLA.md` §4): o azul do pavão no corpo e no pescoço, a
+   * cara branca, a asa canela listrada, a cauda verde-bronze com os OCELOS
+   * (o anel bronze, o turquesa e o miolo azul-noite) — e o uniforme de
+   * chofer: o quepe e a gravata quase pretos, o fio dourado e as luvas
+   * brancas (sem branco puro: estoura no sol).
+   */
+  pavaoAzul: 0x2361c4,
+  pavaoAzulClaro: 0x3f8fe0,
+  pavaoRosto: 0xf7f5ee,
+  pavaoBico: 0xc9b79c,
+  pavaoPupila: 0x1d1a24,
+  pavaoOlho: 0x7a4a24,
+  pavaoBochecha: 0x9fc3f0,
+  pavaoAsa: 0xc78a4e,
+  pavaoAsaListra: 0x5e3b22,
+  pavaoPerna: 0x8b8580,
+  pavaoCauda: 0x2e8a57,
+  pavaoCaudaClara: 0x7cc07c,
+  pavaoBronze: 0xb88a3a,
+  pavaoOcelo: 0x25b2ad,
+  pavaoOceloMiolo: 0x1a2e78,
+  pavaoCrista: 0x2aa0b8,
+  motoristaQuepe: 0x23222c,
+  motoristaDourado: 0xd8b45c,
+  motoristaLuva: 0xfbf8f1,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;
