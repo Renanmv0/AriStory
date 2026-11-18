@@ -1179,6 +1179,10 @@ export interface GameAPI {
   poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante?: number): void;
   /** inclina o passageiro para o ombro do motorista; zero devolve a pose normal */
   encostarNoCarro(quem: 'jogador' | 'parceiro', quanto: number): void;
+  /** o braço de quem vai de carona pela janela (0 no colo, 1 para fora) e o tapa (0 a 1): o toca aqui do Flynn */
+  bracoPelaJanela(quem: 'jogador' | 'parceiro', quanto: number, tapa?: number): void;
+  /** a ponta da mão do lado da porta do passageiro, no mundo (o teste do toca aqui) */
+  maoDaJanela(quem: 'jogador' | 'parceiro'): THREE.Vector3;
   /** o centro da cabeça de um dos dois, no mundo (o olho da câmera de dentro do carro) */
   cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3;
   /** esconde (ou mostra) a cabeça de um dos dois: na primeira pessoa a câmera nasce dentro dela */

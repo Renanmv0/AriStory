@@ -370,6 +370,10 @@ export class BebitoMobile {
     alvo: 0,
   };
   private readonly volante = new THREE.Group();
+  /** a janela do passageiro: a malha, e o quanto ela está aberta (0 fechada, 1 toda aberta) e para onde vai */
+  private vidroDoPassageiro: THREE.Mesh | null = null;
+  private janelaDoPassageiro = 0;
+  private alvoDaJanela = 0;
   /** os dois encostos da frente (cada um deita sozinho) e quanto cada um está deitado, de 0 a 1 */
   private readonly encostos = {} as Record<'motorista' | 'passageiro', THREE.Group>;
   private readonly deitado = { motorista: 0, passageiro: 0 };
@@ -486,14 +490,31 @@ export class BebitoMobile {
     ));
 
     // os vidros: uma malha só, transparente, sem sombra (o sol entra na cabine)
+    // (a janela da porta do PASSAGEIRO, o espelho da do motorista em `-X`, é uma malha à parte: ela DESCE no toca aqui
+    // do Flynn na estrada)
+    const daPortaDoPassageiro = (zm: number, j: number): boolean => j <= PONTOS - 2 - J_DA_PORTA && zm > CARRO.portas.meio && zm < CARRO.portas.frente;
     const vidros = new THREE.Mesh(
-      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro' && !daPorta(zm, j)),
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro' && !daPorta(zm, j) && !daPortaDoPassageiro(zm, j)),
       toon(P.glass, { opacity: 0.36 }),
     );
     vidros.name = 'vidros';
     vidros.userData.semSombra = true;
     vidros.renderOrder = 4;
     this.teto.add(vidros);
+    {
+      // o vidro do passageiro desce ENCOLHENDO até o peitoril (o pivô é a beira de baixo dele): fica sempre dentro do vão
+      const geo = geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro' && daPortaDoPassageiro(zm, j));
+      geo.computeBoundingBox();
+      const peitoril = geo.boundingBox!.min.y;
+      geo.translate(0, -peitoril, 0);
+      const vidro = new THREE.Mesh(geo, toon(P.glass, { opacity: 0.36 }));
+      vidro.name = 'vidro-do-passageiro';
+      vidro.position.y = peitoril;
+      vidro.userData.semSombra = true;
+      vidro.renderOrder = 4;
+      this.teto.add(vidro);
+      this.vidroDoPassageiro = vidro;
+    }
     const vidroDaPorta = new THREE.Mesh(
       geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro' && daPorta(zm, j)),
       toon(P.glass, { opacity: 0.36 }),
@@ -1385,8 +1406,31 @@ export class BebitoMobile {
     this.agito = Math.min(2, this.agito + Math.abs(arfa) * 0.4 + Math.abs(rola) * 0.4);
   }
 
+  /** a JANELA DO PASSAGEIRO: `sim` baixa o vidro (uns 0,8 s), para o braço de quem vai de carona sair */
+  baixarVidroDoPassageiro(sim: boolean, naHora = false): void {
+    this.alvoDaJanela = sim ? 1 : 0;
+    if (naHora) this.janelaDoPassageiro = this.alvoDaJanela;
+    this.poseDaJanela();
+  }
+  /** o quanto o vidro do passageiro já desceu (0 fechado, 1 aberto) */
+  get janelaAberta(): number {
+    return this.janelaDoPassageiro;
+  }
+  private poseDaJanela(): void {
+    const v = this.vidroDoPassageiro;
+    if (!v) return;
+    const k = this.janelaDoPassageiro;
+    v.scale.y = Math.max(0.001, 1 - k);
+    v.visible = k < 0.995;
+  }
+
   update(dt: number): void {
     this.tempo += dt;
+    if (this.janelaDoPassageiro !== this.alvoDaJanela) {
+      const falta = this.alvoDaJanela - this.janelaDoPassageiro;
+      this.janelaDoPassageiro += Math.sign(falta) * Math.min(Math.abs(falta), dt / 0.8);
+      this.poseDaJanela();
+    }
     // os encostos deitando (ou levantando), sem pressa
     let mexeu = false;
     for (const lado of ['motorista', 'passageiro'] as const) {

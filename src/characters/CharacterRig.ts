@@ -200,6 +200,9 @@ export class CharacterRig {
   private noCarro: PoseNoCarro | null = null;
   private volante = 0;
   private carinhoNoCarro = 0;
+  /** o braço de quem vai de carona pela janela (o toca aqui do Flynn): 0 no colo, 1 para fora; e o tapa (0 a 1) */
+  private pelaJanela = 0;
+  private tapaNaJanela = 0;
   /** o arremesso de lado (a pedrinha no lago): o relógio, em segundos; 0 = parado */
   private arremesso = 0;
   private deitado = false;
@@ -1755,6 +1758,23 @@ export class CharacterRig {
     }
   }
 
+  /**
+   * O BRAÇO PELA JANELA (o toca aqui do Flynn na estrada): só de carona, o
+   * braço do lado da porta (o `armL`, em `-X`, que é o lado da janela do
+   * passageiro) sai pela janela aberta e sobe, a mão aberta; o `tapa` (0 a 1)
+   * leva a mão para fora e para a frente, até a pata dele. A janela é da cena.
+   */
+  bracoPelaJanela(quanto: number, tapa = 0): void {
+    this.pelaJanela = THREE.MathUtils.clamp(quanto, 0, 1);
+    this.tapaNaJanela = THREE.MathUtils.clamp(tapa, 0, 1);
+  }
+
+  /** a ponta da mão do lado `-X` (o `armL`) no mundo: o toca aqui mede o encontro com a pata do Flynn */
+  maoEsquerdaNoMundo(alvo: THREE.Vector3): THREE.Vector3 {
+    this.armL.updateWorldMatrix(true, false);
+    return this.armL.localToWorld(alvo.set(0, -this.spec.height * 0.3 * 0.98, 0));
+  }
+
   encostarNoCarro(quanto: number): void {
     this.carinhoNoCarro = THREE.MathUtils.clamp(quanto, 0, 1);
     if (this.carinhoNoCarro === 0) {
@@ -2196,12 +2216,22 @@ export class CharacterRig {
         this.armL.rotation.set(-0.5, 0, 0.12);
         this.armR.rotation.set(-0.5, 0, -0.12);
         this.body.rotation.x = -0.04;
+        // o braço pela janela: o do lado da porta (`-X`) abre para FORA (no esquerdo, `rotation.z` negativo) e
+        // sobe acima do ombro; no tapa, desce um tico e vai para a frente, até a pata do Flynn
+        const k = this.pelaJanela;
+        if (k > 0) {
+          const tapa = this.tapaNaJanela;
+          // (com o braço deitado para fora, quem leva a mão para a FRENTE é o `rotation.y`, não o `x`: o `x` só o gira em
+          // volta de si mesmo)
+          this.armL.rotation.set(-0.5 + 0.55 * k, (0.1 + 0.35 * tapa) * k, 0.12 + (-2.0 + 0.3 * tapa - 0.12) * k);
+        }
       }
       this.poeAltura(Math.sin(this.phase) * 0.008);
       this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
       // O passageiro fica em −X: inclinar em Z negativo aproxima do motorista.
       const carinho = this.noCarro === 'passageiro' ? this.carinhoNoCarro : 0;
-      this.body.rotation.z = -0.29 * carinho;
+      // (com o braço pela janela, o corpo pende um tico para a porta: `rotation.z` positivo vai para o `-X`)
+      this.body.rotation.z = -0.29 * carinho + (this.noCarro === 'passageiro' ? 0.1 * this.pelaJanela : 0);
       this.head.rotation.z = -0.13 * carinho;
       return;
     }

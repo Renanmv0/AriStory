@@ -2508,6 +2508,14 @@ export class Game implements GameAPI {
     (quem === 'jogador' ? this.player : this.parceiro).rig.encostarNoCarro(quanto);
   }
 
+  bracoPelaJanela(quem: 'jogador' | 'parceiro', quanto: number, tapa = 0): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.bracoPelaJanela(quanto, tapa);
+  }
+
+  maoDaJanela(quem: 'jogador' | 'parceiro'): THREE.Vector3 {
+    return (quem === 'jogador' ? this.player : this.parceiro).rig.maoEsquerdaNoMundo(new THREE.Vector3());
+  }
+
   mostrarCabeca(quem: 'jogador' | 'parceiro', sim: boolean): void {
     (quem === 'jogador' ? this.player : this.parceiro).rig.mostrarCabeca(sim);
   }

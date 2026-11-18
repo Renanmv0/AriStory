@@ -140,6 +140,7 @@ export type SomNome =
   | 'buzinaDoJeanLuc'
   | 'carimbo'
   | 'buzinaDaTiaLiz'
+  | 'tocaAqui'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1427,6 +1428,19 @@ export const EFEITOS: Record<SomNome, Receita> = {
       tom(ctx, destino, { freq: f, glide: f * 0.99, quando: t + atraso, dur, vol: 0.05, ataque: 0.01, tipo: 'sawtooth', abafo: 1400 });
       tom(ctx, destino, { freq: f / 2, quando: t + atraso, dur, vol: 0.04, ataque: 0.01, tipo: 'sine' });
     }
+  },
+
+  /**
+   * O TOCA AQUI do Flynn pela janela: o "pá!" de duas palmas se encontrando
+   * (um chiado curtíssimo e aberto, com o grave do impacto por baixo) e um
+   * "plim" de duas notas subindo (sol e dó), de comemoração.
+   */
+  tocaAqui: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.045, vol: 0.13, freq: 2300, glide: 1200, q: 0.8 });
+    chiado(ctx, destino, { quando: t + 0.004, dur: 0.03, vol: 0.06, freq: 4200, q: 1.4 });
+    tom(ctx, destino, { freq: nota(DO - 17), glide: nota(DO - 24), quando: t, dur: 0.07, vol: 0.07, ataque: 0.003, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.09, dur: 0.1, vol: 0.045, ataque: 0.008, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO + 12), quando: t + 0.17, dur: 0.18, vol: 0.05, ataque: 0.008, tipo: 'triangle' });
   },
 
   fotoFlash: ({ ctx, destino, t }) => {

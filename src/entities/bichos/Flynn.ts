@@ -124,6 +124,16 @@ export class Flynn extends Bicho {
    * solta no alto do pulo.
    */
   readonly maoDaBola = new THREE.Object3D();
+  /**
+   * A CORRIDA MATINAL (a estrada, `eventos/bebitoMobile/corridaDoFlynn.ts`):
+   * quem leva o corpo pela calçada é a cena, e isto diz a pose. `corrida` é a
+   * velocidade em "corridas" (1 = 7 m/s, a do Bebito; ele passa de 2), e a
+   * passada acelera junto; `trote` é a corrida NO LUGAR, conversando sem
+   * esfriar; `tocaAqui` (0 a 1) ergue a pata do lado `+X` (o do Bebito) aberta,
+   * e `estica` (0 a 1) a leva até a mão da janela, no tapa. Nulo fora da
+   * estrada: nada abaixo muda o Flynn do ginásio nem o do refeitório.
+   */
+  naEstrada: { corrida: number; trote: boolean; tocaAqui: number; estica: number } | null = null;
   private readonly pata = new THREE.Vector3();
   private readonly outraPata = new THREE.Vector3();
 
@@ -191,6 +201,13 @@ export class Flynn extends Bicho {
   /** o quanto a pata direita subiu (rad): 0 com o braço baixo, perto de 3 no alto */
   get bracoDireitoNoAlto(): number {
     return Math.abs(this.bracos[1]?.rotation.z ?? 0);
+  }
+
+  /** a ponta da pata do lado `+X` (a do toca aqui), no mundo: o teste mede o encontro das mãos */
+  pataDoToca(alvo: THREE.Vector3): THREE.Vector3 {
+    const braco = this.bracos[1];
+    braco.updateWorldMatrix(true, false);
+    return braco.localToWorld(alvo.set(0, -0.205, 0));
   }
 
   // ------------------------------------------------------------------ corpo
@@ -715,7 +732,12 @@ export class Flynn extends Bicho {
 
   // ------------------------------------------------------------------- pose
 
-  protected animar(dt: number, { andando, carinho }: PoseDoBicho): void {
+  protected animar(dt: number, pose: PoseDoBicho): void {
+    const { carinho } = pose;
+    const estrada = this.naEstrada;
+    // na estrada quem anda é a cena: correndo de verdade ou trotando no lugar, as pernas vão
+    const andando = estrada ? estrada.corrida > 0.05 || estrada.trote : pose.andando;
+    const correndoAgora = estrada ? andando : this.correndo && andando;
     this.relogio += dt;
     const t = this.relogio;
     this.acenando = Math.max(0, this.acenando - dt);
@@ -723,12 +745,14 @@ export class Flynn extends Bicho {
     const suave = Math.min(1, dt * 7);
     this.misturaAceno += ((this.acenando > 0 ? 1 : 0) - this.misturaAceno) * suave;
     this.misturaFesta += ((this.comemorando > 0 ? 1 : 0) - this.misturaFesta) * suave;
-    this.misturaCorrida += ((this.correndo && andando ? 1 : 0) - this.misturaCorrida) * suave;
+    this.misturaCorrida += ((correndoAgora ? 1 : 0) - this.misturaCorrida) * suave;
     const aceno = this.misturaAceno;
     const festa = this.misturaFesta;
     const corre = this.misturaCorrida;
     // correndo, a cadência sobe de 10 para 17: num relógio próprio, para a fase não pular
-    if (andando) this.passada += dt * (10 + corre * 7);
+    // (na estrada, a passada ainda acelera com a velocidade: a 2 corridas, uma vez e meia; trotando, um tico mais lenta)
+    const ritmo = estrada ? (estrada.corrida > 0.05 ? Math.min(1.8, 0.6 + 0.45 * estrada.corrida) : 0.8) : 1;
+    if (andando) this.passada += dt * (10 + corre * 7) * ritmo;
 
     // ------------------------------------------------------------ o arremesso
     /**
@@ -738,7 +762,8 @@ export class Flynn extends Bicho {
      * braços descem até o chão. Os ângulos dos braços abaixo são do MUNDO
      * (`… - dobra`), e por isso a pata vai ao chão com o tronco dobrado.
      */
-    let dobra = corre * 0.24;
+    // (trotando no lugar ele fica mais em pé; na disparada, mais deitado)
+    let dobra = corre * (estrada ? (estrada.corrida > 0.05 ? Math.min(0.36, 0.2 + 0.06 * estrada.corrida) : 0.08) : 0.24);
     let pulo = 0;
     /** os pesos dos três jeitos de braço do arremesso: no chão, no peito, no alto */
     let noChao = 0;
@@ -773,7 +798,7 @@ export class Flynn extends Bicho {
 
     // ------------------------------------------------ as pernas e o pulinho
     const passo = andando ? Math.sin(this.passada) : 0;
-    const amplitude = 0.6 + corre * 0.45;
+    const amplitude = estrada && estrada.corrida <= 0.05 ? 0.45 : 0.6 + corre * 0.45;
     for (const [i, perna] of this.pernas.entries()) {
       const lado = i === 0 ? -1 : 1;
       // o balanço guardado à parte: a dobra entra EXATA, senão o pé sai do chão
@@ -818,6 +843,17 @@ export class Flynn extends Bicho {
         const [zAlto, xAlto] = lado > 0 ? [2.5, 0.4] : [-lado * 0.15, -1.7];
         z += (zAlto - z) * noAlto;
         x += (xAlto - dobra - x) * noAlto;
+      }
+      /*
+       * O TOCA AQUI: a pata do lado do Bebito (a `+X`) sobe aberta ao lado da
+       * cabeça, um tico para a frente, a palma virada para a janela; e no
+       * tapa ela DESCE e ABRE até a mão de quem vai de carona.
+       */
+      const toca = estrada && lado > 0 ? estrada.tocaAqui : 0;
+      if (toca > 0) {
+        const estica = estrada!.estica;
+        z += (2.35 - 0.75 * estica - z) * toca;
+        x += (-0.25 - 0.15 * estica - x) * toca;
       }
       if (lado > 0 && aceno > 0) {
         const alto = lado * (Math.PI - 0.45) + Math.sin(t * 13) * 0.3;

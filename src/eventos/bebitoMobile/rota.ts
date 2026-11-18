@@ -34,7 +34,7 @@ export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('esc
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
 /** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
 export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina' | 'tializ';
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina' | 'tializ' | 'flynn';
 /** onde cada viagem COMEÇA (o par do `DESTINO`) */
 const ORIGEM: Record<Sentido, DestinoDeCarro> = {
   'ida': 'casa', 'volta': 'parque', 'parque-clube': 'parque', 'clube-parque': 'clube', 'casa-clube': 'casa', 'clube-casa': 'clube',
@@ -47,8 +47,9 @@ export const MORADORES: Record<DestinoDeCarro, readonly PersonagemNaEstrada[]> =
   clube: ['noel', 'josefina', 'capy', 'walter', 'gina'],
   casa: [],
   // a Tia Liz e as três irmãs, no conversível (`docs/CARROS-DA-ESCOLA.md` §2); na cena, só depois de a Tia Liz
-  // ser conhecida na cantina (antes disso, a viagem segue sem encontro)
-  escola: ['tializ'],
+  // ser conhecida na cantina (antes disso, a viagem segue sem encontro). E o Flynn, que não tem carro: vem A PÉ,
+  // na corrida matinal, pela calçada e mais rápido que o Bebito (§3); na cena, só depois de conhecido no refeitório
+  escola: ['tializ', 'flynn'],
 };
 /**
  * QUEM PODE APARECER numa viagem (decisão do Renan, 2026-11-15): cada um só
@@ -57,8 +58,9 @@ export const MORADORES: Record<DestinoDeCarro, readonly PersonagemNaEstrada[]> =
  * (parque ↔ clube, nos dois sentidos), sorteia entre todos; se o destino não
  * tem ninguém (a casa), vale quem mora de onde a viagem SAI. Desde que a Tia
  * Liz e as irmãs passaram a morar na escola (2026-11-17), casa ↔ escola tem
- * encontro (só elas), e clube ↔ escola e parque ↔ escola sorteiam entre as duas
- * pontas — o pedido do Renan.
+ * encontro, e clube ↔ escola e parque ↔ escola sorteiam entre as duas
+ * pontas — o pedido do Renan. O Flynn (a pé) mora lá desde 2026-11-17 também:
+ * casa ↔ escola sorteia entre ele e as quatro do conversível.
  */
 export function candidatosAoEncontro(sentido: Sentido): readonly PersonagemNaEstrada[] {
   const destino = MORADORES[DESTINO[sentido]], origem = MORADORES[ORIGEM[sentido]];
