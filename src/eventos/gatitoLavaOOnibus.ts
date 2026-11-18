@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import { Gatito } from '../entities/bichos/Gatito';
-import { PALETTE as P } from '../palette';
-import { toon } from '../core/materials';
 import { caixote } from '../world/props';
 import { poca } from '../world/estrada';
 import { fundir } from '../world/fundir';
 import { ARI, RENAN } from '../characters/cast';
+import { BolhasDeSabao, baldeDeEspuma, carrinhoDeMangueira, espumaNaLataria, mangueiraEnroladaNoChao, pistolaDeMangueira } from '../world/lavagemDoOnibus';
+import { MEMORIA_DO_MUTIRAO, depuracaoDoMutirao, mutiraoDaLavagem } from './mutiraoDaLavagem';
+import { relogioDaCena } from './bebitoMobile/presente';
 
 /**
  * ===================================== O GATITO LAVANDO O ÔNIBUS
@@ -55,116 +55,6 @@ const FALAS_DA_LAVAGEM = [
   'Ônibus limpinho, time feliz.',
 ];
 
-/** o balde azul de plástico, com a alça, a espuma transbordando e a esponja reserva boiando */
-function baldeDeEspuma(): THREE.Group {
-  const g = new THREE.Group();
-  g.userData.peca = 'balde-de-espuma';
-  const plastico = toon(P.baldeDeLavar);
-  const perfil = [[0, 0.012], [0.15, 0.012], [0.16, 0.02], [0.185, 0.3], [0.2, 0.31], [0.205, 0.335], [0.19, 0.335], [0.175, 0.31], [0.142, 0.03], [0, 0.03]]
-    .map(([x, y]) => new THREE.Vector2(x, y));
-  g.add(new THREE.Mesh(new THREE.LatheGeometry(perfil, 24), plastico));
-  // os frisos do plástico em volta
-  for (const y of [0.11, 0.2]) {
-    const friso = new THREE.Mesh(new THREE.TorusGeometry(0.162 + (y - 0.02) * 0.08, 0.006, 5, 24).rotateX(Math.PI / 2), plastico);
-    friso.position.y = y;
-    g.add(friso);
-  }
-  // a alça de arame caída para o lado, com o pegador
-  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.007, 5, 20, Math.PI).rotateY(Math.PI / 2), toon(P.onibusCalota));
-  alca.position.y = 0.3;
-  alca.rotation.x = -1.1;
-  g.add(alca);
-  // a espuma: bolotas brancas transbordando (uma malha), e a esponja reserva
-  const bolotas: THREE.BufferGeometry[] = [];
-  let s = 7;
-  const sorte = (): number => ((s = (s * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 16; i++) {
-    const a = sorte() * Math.PI * 2, r = Math.sqrt(sorte()) * 0.15, raio = 0.045 + sorte() * 0.04;
-    const b = new THREE.SphereGeometry(raio, 10, 7);
-    b.scale(1, 0.7, 1);
-    b.translate(Math.cos(a) * r, 0.32 + (0.15 - r) * 0.25 + sorte() * 0.02, Math.sin(a) * r);
-    bolotas.push(b);
-  }
-  // dois escorridos de espuma descendo pela borda
-  for (const a of [0.6, 2.4]) {
-    const gota = new THREE.CapsuleGeometry(0.022, 0.07, 3, 8);
-    gota.translate(Math.cos(a) * 0.2, 0.28, Math.sin(a) * 0.2);
-    bolotas.push(gota);
-  }
-  g.add(new THREE.Mesh(mergeGeometries(bolotas.map((b) => b.index ? b.toNonIndexed() : b).map((b) => { b.deleteAttribute('uv'); return b; })) as THREE.BufferGeometry, toon(P.espumaDeSabao)));
-  const reserva = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.05, 0.11), toon(P.esponjaAmarela));
-  reserva.position.set(0.05, 0.37, -0.03);
-  reserva.rotation.set(0.25, 0.7, -0.15);
-  g.add(reserva);
-  return g;
-}
-
-/**
- * A ESPUMA GRUDADA NA LATARIA: manchas brancas achatadas contra o lado do ônibus, em volta de onde ele esfrega, e
- * escorridos descendo — numa malha só. `face` é o plano do lado (`z`), e a malha fica 1 cm para fora dele.
- */
-function espumaNaLataria(x: number, y: number, face: number): THREE.Mesh {
-  const pedacos: THREE.BufferGeometry[] = [];
-  let s = 11;
-  const sorte = (): number => ((s = (s * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 22; i++) {
-    const a = sorte() * Math.PI * 2, r = Math.sqrt(sorte()) * 0.42;
-    const raio = 0.03 + sorte() * 0.05;
-    const b = new THREE.SphereGeometry(raio, 9, 6);
-    b.scale(1, 0.85, 0.3);
-    b.translate(x + Math.cos(a) * r * 1.2, y + Math.sin(a) * r * 0.7, face + 0.008);
-    pedacos.push(b);
-  }
-  // os escorridos: a espuma descendo pela lataria até o friso de baixo
-  // (gotas gordas e curtas: fininhas e compridas, de longe liam como palitos soltos no ar)
-  for (let i = 0; i < 4; i++) {
-    const comp = 0.07 + sorte() * 0.06;
-    const gota = new THREE.SphereGeometry(0.03, 8, 6);
-    gota.scale(1, comp / 0.03, 0.3);
-    gota.translate(x - 0.3 + i * 0.2 + sorte() * 0.06, y - 0.3 - comp * 0.6, face + 0.008);
-    pedacos.push(gota);
-  }
-  return new THREE.Mesh(mergeGeometries(pedacos.map((b) => { b.deleteAttribute('uv'); return b; })) as THREE.BufferGeometry, toon(P.espumaDeSabao));
-}
-
-/** AS BOLHAS: um lote que sobe da esponja e do balde, balança e estoura (cresce e some) */
-class BolhasDeSabao {
-  readonly malha = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), toon(P.espumaDeSabao, { opacity: 0.5, glow: 0.25 }), 18);
-  private readonly bolhas: Array<{ p: THREE.Vector3; vida: number; dura: number; tam: number; fase: number }> = [];
-  private readonly m = new THREE.Matrix4();
-  private sorte = 3;
-  constructor() {
-    this.malha.frustumCulled = false;
-    this.malha.userData.semSombra = true;
-    for (let i = 0; i < 18; i++) this.bolhas.push({ p: new THREE.Vector3(), vida: 99, dura: 1, tam: 0, fase: i });
-  }
-  private rnd(): number {
-    return ((this.sorte = (this.sorte * 16807) % 2147483647) / 2147483647);
-  }
-  update(dt: number, fontes: THREE.Vector3[]): void {
-    this.bolhas.forEach((b, i) => {
-      b.vida += dt;
-      if (b.vida > b.dura) {
-        const f = fontes[i % fontes.length];
-        b.p.set(f.x + (this.rnd() - 0.5) * 0.12, f.y + this.rnd() * 0.05, f.z + this.rnd() * 0.1);
-        b.vida = 0;
-        b.dura = 1.6 + this.rnd() * 2.2;
-        b.tam = 0.018 + this.rnd() * 0.03;
-        b.fase = this.rnd() * 6;
-      }
-      const k = b.vida / b.dura;
-      b.p.y += dt * (0.16 + b.tam * 2);
-      b.p.x += Math.sin(b.vida * 2.4 + b.fase) * dt * 0.08;
-      b.p.z += dt * 0.05;
-      // nasce pequenininha, cresce, e no fim incha um tico e some (o estouro)
-      const tam = b.tam * Math.min(1, k * 5) * (k > 0.92 ? Math.max(0, 1 - (k - 0.92) * 12.5) * 1.3 : 1);
-      this.m.makeScale(tam, tam, tam).setPosition(b.p);
-      this.malha.setMatrixAt(i, this.m);
-    });
-    this.malha.instanceMatrix.needsUpdate = true;
-  }
-}
-
 /**
  * Monta a lavagem ao lado do ônibus. `onibus` é o meio do lado da porta (o que fica de frente para a câmera), no
  * mundo, com a lataria virada para o `+Z`; `x` é onde, ao longo do ônibus, o Gatito esfrega.
@@ -180,7 +70,8 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
   const CAIXOTE = { x, z: face + 0.34, alto: 0.88 };
   const BALDE = { x: x + 0.68, z: face + 0.42 };
 
-  w.add(w.place(poca(5), x + 0.5, 0, face + 0.7)).scale.set(0.36, 1, 0.3);
+  const pocaNoChao = w.add(w.place(poca(5), x + 0.5, 0, face + 0.7));
+  pocaNoChao.scale.set(0.36, 1, 0.3);
   const pilha = new THREE.Group();
   pilha.add(w.place(caixote(0.56, 0.44), 0, 0, 0, 0.08));
   // o de cima, um tico menor e torto (pilha de quem improvisou)
@@ -188,6 +79,20 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
   w.add(fundir(w.place(pilha, CAIXOTE.x, 0, CAIXOTE.z)));
   w.add(fundir(w.place(baldeDeEspuma(), BALDE.x, 0, BALDE.z, 0.4)));
   w.blockBox(x + 0.32, face + 0.4, 0.66, 0.36);
+  // o CARRINHO DA MANGUEIRA, do outro lado dos caixotes, e a ponta da mangueira enrolada no chão com a pistola em cima
+  const carrinho = w.place(carrinhoDeMangueira(), x - 0.98, 0, face + 0.42, 0.3);
+  carrinho.updateMatrixWorld(true);
+  const saidaDaMangueira = new THREE.Vector3();
+  carrinho.getObjectByName('saida')?.getWorldPosition(saidaDaMangueira);
+  w.add(fundir(carrinho));
+  w.blockBox(x - 0.98, face + 0.42, 0.34, 0.3);
+  const mangueiraNoChao = new THREE.Group();
+  mangueiraNoChao.add(mangueiraEnroladaNoChao());
+  const pistolaDeitada = pistolaDeMangueira();
+  pistolaDeitada.rotation.set(0, 0.9, Math.PI / 2);
+  pistolaDeitada.position.set(0.12, 0.05, 0.05);
+  mangueiraNoChao.add(pistolaDeitada);
+  w.add(fundir(w.place(mangueiraNoChao, x - 0.92, 0, face + 0.98)));
 
   const gatito = new Gatito({ minX: CAIXOTE.x, maxX: CAIXOTE.x, minZ: CAIXOTE.z, maxZ: CAIXOTE.z });
   gatito.entrarEmServico();
@@ -207,6 +112,8 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
   w.add(bolhas.malha);
   const esponja = new THREE.Vector3();
   const topoDoBalde = new THREE.Vector3(BALDE.x, 0.42, BALDE.z);
+  /** as bolhas que o mutirão empresta (a esponja de quem ajuda) */
+  const fontesDoMutirao: THREE.Vector3[] = [];
 
   const perto = (raio: number): boolean => {
     const p = g0.playerPosition();
@@ -220,11 +127,12 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
   };
 
   let conversando = false;
+  const relogio = relogioDaCena(w);
   let proximaEsfregada = 0.6;
   w.onUpdate((dt) => {
     gatito.update(dt);
     gatito.pontaDaEsponja(esponja);
-    bolhas.update(dt, gatito.esfregando ? [esponja, topoDoBalde, esponja] : [topoDoBalde]);
+    bolhas.update(dt, [...(gatito.esfregando ? [esponja, topoDoBalde, esponja] : [topoDoBalde]), ...fontesDoMutirao]);
     // o "fsh-fsh" da esponja, baixinho, só com a dupla perto
     proximaEsfregada -= dt;
     if (proximaEsfregada <= 0) {
@@ -233,7 +141,7 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
     }
   });
 
-  w.interact({
+  const falarComEle = w.interact({
     id: 'escola-patio:gatito-lavando',
     x: CAIXOTE.x + 0.2, z: face + 1.05, radius: 1.5,
     label: 'Falar com o Gatito', icon: '🐱',
@@ -259,6 +167,22 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
         } else {
           await g.say([FALAS_DA_LAVAGEM[Math.floor(Math.random() * FALAS_DA_LAVAGEM.length)]], G);
         }
+        // O MUTIRÃO (pedido do Renan): dá para ajudar — um na esponja, o outro na mangueira
+        await g.say([g.temMemoria(MEMORIA_DO_MUTIRAO)
+          ? 'Mais uma rodada de mutirão? A mangueira tá ali, doida pra trabalhar.'
+          : 'Querem ajudar? Tem uma esponja sobrando no balde e uma mangueira doida pra trabalhar.'], G);
+        if ((await g.ask('Ajudar o Gatito a lavar o ônibus?', ['Bora ajudar!', 'Agora não'])) === 0) {
+          falarComEle.enabled = false;
+          try {
+            await mutiraoDaLavagem(g, {
+              gatito, x: CAIXOTE.x, face, saidaDaMangueira, mangueiraNoChao, poca: pocaNoChao,
+              relogio, raiz: w.root, fontesDeBolhas: fontesDoMutirao,
+              som: (nome) => g.som(nome),
+            });
+          } finally {
+            falarComEle.enabled = true;
+          }
+        }
       } finally {
         conversando = false;
         olharOOnibus();
@@ -267,6 +191,6 @@ export function montarGatitoLavandoOOnibus(w: WorldBuilder, onibus: { x: number;
     },
   });
 
-  w.root.userData.gatitoLavando = { gatito, face, esponja };
+  w.root.userData.gatitoLavando = { gatito, face, esponja, mutirao: depuracaoDoMutirao };
   return gatito;
 }

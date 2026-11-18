@@ -1133,6 +1133,23 @@ node scripts/smoke.mjs /tmp/aristory   # tira as fotos e checa erros de console
 Olhe as imagens. Confira: dá pra andar sem travar, os prompts aparecem, nada
 flutuando no ar, nada atravessando parede. Veja `.claude/skills/aristory-testar`.
 
+## Cutscene com OS TRÊS trabalhando (o mutirão da lavagem do ônibus)
+
+`eventos/mutiraoDaLavagem.ts` é o molde de cutscene em que a dupla FAZ uma coisa com um personagem, num lugar fixo:
+
+- **Trocar de lugar por baixo da tela escura** (`g.escurecerTela(true)` → `releasePlayer`/`releaseCompanion` →
+  câmera → `escurecerTela(false)`): sem o motor de "andar até", o corte é o que esconde o salto.
+- **A câmera vem do lado em que a ação APARECE**: a esponja vai na mão direita, que de frente para a lataria fica no
+  lado −X de quem esfrega — pelo lado do nariz do ônibus, o corpo dele tapava a esponja e a espuma. A tomada é pelo
+  lado da traseira, perto, e recua no celular em pé.
+- **Quem segura a mangueira MIRA pelo motor**: `g.mirarJogador(ponto)` ou `g.holdCompanion(x, z)` a cada quadro, e o
+  jato sai da `ponta` da pistola (um `Object3D` com nome dentro do que vai na mão) na direção dela — a água segue o
+  corpo, e não o contrário.
+- **Tudo no relógio do jogo** (`relogioDaCena`): cada pedaço é uma promessa que um `aCadaQuadro` resolve; a fala
+  (`g.say`) não para o mundo, então a água, as bolhas e a sacudida continuam enquanto alguém fala.
+- **Devolver tudo**: as mãos (`segurarNaCena(id, null)`), as poses, a mira, a câmera, a mangueira no chão, a poça no
+  tamanho de antes e o Gatito de volta à esponja; o prompt fica desligado enquanto o mutirão dura.
+
 ## Cutscene de BICHO DE VEÍCULO que desce e anda (o desfile da Valentina na escola)
 
 `eventos/bebitoMobile/desfileDaValentina.ts` é o molde de um veículo que chega, cujo motorista e passageira DESCEM,

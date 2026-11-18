@@ -115,9 +115,21 @@ await p.waitForTimeout(800);
 
 // ============================================================ 3. a conversa
 console.log('\n3. a conversa');
-const conversar = async (max = 40) => {
+/** passa as falas; numa pergunta, responde pelo `escolher(opções)` (o índice) e anota a pergunta */
+const conversar = async (max = 40, escolher = () => 1) => {
   const falas = [];
   for (let i = 0; i < max; i++) {
+    await p.waitForTimeout(100);
+    const opcoes = await p.evaluate(() => [...document.querySelectorAll('.escolhas.show button')].map((b) => b.textContent ?? ''));
+    if (opcoes.length) {
+      await p.waitForTimeout(900);
+      const pergunta = await p.evaluate(() => document.querySelector('.dialogue .text')?.textContent ?? '');
+      const k = escolher(opcoes, pergunta);
+      falas.push(`? ${pergunta} [${opcoes.join(' / ')}] -> ${opcoes[k]}`);
+      await p.evaluate((k) => document.querySelectorAll('.escolhas.show button')[k].click(), k);
+      await p.waitForTimeout(400);
+      continue;
+    }
     if (!(await p.locator('.dialogue.show').count())) {
       await p.waitForTimeout(500);
       if (!(await p.locator('.dialogue.show').count()) && falas.length) break;
@@ -153,6 +165,8 @@ await p.screenshot({ path: `${OUT}-conversa.png` });
 const primeira = await conversar(60);
 console.log('      ' + primeira.join('\n      '));
 conferir(primeira.some((f) => /^Gatito: .*banho no ônibus/.test(f)), 'ele conta que está dando banho no ônibus');
+// (a pergunta pode estar ainda sendo escrita quando as opções aparecem: quem diz que é o convite são as opções)
+conferir(primeira.some((f) => /^\? .*\[Bora ajudar! \/ Agora não\] -> Agora não$/.test(f)), 'e convida a ajudar (respondemos "Agora não")');
 await p.waitForTimeout(3500);
 const depois = await p.evaluate(() => (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? []).some((m) => m.id === 'gatito-lavando-o-onibus'));
 conferir(depois, 'a memória "O ônibus brilhando"');
@@ -162,9 +176,107 @@ await p.waitForTimeout(800);
 conferir(await chegarPerto(), 'dá para falar de novo');
 await p.keyboard.press('KeyE');
 await p.waitForTimeout(800);
-const segunda = await conversar(10);
+const segunda = await conversar(14);
 console.log('      ' + segunda.join('\n      '));
-conferir(segunda.length === 1 && segunda[0].startsWith('Gatito:'), 'na segunda vez, uma fala só dele');
+conferir(segunda.filter((f) => f.startsWith('Gatito:')).length === 2 && !segunda.some((f) => /banho no ônibus dos Gatitos/.test(f)), 'na segunda vez, uma fala curta e o convite (sem se apresentar de novo)');
+
+// ============================================================ 4. o mutirão
+console.log('\n4. o mutirão: Renan na mangueira, Ari na esponja');
+await p.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 2; });
+conferir(await chegarPerto(), 'o prompt de novo');
+await p.keyboard.press('KeyE');
+await p.waitForTimeout(800);
+const estado = () => p.evaluate(() => {
+  const u = window.jogo.current.world.root.userData.gatitoLavando;
+  const d = u.mutirao;
+  const V = window.jogo.scene.position.constructor;
+  const pos = (o) => (o ? o.getWorldPosition(new V()).toArray() : null);
+  const save = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
+  return {
+    fase: d.fase, face: u.face, gatito: u.gatito.group.position.toArray(), sacudindo: u.gatito.sacudindo,
+    esponja: pos(d.esponja), pistola: pos(d.pistola), mancha: d.mancha ? d.mancha.scale.x : null,
+    jato: d.jato ? { ligado: d.jato.ligado, alvo: d.jato.alvo.toArray(), chegou: d.jato.chegou } : null,
+    arco: d.arco ? { visivel: d.arco.malha.visible, conta: d.arco.malha.geometry.drawRange.count } : null,
+    mao: { ari: !!window.jogo.objetoNaMao?.('ari'), renan: !!window.jogo.objetoNaMao?.('renan') },
+    memoria: (save.memories ?? []).some((m) => m.id === 'mutirao-da-lavagem'),
+    jogador: window.jogo.playerPosition().toArray(),
+  };
+});
+const vistos = {};
+let maiorMancha = 0, menorMancha = 9, alvoNoGatito = Infinity, maiorArco = 0, viuSacudida = false, esponjaNaLataria = Infinity, esponjaAltura = 0;
+const falasDoMutirao = [];
+const t0 = Date.now();
+while (Date.now() - t0 < 600000) {
+  const e = await estado();
+  if (!vistos[e.fase]) {
+    vistos[e.fase] = true;
+    console.log(`      fase: ${e.fase}`);
+  }
+  if (e.fase === 'esfregando' && e.esponja) {
+    esponjaNaLataria = Math.min(esponjaNaLataria, Math.abs(e.esponja[2] - e.face));
+    esponjaAltura = e.esponja[1];
+    maiorMancha = Math.max(maiorMancha, e.mancha ?? 0);
+    if (!vistos.fotoEsfregando && (e.mancha ?? 0) > 0.6) { vistos.fotoEsfregando = true; await p.screenshot({ path: `${OUT}-mutirao-1-esfregando.png` }); }
+  }
+  if (e.fase === 'enxaguando' && e.jato?.chegou) {
+    if (!vistos.fotoEnxague && (e.mancha ?? 1) < 0.7) { vistos.fotoEnxague = true; await p.screenshot({ path: `${OUT}-mutirao-2-enxaguando.png` }); }
+  }
+  if (e.fase === 'pegadinha' && e.jato) {
+    menorMancha = Math.min(menorMancha, e.mancha ?? 9);
+    const d = Math.hypot(e.jato.alvo[0] - e.gatito[0], e.jato.alvo[2] - e.gatito[2]);
+    alvoNoGatito = Math.min(alvoNoGatito, d);
+    if (!vistos.fotoPegadinha && d < 0.2 && e.jato.ligado) { vistos.fotoPegadinha = true; await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}-mutirao-3-pegadinha.png` }); }
+  }
+  if (e.sacudindo) {
+    viuSacudida = true;
+    if (!vistos.fotoSacudida) { vistos.fotoSacudida = true; await p.screenshot({ path: `${OUT}-mutirao-4-sacudida.png` }); }
+  }
+  if (e.arco) maiorArco = Math.max(maiorArco, e.arco.conta);
+  if (e.fase === 'arco-iris' && e.arco?.conta > 0 && !vistos.fotoArco && e.arco.conta >= 64 * 36) {
+    vistos.fotoArco = true;
+    await p.waitForTimeout(500);
+    await p.screenshot({ path: `${OUT}-mutirao-5-arco-iris.png` });
+  }
+  if (e.fase === 'fim') break;
+  // as falas e as perguntas: a mangueira fica com o Renan (a segunda opção)
+  const opcoes = await p.evaluate(() => [...document.querySelectorAll('.escolhas.show button')].map((b) => b.textContent ?? ''));
+  if (opcoes.length) {
+    const pergunta = await p.evaluate(() => document.querySelector('.dialogue .text')?.textContent ?? '');
+    // (a pergunta ainda pode estar sendo escrita: quem decide é a opção)
+    const k = opcoes.includes('Renan') ? opcoes.indexOf('Renan') : 0;
+    falasDoMutirao.push(`? ${pergunta} -> ${opcoes[k]}`);
+    await p.evaluate((k) => document.querySelectorAll('.escolhas.show button')[k].click(), k);
+    await p.waitForTimeout(300);
+    continue;
+  }
+  if (await p.locator('.dialogue.show').count()) {
+    await p.waitForTimeout(600);
+    const quem = await p.evaluate(() => document.querySelector('.dialogue .who')?.textContent ?? '');
+    const t = await p.evaluate(() => document.querySelector('.dialogue .text')?.textContent ?? '');
+    if (t && falasDoMutirao[falasDoMutirao.length - 1] !== `${quem}: ${t}`) falasDoMutirao.push(`${quem}: ${t}`);
+    if (!vistos[`foto-${falasDoMutirao.length}`] && /Eu sou gato/.test(t)) { vistos[`foto-${falasDoMutirao.length}`] = true; await p.screenshot({ path: `${OUT}-mutirao-3b-miau.png` }); }
+    await p.keyboard.press('KeyE');
+    await p.waitForTimeout(200);
+  } else {
+    await p.waitForTimeout(250);
+  }
+}
+console.log('      ' + falasDoMutirao.join('\n      '));
+const fim = await estado();
+conferir(['esfregando', 'enxaguando', 'pegadinha', 'sacudida', 'arco-iris', 'fim'].every((f) => vistos[f]), 'as fases todas, na ordem do roteiro', Object.keys(vistos).filter((k) => !k.startsWith('foto')).join(' → '));
+conferir(esponjaNaLataria < 0.2, `a esponja de quem ajuda encosta na lataria (a ${(esponjaNaLataria * 100).toFixed(0)} cm, na altura ${esponjaAltura.toFixed(2)} m)`);
+conferir(maiorMancha > 0.9, `a espuma cresce esfregando (${maiorMancha.toFixed(2)})`);
+conferir(menorMancha < 0.05, `e o jato a enxágua (${menorMancha.toFixed(2)})`);
+conferir(alvoNoGatito < 0.15, `o jato escorrega e pega o Gatito (${alvoNoGatito.toFixed(2)} m dele)`);
+conferir(viuSacudida, 'a sacudida de gato molhado');
+conferir(maiorArco >= 64 * 36, `o arco-íris se desenha inteiro (${maiorArco} índices)`);
+conferir(falasDoMutirao.some((f) => /Renan: A mangueira é minha/.test(f)) && falasDoMutirao.some((f) => /Ari: Então eu fico com a esponja/.test(f)), 'quem escolhemos pega a mangueira, e o outro a esponja');
+conferir(fim.memoria, 'a memória "Banho de mangueira"');
+conferir(!fim.mao.ari && !fim.mao.renan, 'no fim as mãos vazias (a esponja e a pistola voltaram)');
+await p.waitForTimeout(1500);
+const depoisDoMutirao = await medir();
+conferir(depoisDoMutirao.esfregando, 'e o Gatito de volta à esponja');
+await p.screenshot({ path: `${OUT}-mutirao-6-depois.png` });
 
 const peso = await p.evaluate(() => window.jogo.renderer.info.render);
 console.log(`\n   peso: ${peso.calls} desenhos, ${peso.triangles} triângulos`);

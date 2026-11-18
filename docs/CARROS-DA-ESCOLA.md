@@ -85,6 +85,18 @@ ele larga a esponja, vira para a dupla e conta que está dando banho no ônibus 
 brilhando" e um six seven); depois, uma fala curta sorteada, e ele volta a esfregar. As falas são PROVISÓRIAS (minhas).
 `?gatitoLavando` força, `?semGatitoLavando` tira; o teste é o `scripts/gatitoLavando.mjs`.
 
+**O MUTIRÃO DA LAVAGEM (2026-11-18, pedido do Renan: "a gente pode ajudar, um pega a esponja e o outro a mangueira,
+uma animação de nós três lavando — divertida, muito bem feita e polida")** — `eventos/mutiraoDaLavagem.ts`, peças em
+`world/lavagemDoOnibus.ts`. Toda conversa com o Gatito lavando termina no convite; aceitando, quem joga escolhe quem
+fica com a MANGUEIRA (o outro pega a esponja reserva do balde) e a tela pisca com os três no lugar, numa câmera de três
+quartos pelo lado da traseira: o da esponja ESFREGANDO em roda colado na lataria (pose nova `lavarNaCena` do corpo da
+dupla) e a espuma crescendo; o da mangueira ENXAGUANDO — a mangueira verde esticada do carrinho até a pistola, o jato
+(o fio, as gotas e o respingo na lataria), a espuma sumindo e a lataria piscando de limpa; a PEGADINHA: o jato
+escorrega e pega o Gatito em cheio ("MIAU! Ei! Eu sou gato, não ônibus!"), ele dá a SACUDIDA de gato molhado em cima de
+quem está do lado e os dois riem; e o FINAL: mangueira para o céu, a chuva fininha e um ARCO-ÍRIS desenhando-se por
+cima do ônibus, o six seven, os pulinhos e a memória "Banho de mangueira". Depois tudo volta (a esponja no balde, a
+mangueira enrolada no chão, o Gatito esfregando). Dá para repetir quando quiser. As falas são PROVISÓRIAS (minhas).
+
 **As ideias de antes** (ficam para referência):
 
 **⭐ A. O ônibus escolar amarelinho, em miniatura** (recomendado)

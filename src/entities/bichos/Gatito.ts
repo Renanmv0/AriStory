@@ -48,6 +48,8 @@ const QUADRIL = { y: 0.14, z: -0.16 };
 const OMBRO = 0.19;
 /** quanto dura o six seven, em segundos de jogo */
 const DURA_SIX_SEVEN = 2.8;
+/** quanto dura a sacudida de gato molhado */
+const DURA_SACUDIDA = 1.4;
 
 export class Gatito extends Bicho {
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
@@ -75,6 +77,9 @@ export class Gatito extends Bicho {
   /** 0 a 1: o quanto ele já está de pé ESFREGANDO (a lavagem do ônibus; entra e sai sem estalo) */
   private esfregaPeso = 0;
   private esfregaAlvo = 0;
+  /** quanto falta da SACUDIDA de gato molhado (a mangueira pegou ele), em segundos; e o giro dela no quadro anterior */
+  private sacudidaFalta = 0;
+  private sacudidaAntes = 0;
   /** a esponja da lavagem, na ponta da pata da frente direita (só aparece esfregando) */
   private readonly esponja = new THREE.Group();
 
@@ -127,6 +132,18 @@ export class Gatito extends Bicho {
    */
   esfregar(sim: boolean): void {
     this.esfregaAlvo = sim ? 1 : 0;
+  }
+
+  /**
+   * A SACUDIDA DE GATO MOLHADO: o corpo torce em volta da espinha, rápido, de um lado para o outro, a cabeça vai junto
+   * (atrasada) e as orelhas deitam — o jeito de bicho se secar. A cena solta as gotinhas.
+   */
+  sacudir(): void {
+    this.sacudidaFalta = DURA_SACUDIDA;
+  }
+
+  get sacudindo(): boolean {
+    return this.sacudidaFalta > 0;
   }
 
   get esfregando(): boolean {
@@ -394,6 +411,10 @@ export class Gatito extends Bicho {
 
   protected animar(dt: number, { andando, sentado, carinho, fase }: PoseDoBicho): void {
     const suave = Math.min(1, dt * 7);
+    // a sacudida é somada por cima da pose: tira a do quadro anterior antes de a pose interpolar
+    this.corpo.rotation.z -= this.sacudidaAntes;
+    this.cabeca.rotation.y -= this.sacudidaAntes * 1.3;
+    this.sacudidaAntes = 0;
 
     // o relógio do six seven
     if (this.sixSevenFalta > 0) {
@@ -490,6 +511,21 @@ export class Gatito extends Bicho {
       const lado = i === 0 ? -1 : 1;
       const tique = Math.sin(fase * 2.3 + i * 1.7);
       this.orelhas[i].rotation.z = -lado * (0.34 + carinho * 0.12) - tique * 0.05 * lado;
+    }
+
+    // a SACUDIDA: torce rápido em volta da espinha, forte no meio e sumindo nas pontas, e as orelhas deitam
+    if (this.sacudidaFalta > 0) {
+      this.sacudidaFalta = Math.max(0, this.sacudidaFalta - dt);
+      const k = 1 - this.sacudidaFalta / DURA_SACUDIDA;
+      const envelope = Math.sin(k * Math.PI);
+      const torce = Math.sin(k * DURA_SACUDIDA * 34) * 0.42 * envelope;
+      this.corpo.rotation.z += torce;
+      this.cabeca.rotation.y += torce * 1.3;
+      this.sacudidaAntes = torce;
+      for (let i = 0; i < this.orelhas.length; i++) {
+        const lado = i === 0 ? -1 : 1;
+        this.orelhas[i].rotation.z += -lado * 0.5 * envelope;
+      }
     }
 
     // no carinho ele fecha os olhinhos de contente

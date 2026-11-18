@@ -2512,6 +2512,14 @@ export class Game implements GameAPI {
     (quem === 'jogador' ? this.player : this.parceiro).rig.bracoPelaJanela(quanto, tapa);
   }
 
+  lavarNaCena(quem: 'jogador' | 'parceiro', pose: 'esponja' | 'mangueira' | null, alto = 0): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.lavar(pose, alto);
+  }
+
+  comemorar(quem: 'jogador' | 'parceiro'): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.cheer();
+  }
+
   maoDaJanela(quem: 'jogador' | 'parceiro'): THREE.Vector3 {
     return (quem === 'jogador' ? this.player : this.parceiro).rig.maoEsquerdaNoMundo(new THREE.Vector3());
   }

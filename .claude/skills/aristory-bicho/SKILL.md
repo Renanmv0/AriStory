@@ -602,6 +602,9 @@ o mesmo molde, e deixaram três truques:
   medida cedo, a esponja parecia 50 cm mais baixa. Espere `jogo.elapsed` e meça a ponta (`pontaDaEsponja`).
 - **O que é dele mora nele** (a esponja, escondida fora do serviço); o que é do lugar (os caixotes, o balde, a espuma
   na lataria, as bolhas) mora na camada.
+- **Gesto somado por cima da pose** (a SACUDIDA de gato molhado, `sacudir()`): o corpo torce em volta da espinha e a
+  cabeça vai junto; como a pose interpola a partir do valor do quadro anterior, o gesto TIRA o que somou antes de a
+  pose rodar (`sacudidaAntes`) — sem isso a torção acumulava e o corpo ficava torto no fim.
 
 ## Ave com cauda que abre (o Pietro, o pavão motorista)
 

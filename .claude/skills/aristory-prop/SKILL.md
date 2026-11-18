@@ -921,6 +921,20 @@ O molde de VEÍCULO PARADO caprichado sem pesar (o ônibus da cidade é o de ve�
   caixa de cada malha alinhada no quadro da peça, com `?semFundir`: o fundo do capô no plano do da carroceria, as
   quinas do contorno da porta de trás, e decalque a 1 mm da face (vai a 3–4 mm).
 
+## A lavagem do ônibus (`world/lavagemDoOnibus.ts`)
+
+O kit de ÁGUA que se mexe sem shader novo:
+
+- **O jato**: uma curva (`QuadraticBezierCurve3`) da ponta da pistola até onde bate, o fio translúcido refeito a cada
+  quadro por um `TubeGeometry` (só enquanto aparece), as gotas correndo por ela num lote (mais soltas longe do bico) e
+  o RESPINGO onde bate, num lote de gotas com gravidade que esticam na direção em que caem (pingo, e não bolinha). A
+  pressão abre e fecha devagar: ligando, a água despenca perto do bico e vai alcançando o alvo.
+- **O arco-íris**: uma fita em arco com as seis cores da paleta (os vértices duplicados na emenda de cada faixa, para
+  a borda ser viva), translúcida e de dois lados; ela ENTRA DESENHANDO pelo `drawRange` (os índices em ordem de arco).
+- **A mangueira solta**: um tubo pelos pontos (a saída do carrinho, deitado no chão, subindo até o engate da pistola),
+  refeito a cada quadro.
+- **De mão, em escala chibi** (a esponja e a pistola, 1,4×), com os pontos que a cena lê pelo NOME (`ponta`, `engate`).
+
 ## O ônibus da cidade (`world/onibusDaCidade.ts`)
 
 O ônibus urbano detalhado (pedido do Renan: as mesmas cores do `bus()` de

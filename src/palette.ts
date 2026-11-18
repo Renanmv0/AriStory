@@ -3129,6 +3129,11 @@ export const PALETTE = {
   esponjaVerde: 0x4f9a5a,
   espumaDeSabao: 0xf8fbff,
   baldeDeLavar: 0x4f8fd6,
+  /* o mutirão da lavagem: a mangueira verde (e o verde da volta de baixo), a pistola laranja e o carrinho de enrolar */
+  mangueiraVerde: 0x4fae5f,
+  mangueiraVerdeEscuro: 0x2f7d43,
+  pistolaDeMangueira: 0xf07a3c,
+  carrinhoDeMangueira: 0x3f6fc6,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

@@ -1181,6 +1181,14 @@ export interface GameAPI {
   encostarNoCarro(quem: 'jogador' | 'parceiro', quanto: number): void;
   /** o braço de quem vai de carona pela janela (0 no colo, 1 para fora) e o tapa (0 a 1): o toca aqui do Flynn */
   bracoPelaJanela(quem: 'jogador' | 'parceiro', quanto: number, tapa?: number): void;
+  /**
+   * LAVANDO O ÔNIBUS (o mutirão do Gatito): `'esponja'` esfrega em roda, `'mangueira'` segura a pistola com as duas
+   * mãos; `alto` (0 a 1) ergue a mira da mangueira. O que vai na mão é da cena (`segurarNaCena`, pose `'none'`); `null`
+   * devolve os braços.
+   */
+  lavarNaCena(quem: 'jogador' | 'parceiro', pose: 'esponja' | 'mangueira' | null, alto?: number): void;
+  /** o pulinho de comemoração de um dos dois (o mesmo de quando ganha memória) */
+  comemorar(quem: 'jogador' | 'parceiro'): void;
   /** a ponta da mão do lado da porta do passageiro, no mundo (o teste do toca aqui) */
   maoDaJanela(quem: 'jogador' | 'parceiro'): THREE.Vector3;
   /** o centro da cabeça de um dos dois, no mundo (o olho da câmera de dentro do carro) */
