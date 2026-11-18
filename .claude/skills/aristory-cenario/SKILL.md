@@ -1132,3 +1132,19 @@ node scripts/smoke.mjs /tmp/aristory   # tira as fotos e checa erros de console
 ```
 Olhe as imagens. Confira: dá pra andar sem travar, os prompts aparecem, nada
 flutuando no ar, nada atravessando parede. Veja `.claude/skills/aristory-testar`.
+
+## Cutscene de BICHO DE VEÍCULO que desce e anda (o desfile da Valentina na escola)
+
+`eventos/bebitoMobile/desfileDaValentina.ts` é o molde de um veículo que chega, cujo motorista e passageira DESCEM,
+fazem uma coreografia no mundo e voltam:
+
+- **Tirar o bicho do carro é `w.root.attach(bicho.group)`** (guarda a posição no mundo); voltar é
+  `carro.lata.attach(...)` e repor a posição do banco. A pose de veículo (`aoVolante`) vira `null` fora dele.
+- **Quem atualiza o bicho é o carro, dentro ou fora**: a limusine só atualizava o Pietro com `aoVolante` ligado, e
+  fora do carro o `irPara` dele nunca chegava (o desfile travou no porta-malas). Bicho de veículo: `update` sempre.
+- **Pular do banco para o chão** é um arco no relógio da cena (`pular`), por cima da porta.
+- **O relógio da cutscene** é uma lista de tarefas com duração (`animar(dur, f)` devolve uma promessa), tocada num
+  `w.onUpdate` só, no `ritmoDoPresente` (o teste acelera); a câmera persegue a tomada pedida (`filmar`).
+- **Começar depois de outra cena com câmera**: a chegada animada do Bebito ganhou `aoConcluir` (chamado depois de
+  devolver a câmera e os controles); começando no `aoEstacionar`, as duas brigariam pela câmera.
+- **Objeto que passa de mão** (o rolo do tapete) mora FORA da junção da peça, com nome, e troca de pai com `attach`.

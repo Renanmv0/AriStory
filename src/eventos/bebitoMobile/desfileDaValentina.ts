@@ -184,7 +184,8 @@ export function desfileDaValentina(w: WorldBuilder, aoAcabar: () => void): void 
 
     // 4. o Pietro do lado do tapete, com o LEQUE aberto, e a Valentina desce por cima da porta
     await pietro.irPara(1.05, INICIO_DO_TAPETE - 0.35, 1.0);
-    pietro.encarar(0, INICIO_DO_TAPETE);
+    // (o leque abre virado para a dupla, que assiste do estacionamento: virado para ela, ele aparecia de lado)
+    pietro.encarar(4.55, 38);
     pietro.abrirLeque(true);
     await g.say(['Signorina, o seu tapete.'], 'Pietro');
     estado.fase = 'descendo';
