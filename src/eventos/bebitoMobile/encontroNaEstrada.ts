@@ -170,8 +170,8 @@ export class EncontroNaEstrada {
       if (this.tapaDaCarona >= 0) {
         this.tapaDaCarona += dt;
         const t = this.tapaDaCarona;
-        bate = t < 0.16 ? t / 0.16 : t < 0.28 ? 1 : Math.max(0, 1 - (t - 0.28) / 0.25);
-        if (t > 0.53) this.tapaDaCarona = -1;
+        bate = t < 0.16 ? t / 0.16 : t < 0.45 ? 1 : Math.max(0, 1 - (t - 0.45) / 0.25);
+        if (t > 0.7) this.tapaDaCarona = -1;
       }
       this.vidro = this.aoAbrirAJanela?.(this.janela, bate) ?? 1;
     } else {
@@ -434,13 +434,13 @@ export class EncontroNaEstrada {
     }
     if (this.noToca && this.carro instanceof CorridaDoFlynn) {
       /*
-       * o toca aqui: do ALTO, à frente e por cima da calçada, olhando para baixo o vão entre o Flynn e a porta. Na
+       * o toca aqui: QUASE DE CIMA, um tico à frente, olhando para baixo o vão entre o Flynn e a porta. Na
        * altura dos olhos não dá: da calçada a cabeça dele tapa o encontro das mãos, e da pista o retrovisor e a coluna
-       * do para-brisa tapam a janela
+       * do para-brisa tapam a janela; e de cima mais baixo, da calçada, a pata do lado do carro some atrás da cabeça
        */
       const emPe = window.innerWidth / window.innerHeight < 0.8;
       const sa = this.estado.s;
-      const de = this.naPista(sa + (emPe ? 3.4 : 2.6), emPe ? 4.7 : 4.4, emPe ? 4.1 : 3.3);
+      const de = this.naPista(sa + (emPe ? 2.2 : 1.6), emPe ? 4.0 : 3.7, emPe ? 5.2 : 4.3);
       return { de, para: this.naPista(sa - 0.35, 2.95, 0.95) };
     }
     if (this.dePerto && this.carro instanceof DoisCavalosDoJeanLuc && this.carro.jeanLuc) {

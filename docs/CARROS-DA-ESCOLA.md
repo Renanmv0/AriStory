@@ -8,7 +8,9 @@ para os carros da escola". É o próximo passo que já estava marcado em
 
 **O estado:** o **conversível da Tia Liz e das irmãs** (§2) está FEITO e no
 jogo (2026-11-17): o carro, a interação na estrada e o estacionado na escola.
-Os outros (o Gatito, o Flynn e a Valentina) são só ideias. Este documento é o cardápio para o
+O **Flynn** (§3) também está no jogo (2026-11-18), sem carro: a
+escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. Os
+outros (o Gatito e a Valentina) são só ideias. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -249,6 +251,32 @@ puesto" para a Tia Liz.
 ---
 
 ## 3. O Flynn
+
+**FEITO (2026-11-18): a corrida matinal, a pé.** O Renan escolheu: "seria engraçado ele correndo na calçada mais
+rápido que o carro, e uma interação com um toca aqui, e ele falando que está fazendo a corrida matinal dele, ele não
+pode ficar atrás dos seus rivais (quero adicionar um personagem lobo para disputar com o Flynn depois)".
+
+- **Onde:** o Flynn mora na escola (`MORADORES.escola` em `rota.ts`): casa ↔ escola sorteia entre ele e a Tia Liz;
+  parque ↔ escola e clube ↔ escola, entre as duas pontas. Só depois de `flynn-conhecido` (o refeitório); antes, a
+  viagem segue sem encontro. Na viagem em que ele vem correndo, **a bola dele não escapa** na calçada.
+- **A corrida** (`eventos/bebitoMobile/corridaDoFlynn.ts`, o "veículo" dele no contrato de sempre): ele vem pela
+  calçada da direita, no meio dela (as placas ficam na beira e os postes no fundo), e passa o Bebito a uns 3,5 vezes
+  a velocidade do carro, com a passada acelerando junto (`Flynn.naEstrada`). Chega com o apito.
+- **A conversa:** parado um palmo à frente da janela de quem vai de carona, ele TROTA NO LUGAR. A corrida matinal e
+  os rivais ("Ele também acorda cedo…": o lobo que vem depois, sem nome ainda).
+- **O toca aqui:** ele desce da calçada até a beira do asfalto, vira meio para o carro e ergue a pata; o VIDRO DO
+  PASSAGEIRO do Bebito desce (`baixarVidroDoPassageiro`, a janela virou uma malha própria) e o braço de quem vai de
+  carona sai pela janela (`CharacterRig.bracoPelaJanela`). A hora certa: acertando, as duas mãos se encontram (medido:
+  a 13–17 cm, contando o tamanho delas), o "pá!" (`tocaAqui`), corações e ele comemora; errando, a pata dele já
+  desceu e a mão passa no vento. A tomada é quase de cima: da calçada a cabeça dele tapava a pata, e da pista o
+  retrovisor tapava a janela.
+- **A saída:** ele dispara e some na frente. A memória: "A corrida matinal".
+- **Estacionado:** não tem (ele não tem carro). Uma ideia para depois: ele alongando na calçada da escola.
+- **Testado:** `scripts/corridaDoFlynn.mjs` (rotas, sem conhecer, acertando, errando; `CEL=1` no celular em pé).
+  Peso na conversa: ~486 desenhos e ~403 mil triângulos (com a tela deitada), ~300 no celular — mais leve que o
+  conversível (710). O som `tocaAqui`: pico 0,10 no `.wav`, 0,24 s.
+
+**As ideias de antes** (ficam para referência):
 
 **⭐ A. A van da atlética com a tabela de basquete no teto** (recomendado)
 - Uma van esportiva laranja e branca, das cores da raposa, com o escudo dos

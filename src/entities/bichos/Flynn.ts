@@ -847,12 +847,13 @@ export class Flynn extends Bicho {
       /*
        * O TOCA AQUI: a pata do lado do Bebito (a `+X`) sobe aberta ao lado da
        * cabeça, um tico para a frente, a palma virada para a janela; e no
-       * tapa ela DESCE e ABRE até a mão de quem vai de carona.
+       * tapa ela ABRE até a mão de quem vai de carona (a mão da janela fica
+       * mais alta que ele: descendo muito, a pata passava por baixo dela).
        */
       const toca = estrada && lado > 0 ? estrada.tocaAqui : 0;
       if (toca > 0) {
         const estica = estrada!.estica;
-        z += (2.35 - 0.75 * estica - z) * toca;
+        z += (2.35 - 0.4 * estica - z) * toca;
         x += (-0.25 - 0.15 * estica - x) * toca;
       }
       if (lado > 0 && aceno > 0) {

@@ -42,7 +42,7 @@ export class CorridaDoFlynn {
     this.alvoDoToca = sim ? 1 : 0;
   }
 
-  /** o tapa: a pata desce e abre até a mão da janela e volta (0,5 s) */
+  /** o tapa: a pata abre até a mão da janela, segura e volta (0,7 s) */
   bater(): void {
     this.tapa = 0;
     this.tapas++;
@@ -67,10 +67,10 @@ export class CorridaDoFlynn {
     p.tocaAqui += (this.alvoDoToca - p.tocaAqui) * Math.min(1, dt * 6);
     if (this.tapa >= 0) {
       this.tapa += dt;
-      // vai rápido (0,16 s), segura um instante e volta devagar
+      // vai rápido (0,16 s), segura as mãos juntas um instante e volta devagar
       const k = this.tapa;
-      p.estica = k < 0.16 ? k / 0.16 : k < 0.28 ? 1 : Math.max(0, 1 - (k - 0.28) / 0.25);
-      if (k > 0.53) { this.tapa = -1; p.estica = 0; }
+      p.estica = k < 0.16 ? k / 0.16 : k < 0.45 ? 1 : Math.max(0, 1 - (k - 0.45) / 0.25);
+      if (k > 0.7) { this.tapa = -1; p.estica = 0; }
     }
     this.flynn.update(dt);
   }

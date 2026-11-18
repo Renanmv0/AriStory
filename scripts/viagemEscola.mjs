@@ -214,8 +214,12 @@ async function percorrer(sentido, motorista, comFotos) {
   console.log('  vistos:', Object.keys(resumo.vistos).join(', '), `| tropeços ${resumo.tropecos}, sustos ${resumo.sustos}, gentilezas ${resumo.gentilezas}`);
   assert.equal(resumo.tropecos, 0, 'o piloto de teste não tropeça');
   assert.equal(resumo.sustos, 0, 'ninguém leva susto');
-  for (const tipo of ESCOLARES) assert.ok(resumo.vistos[tipo], `${tipo} aconteceu`);
-  assert.ok(guardaNaDireita !== null && guardaNaDireita > 0.6 && guardaNaDireita < 2.6, 'o Gatito guarda a faixa da direita');
+  // (um de cada por viagem: com o Flynn passando a pé, a bola dele não escapa; com a Tia Liz de conversível, a torcida
+  // não atravessa — `docs/CARROS-DA-ESCOLA.md`)
+  const quem = rota.encontro?.personagem;
+  const fora = { flynn: 'bola-do-flynn', tializ: 'torcida' }[quem];
+  for (const tipo of ESCOLARES) if (tipo !== fora || !resumo.vistos[quem]) assert.ok(resumo.vistos[tipo], `${tipo} aconteceu`);
+  if (fora !== 'torcida' || !resumo.vistos[quem]) assert.ok(guardaNaDireita !== null && guardaNaDireita > 0.6 && guardaNaDireita < 2.6, 'o Gatito guarda a faixa da direita');
   return motorista;
 }
 

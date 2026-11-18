@@ -189,7 +189,7 @@ try {
       assert.equal(fim.toca, acertar ? 1 : 0, 'o som do tapa só no acerto');
       assert.equal(fim.janela, 0, 'o vidro sobe de novo');
       assert.ok(fim.memoria, 'a memória "A corrida matinal"');
-      assert.match(ditos, /corrida ma/);
+      assert.match(ditos, /toca aqui/);
       assert.match(ditos, /rivais/);
       assert.equal(await page.evaluate(() => localStorage.getItem('aristory.save.v1')), null, 'o save de verdade fica intacto');
       return ditos;

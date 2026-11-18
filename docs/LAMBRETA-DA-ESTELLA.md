@@ -24,25 +24,27 @@ Cada personagem mora num lugar (`MORADORES`): a Estella, o Mano (a Kombi de
 sorvete, `docs/KOMBI-DO-MANO.md`), o Cookie (o carrinho,
 `docs/CARRINHO-DO-COOKIE.md`) e o Jean-Luc (o 2CV, `docs/DOIS-CAVALOS-DO-JEAN-LUC.md`) no parque; o Noel, a
 Josefina, o Capy, o Walter e a Gina (o carrinho de golfe, `docs/CARRINHO-DE-GOLFE-DA-GINA.md`) no clube; a Tia Liz e as
-irmãs (o conversível, `docs/CARROS-DA-ESCOLA.md`) na escola; ninguém na casa.
+irmãs (o conversível, `docs/CARROS-DA-ESCOLA.md`) e o Flynn (a pé, na corrida matinal) na escola; ninguém na casa.
 
 - Vale o **destino**: indo ao parque, a Estella, o Mano, o Cookie ou o Jean-Luc; indo ao clube, o pessoal do clube.
 - Se o destino não tem ninguém (a casa), vale a **origem**: do clube
   para casa, o pessoal do clube; do parque para a escola, um dos quatro do parque.
 - Se as **duas pontas** têm gente (parque ↔ clube, nos dois sentidos), sorteia
   entre **todos** os nove.
-- Casa ↔ escola: só a Tia Liz e as irmãs (desde 2026-11-17; antes, sem encontro). A turma da escola continua na zona escolar.
+- Casa ↔ escola: a Tia Liz e as irmãs, ou o Flynn correndo (desde 2026-11-17; antes, sem encontro). Cada um só
+  depois de conhecido na escola (a Tia Liz na cantina, o Flynn no refeitório); sorteado e ainda não conhecido, a
+  viagem segue sem encontro. A turma da escola continua na zona escolar.
 - O sorteio é por igual entre os candidatos, pela semente da viagem: recarregar
   conserva o mesmo encontro.
 
 | rota | quem pode aparecer |
 |---|---|
 | casa ↔ parque | Estella, Mano, Cookie, Jean-Luc |
-| parque ↔ escola | Estella, Mano, Cookie, Jean-Luc, Tia Liz e as irmãs |
+| parque ↔ escola | Estella, Mano, Cookie, Jean-Luc, Tia Liz e as irmãs, Flynn |
 | casa ↔ clube | Noel, Josefina, Capy, Walter, Gina |
-| clube ↔ escola | Noel, Josefina, Capy, Walter, Gina, Tia Liz e as irmãs |
+| clube ↔ escola | Noel, Josefina, Capy, Walter, Gina, Tia Liz e as irmãs, Flynn |
 | parque ↔ clube | os nove |
-| casa ↔ escola | Tia Liz e as irmãs |
+| casa ↔ escola | Tia Liz e as irmãs, Flynn |
 
 Isso substitui o "25% para cada um em toda viagem" de 2026-11-13
 (`docs/FOOD-TRUCK-DO-WALTER.md`).
