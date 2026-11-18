@@ -784,11 +784,10 @@ export class LimusineDaValentina {
     this.lata.position.y = Math.sin(this.relogio * 2.9) * 0.01 * anda;
     this.lata.rotation.x = Math.sin(this.relogio * 1.9) * 0.004 * anda;
     this.lata.rotation.z = Math.sin(this.relogio * 1.5) * 0.005 * anda;
-    if (this.pietro?.aoVolante) {
-      // conversando, ele vira a cabeça para o Bebito (o −X do carro: giro negativo)
-      this.pietro.aoVolante.olhar = this.conversa ? -0.9 : 0;
-      this.pietro.update(dt);
-    }
+    // conversando, ele vira a cabeça para o Bebito (o −X do carro: giro negativo); fora do carro (o desfile), ele
+    // continua vivo e andando
+    if (this.pietro?.aoVolante) this.pietro.aoVolante.olhar = this.conversa ? -0.9 : 0;
+    this.pietro?.update(dt);
     this.valentina?.update(dt);
   }
 }
