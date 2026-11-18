@@ -12,6 +12,8 @@ import { DoisCavalosDoJeanLuc } from '../../world/doisCavalosDoJeanLuc';
 import { CarrinhoDeGolfeDaGina } from '../../world/carrinhoDeGolfeDaGina';
 import { ConversivelDaTiaLiz } from '../../world/conversivelDaTiaLiz';
 import { CorridaDoFlynn } from './corridaDoFlynn';
+import { LimusineDaValentina } from '../../world/limusineDaValentina';
+import { POSES_DA_POLAROID, polaroid, type PoseDaPolaroid } from '../../world/bebitoMobile/acessorios';
 import { ALTO_DA_CALCADA } from '../../world/estrada';
 import { ITENS } from '../../world/itens';
 import { ARI, RENAN } from '../../characters/cast';
@@ -22,9 +24,9 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc | CarrinhoDeGolfeDaGina | ConversivelDaTiaLiz | CorridaDoFlynn;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina', tializ: 'Tia Liz', flynn: 'Flynn' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒', tializ: '🐻', flynn: '🦊' } as const)[this.personagem]; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc | CarrinhoDeGolfeDaGina | ConversivelDaTiaLiz | CorridaDoFlynn | LimusineDaValentina;
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina', tializ: 'Tia Liz', flynn: 'Flynn', valentina: 'Valentina' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒', tializ: '🐻', flynn: '🦊', valentina: '🦩' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -56,6 +58,13 @@ export class EncontroNaEstrada {
    * (a cena liga isto no Bebito e na carona); `bater` é o instante do tapa
    */
   aoAbrirAJanela: ((quanto: number, bater: number) => number) | null = null;
+  /**
+   * a Valentina: a polaroid chegou ao Bebito (a cena a põe no painel do carro dela e grava a ficha); devolve
+   * `false` se não coube
+   */
+  aoGanharPolaroid: ((id: PoseDaPolaroid) => boolean) | null = null;
+  /** se o painel do Bebito já tem uma polaroid dela (a sessão de fotos é uma vez só) */
+  jaTemPolaroid = false;
   /** o quanto o vidro do Bebito já desceu (o que a cena devolve): a agulha só aparece com ele todo embaixo */
   private vidro = 0;
   private tapaDaCarona = -1;
@@ -64,7 +73,8 @@ export class EncontroNaEstrada {
       : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
         : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie()
           : personagem === 'jeanluc' ? new DoisCavalosDoJeanLuc() : personagem === 'gina' ? new CarrinhoDeGolfeDaGina()
-            : personagem === 'tializ' ? new ConversivelDaTiaLiz() : personagem === 'flynn' ? new CorridaDoFlynn() : new CarroDaJosefina();
+            : personagem === 'tializ' ? new ConversivelDaTiaLiz() : personagem === 'flynn' ? new CorridaDoFlynn()
+              : personagem === 'valentina' ? new LimusineDaValentina() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -86,11 +96,13 @@ export class EncontroNaEstrada {
         gina: 'Um apito, um giroflex e um pescoço saindo pelo toldo… é a Gina de carrinho de golfe!',
         tializ: 'Um conversível azul e amarelo cheio de pompom… é a Tia Liz com as meninas!',
         flynn: 'Passos rápidos na calçada e uma bandana azul… é o Flynn, correndo MAIS RÁPIDO que o Bebito!',
+        valentina: 'Um carro rosa que não acaba mais, com um pavão ao volante… é a limusine da Valentina!',
       } as const)[this.personagem], this.icone);
       // (o Mano chega tocando a musiquinha da Kombi, e o Cookie apertando a corneta com a tromba)
       this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie'
         : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : this.personagem === 'gina' ? 'apito'
-          : this.personagem === 'tializ' ? 'buzinaDaTiaLiz' : this.personagem === 'flynn' ? 'apito' : 'buzinaDoBebito');
+          : this.personagem === 'tializ' ? 'buzinaDaTiaLiz' : this.personagem === 'flynn' ? 'apito'
+            : this.personagem === 'valentina' ? 'buzinaDaLimusine' : 'buzinaDoBebito');
       if (this.carro instanceof CarrinhoDoCookie) this.carro.buzinar();
     }
     if (e.fase === 'feito') return;
@@ -99,7 +111,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0, tializ: 5.4, flynn: 3.6 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0, tializ: 5.4, flynn: 3.6, valentina: 5.8 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -126,6 +138,7 @@ export class EncontroNaEstrada {
         if (this.personagem === 'gina') this.g.som('apito');
         if (this.personagem === 'tializ') this.g.som('buzinaDaTiaLiz');
         if (this.personagem === 'flynn') this.g.som('apito');
+        if (this.personagem === 'valentina') this.g.som('buzinaDaLimusine');
       });
     } else if (e.fase === 'saindo') {
       // (o Flynn dispara de novo: sai mais rápido que qualquer carro)
@@ -144,6 +157,7 @@ export class EncontroNaEstrada {
           gina: 'Lá vai a Gina de volta pra guarita, apitando, com o pescoço acima de todo mundo.',
           tializ: 'Lá se vai o conversível, com os pompons balançando e a bandeirinha no vento.',
           flynn: 'E lá vai o Flynn, sumindo na frente do Bebito. A pé.',
+          valentina: 'Lá se vai a limusine, devagar e com estilo, o leque do Pietro aparecendo pela porta.',
         } as const)[this.personagem], this.icone);
       }
     }
@@ -402,6 +416,48 @@ export class EncontroNaEstrada {
       await g.wait(0.8);
       this.noToca = false;
       await g.say(['Agora deixa eu ir, que o aquecimento tá esfriando. Até a escola!'], 'Flynn');
+      return;
+    }
+    if (this.personagem === 'valentina') {
+      const limusine = this.carro as LimusineDaValentina;
+      g.som('buzinaDaLimusine');
+      await g.say(['Ciao, bebitos! Que sorte encontrar vocês na estrada!'], 'Valentina');
+      if (this.jaTemPolaroid) {
+        await g.say(['A nossa polaroid ainda está no painel? Che bello. Foi a minha melhor foto do ano.'], 'Valentina');
+        await g.say(['Ci vediamo a scuola, amori! Pietro, andiamo.'], 'Valentina');
+        await g.say(['Sim, signorina. Com licença.'], 'Pietro');
+        return;
+      }
+      await g.say(['Valentina?! De limusine? E quem é esse pavão de quepe?'], this.carona);
+      await g.say(['Pietro, motorista da signorina Valentina. Muito prazer.'], 'Pietro');
+      await g.say(['O Pietro é o motorista mais elegante de Milão. Agora, uma foto! A luz da estrada está perfetta.'], 'Valentina');
+      // o Pietro pega a câmera antiga do banco do lado e a ergue pela janela, apontada para o Bebito
+      limusine.erguerCamera(true);
+      await g.wait(1.2);
+      const ids = Object.keys(POSES_DA_POLAROID) as PoseDaPolaroid[];
+      const escolha = await g.ask('Qual pose a gente faz?', ids.map((id) => POSES_DA_POLAROID[id]));
+      const pose = ids[Math.max(0, Math.min(ids.length - 1, escolha))];
+      await g.say([({
+        'polaroid-coracao': 'Che dolci! Um coraçãozinho, que romântico!',
+        'polaroid-beijinho': 'Ahh, amore! Um beijinho na bochecha, perfeito pra capa.',
+        'polaroid-modelo': 'Isso! Queixo pra cima, olhar de capa de revista!',
+      } as const)[pose]], 'Valentina');
+      await g.say(['Uno, due, tre…'], 'Valentina');
+      limusine.disparar();
+      g.som('fotoFlash');
+      await g.wait(0.55);
+      if (pose !== 'polaroid-modelo') g.soltarCoracoes();
+      await g.say(['Perfetto!'], 'Valentina');
+      // a polaroid sai da câmera e voa até o painel do Bebito
+      limusine.jogarPolaroid(polaroid(pose), this.naPista(this.parada ?? this.estado.s, 1.75, 1.15));
+      g.som('lancar');
+      await g.wait(1.2);
+      const coube = this.aoGanharPolaroid?.(pose) ?? false;
+      g.som('pegar');
+      g.toast(coube ? 'A polaroid da Valentina ficou no painel do Bebito!' : 'O painel está cheio: a polaroid foi pro porta-luvas.', '📸');
+      limusine.erguerCamera(false);
+      await g.say(['Pra deixar o painel de vocês com estilo. Ci vediamo a scuola, amori!'], 'Valentina');
+      await g.say(['Com licença, signori.'], 'Pietro');
       return;
     }
     if (this.personagem === 'estella') {

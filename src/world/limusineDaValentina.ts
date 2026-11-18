@@ -478,6 +478,19 @@ export class LimusineDaValentina {
   private relogio = 0;
   private velocidade = 0;
   private conversa = false;
+  /** a câmera antiga (no banco do passageiro; na foto, na mão do Pietro) e o tapete enrolado do porta-malas */
+  camera: THREE.Group | null = null;
+  rolo: THREE.Group | null = null;
+  private flash!: THREE.Mesh;
+  private brilho = 0;
+  /** para onde a câmera vai (0 no banco, 1 na mão do Pietro, apontada para o Bebito) */
+  private alvoDaCamera = 0;
+  private naMao = 0;
+  private readonly casaDaCamera = { p: new V(0.4, C.sofa.assento + 0.075, C.pietro.z), giro: -0.5 };
+  /** a polaroid voando da Valentina até o Bebito */
+  private readonly voando: Array<{ peca: THREE.Object3D; t: number; de: THREE.Vector3; para: THREE.Vector3 }> = [];
+  /** quantos flashes já dispararam (o teste conta) */
+  flashes = 0;
 
   constructor(estacionado = false) {
     this.group.userData.peca = 'limusine-da-valentina';
@@ -602,8 +615,12 @@ export class LimusineDaValentina {
       por(malha(quina(0.45, 0.025, 0.45, 0.01), P.limusineRosaFundo), C.pietro.x, C.pietro.banco - 0.095, C.pietro.z);
       // o banco do passageiro, baixo, com a câmera de fotógrafo em cima
       por(malha(quina(0.46, 0.14, 0.44, 0.05), COURO), 0.4, C.sofa.assento - 0.07, C.pietro.z);
-      const cam = por(cameraAntiga(), 0.4, C.sofa.assento + 0.075, C.pietro.z);
+      // (a câmera é um grupo com nome, fora da junção: na sessão de fotos ela sobe na mão do Pietro)
+      const cam = cameraAntiga();
+      cam.name = 'camera-antiga';
+      cam.position.set(0.4, C.sofa.assento + 0.075, C.pietro.z);
       cam.rotation.y = -0.5;
+      this.camera = cam;
     }
 
     // ------------------------------------------------------- a DIVISÓRIA com o minibar e as taças
@@ -649,8 +666,12 @@ export class LimusineDaValentina {
     // ------------------------------------------------------- atrás: o TAPETE VERMELHO enrolado em cima do porta-malas
     {
       const zt = -2.55;
-      const t = por(tapeteEnrolado(1.2), 0, yDaTampa(zt, 0) + 0.1, zt);
+      // (o rolo é um grupo com nome, fora da junção: na chegada à escola o Pietro o leva para o chão)
+      const t = tapeteEnrolado(1.2);
+      t.name = 'tapete-enrolado';
+      t.position.set(0, yDaTampa(zt, 0) + 0.1, zt);
       t.rotation.y = 0.02;
+      this.rolo = t;
       for (const x of [-0.4, 0.4]) {
         const y0 = yDaTampa(zt, x);
         casco.add(tubo([new V(x, y0, zt + 0.15), new V(x, y0 + 0.17, zt + 0.08), new V(x, y0 + 0.22, zt), new V(x, y0 + 0.17, zt - 0.08), new V(x, y0, zt - 0.15)], 0.012, OURO, 5));
@@ -659,6 +680,17 @@ export class LimusineDaValentina {
 
     juntarPorCor(casco);
     this.lata.add(fundir(casco));
+    for (const solto of [this.camera, this.rolo]) {
+      if (!solto) continue;
+      juntarPorCor(solto);
+      this.lata.add(fundir(solto));
+    }
+    // o FLASH da câmera: o clarão no bulbo do prato, que acende e apaga
+    this.flash = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), toon(P.flashDaFoto, { glow: 1 }));
+    this.flash.userData.semSombra = true;
+    this.flash.visible = false;
+    this.camera?.add(this.flash);
+    this.flash.position.set(0.13, 0.15, 0.06);
     this.group.add(this.lata);
 
     // ------------------------------------------------------- as rodas
@@ -693,7 +725,54 @@ export class LimusineDaValentina {
     }
   }
 
+  /** o Pietro pega a câmera do banco e a ergue pela janela, apontada para o Bebito (ou a devolve) */
+  erguerCamera(sim: boolean): void {
+    this.alvoDaCamera = sim ? 1 : 0;
+  }
+  /** o clarão do flash */
+  disparar(): void {
+    this.brilho = 1;
+    this.flashes++;
+    this.valentina?.encantar(2);
+  }
+  /**
+   * a POLAROID sai da câmera e voa até `alvo` (no mundo: o painel do Bebito), num arco, girando de leve; a peça
+   * que voa é a mesma do painel, maior
+   */
+  jogarPolaroid(peca: THREE.Object3D, alvo: THREE.Vector3): void {
+    this.group.updateMatrixWorld(true);
+    const de = this.camera ? this.camera.position.clone().add(new V(0, 0.1, 0)) : new V(-0.6, 1.3, 0.5);
+    peca.scale.setScalar(2.4);
+    peca.visible = false;
+    this.group.add(peca);
+    this.voando.push({ peca, t: 0, de, para: this.group.worldToLocal(alvo.clone()) });
+  }
+  /** quantas polaroids estão no ar (o teste confere) */
+  get polaroidsNoAr(): number { return this.voando.length; }
+
   update(dt: number, distancia: number, conversando: boolean): void {
+    // a câmera: do banco para a mão do Pietro (ele vira para o Bebito), na frente dele e para fora da porta
+    if (this.camera) {
+      this.naMao += (this.alvoDaCamera - this.naMao) * Math.min(1, dt * 3);
+      const k = this.naMao * this.naMao * (3 - 2 * this.naMao);
+      const mao = new V(C.pietro.x - 0.42, 1.42, C.pietro.z + 0.12);
+      this.camera.position.lerpVectors(this.casaDaCamera.p, mao, k);
+      this.camera.position.y += Math.sin(k * Math.PI) * 0.35;
+      this.camera.rotation.set(0, this.casaDaCamera.giro + (-Math.PI / 2 - this.casaDaCamera.giro) * k, 0);
+    }
+    this.brilho = Math.max(0, this.brilho - dt * 2.4);
+    this.flash.visible = this.brilho > 0.02;
+    this.flash.scale.setScalar(0.5 + this.brilho * 2.8);
+    for (let i = this.voando.length - 1; i >= 0; i--) {
+      const d = this.voando[i];
+      d.t += dt / 1.1;
+      if (d.t >= 1) { this.group.remove(d.peca); this.voando.splice(i, 1); continue; }
+      d.peca.visible = true;
+      d.peca.position.lerpVectors(d.de, d.para, d.t);
+      d.peca.position.y += Math.sin(d.t * Math.PI) * 0.8;
+      d.peca.rotation.set(0.3 * Math.sin(d.t * 9), -Math.PI / 2 + d.t * Math.PI * 2, 0.2);
+      d.peca.scale.setScalar(2.4 - 1.4 * d.t);
+    }
     this.relogio += dt;
     this.conversa = conversando;
     const v = dt > 0 ? distancia / dt : 0;

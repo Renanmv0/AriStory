@@ -1155,6 +1155,22 @@ export class BebitoMobile {
     return true;
   }
 
+  /**
+   * PÕE UMA PEÇA NA HORA, no carro já montado (a polaroid que a Valentina tira na estrada vai para o painel): o
+   * mesmo que a montagem faz com a ficha, num lugar vazio. Devolve `false` se o lugar já tinha alguma coisa.
+   */
+  colocarPeca(vaga: VagaDoCarro, lugar: number, id: string): boolean {
+    const e = this.encaixes[vaga]?.[lugar];
+    const monta = PECAS_DO_CARRO[id];
+    if (!e || !monta || e.children.some((c) => c.name.startsWith('detalhe:'))) return false;
+    const peca = monta();
+    peca.name = `detalhe:${id}`;
+    e.add(peca);
+    enxugar(peca);
+    this.ficha.vagas[vaga][lugar] = id;
+    return true;
+  }
+
   /** veste as vagas com o que a ficha manda: peça 3D no encaixe, adesivo de canvas colado no lugar dele */
   private vestirVagas(): void {
     for (const vaga of VAGAS_DO_CARRO) {

@@ -7,6 +7,9 @@ import { frisbee, raquete } from '../props';
 import { toalhaXadrez } from '../texturasDeCasa';
 import { uvEmMetrosPorTriangulo } from '../acabamento';
 import { emblemaDosGatitos } from '../uniformeDosGatitos';
+import { ARI, RENAN } from '../../characters/cast';
+import { canvasComLetra } from '../halloween/carrinhoDePocoes';
+import { FONTE_REDONDA } from '../halloween/barracaDoWalter';
 
 /**
  * ============================== OS DETALHES DO BEBITO MOBILE (as referências)
@@ -391,6 +394,118 @@ function emblema(): THREE.Group {
   return g;
 }
 
+// ================================================================ a polaroid da Valentina
+
+/** as três poses da sessão de fotos da Valentina na estrada (a dupla escolhe), cada uma é uma polaroid */
+export const POSES_DA_POLAROID = {
+  'polaroid-coracao': 'Coraçãozinho com as mãos',
+  'polaroid-beijinho': 'Beijinho na bochecha',
+  'polaroid-modelo': 'Cara de modelo',
+} as const;
+export type PoseDaPolaroid = keyof typeof POSES_DA_POLAROID;
+
+const fotos = new Map<PoseDaPolaroid, THREE.CanvasTexture>();
+const cssDe = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
+/**
+ * A FOTO DA POLAROID, pintada: os dois na janela do Bebito (o azul-céu da lataria embaixo, o creme do teto em
+ * cima), cada um com a pele e o cabelo da ficha (`characters/cast.ts`: a juba de cachos castanhos do Ari, os
+ * cachos curtos pretos do Renan), na pose escolhida — e, na margem branca de baixo, a dedicatória dela.
+ */
+function fotoDaPolaroid(pose: PoseDaPolaroid): THREE.CanvasTexture {
+  const pronta = fotos.get(pose);
+  if (pronta) return pronta;
+  const L = 256, A = 312, M = 14, F = L - 2 * M;
+  const tex = canvasComLetra(L, A, (c) => {
+    c.fillStyle = '#fbf8f1'; c.fillRect(0, 0, L, A);
+    c.save(); c.beginPath(); c.rect(M, M, F, F); c.clip();
+    // o céu e a moldura da janela do Bebito
+    const ceu = c.createLinearGradient(0, M, 0, M + F);
+    ceu.addColorStop(0, '#9fd8f5'); ceu.addColorStop(1, '#dff3fb');
+    c.fillStyle = ceu; c.fillRect(M, M, F, F);
+    c.fillStyle = cssDe(P.bebitoCreme); c.fillRect(M, M, F, 22);
+    c.fillStyle = cssDe(P.bebitoAzulCeu); c.fillRect(M, M + F - 50, F, 50);
+    c.fillStyle = cssDe(P.bebitoCromo); c.fillRect(M, M + F - 54, F, 6);
+    /** um rostinho: a pele, o cabelo da ficha, os olhos, o sorriso e o blush */
+    const rosto = (x: number, y: number, ficha: typeof ARI, jeito: 'juba' | 'cachinhos', olhos: 'abertos' | 'fechados' | 'oculos', inclina = 0): void => {
+      c.save(); c.translate(x, y); c.rotate(inclina);
+      const cabelo = cssDe(ficha.hair.color);
+      c.fillStyle = cabelo;
+      if (jeito === 'juba') {
+        for (let k = 0; k < 14; k++) { const a = Math.PI * (0.95 + (k / 13) * 1.1); c.beginPath(); c.arc(Math.cos(a) * 40, Math.sin(a) * 38 + 6, 17, 0, Math.PI * 2); c.fill(); }
+        for (const dx of [-40, 40]) { c.beginPath(); c.arc(dx, 26, 15, 0, Math.PI * 2); c.fill(); }
+      } else {
+        for (let k = 0; k < 9; k++) { const a = Math.PI * (1.12 + (k / 8) * 0.76); c.beginPath(); c.arc(Math.cos(a) * 30, Math.sin(a) * 32 + 2, 13, 0, Math.PI * 2); c.fill(); }
+      }
+      c.fillStyle = cssDe(ficha.skin); c.beginPath(); c.ellipse(0, 6, 31, 33, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = cabelo;
+      if (jeito === 'juba') { c.beginPath(); c.ellipse(-6, -22, 26, 11, -0.2, 0, Math.PI * 2); c.fill(); }
+      else for (const dx of [-14, 0, 14]) { c.beginPath(); c.arc(dx, -24, 11, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = cssDe(P.valentinaBochecha);
+      for (const dx of [-18, 18]) { c.beginPath(); c.ellipse(dx, 16, 7, 4, 0, 0, Math.PI * 2); c.fill(); }
+      c.strokeStyle = '#3a2a24'; c.fillStyle = cssDe(ficha.eyes); c.lineWidth = 3; c.lineCap = 'round';
+      if (olhos === 'abertos') for (const dx of [-11, 11]) { c.beginPath(); c.ellipse(dx, 4, 4, 5.5, 0, 0, Math.PI * 2); c.fill(); }
+      else if (olhos === 'fechados') for (const dx of [-11, 11]) { c.beginPath(); c.arc(dx, 6, 5, Math.PI * 1.1, Math.PI * 1.9); c.stroke(); }
+      else {
+        c.fillStyle = '#26232d';
+        for (const dx of [-12, 12]) { c.beginPath(); c.ellipse(dx, 4, 11, 8, 0, 0, Math.PI * 2); c.fill(); }
+        c.fillRect(-3, 1, 6, 3);
+        c.fillStyle = 'rgba(255,255,255,0.7)'; for (const dx of [-15, 9]) c.fillRect(dx, -1, 4, 3);
+      }
+      c.beginPath(); c.arc(0, 15, 8, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+      c.restore();
+    };
+    const coracao = (x: number, y: number, r: number, cor: string): void => {
+      c.fillStyle = cor; c.beginPath(); c.moveTo(x, y + r * 0.9);
+      c.bezierCurveTo(x - r * 1.4, y - r * 0.2, x - r * 0.6, y - r * 1.2, x, y - r * 0.4);
+      c.bezierCurveTo(x + r * 0.6, y - r * 1.2, x + r * 1.4, y - r * 0.2, x, y + r * 0.9); c.fill();
+    };
+    if (pose === 'polaroid-beijinho') {
+      rosto(160, 118, RENAN, 'cachinhos', 'abertos');
+      rosto(96, 122, ARI, 'juba', 'fechados', 0.28);
+      for (const [x, y, r] of [[132, 60, 9], [150, 44, 6], [120, 40, 5]] as const) coracao(x, y, r, '#f0567f');
+    } else if (pose === 'polaroid-modelo') {
+      rosto(90, 120, ARI, 'juba', 'oculos', -0.1);
+      rosto(166, 120, RENAN, 'cachinhos', 'oculos', 0.1);
+      c.fillStyle = '#ffe27a';
+      for (const [x, y] of [[40, 56], [216, 70], [128, 46]] as const) { c.beginPath(); for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2, r = k % 2 ? 3 : 9; c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } c.fill(); }
+    } else {
+      rosto(88, 116, ARI, 'juba', 'abertos', -0.12);
+      rosto(168, 116, RENAN, 'cachinhos', 'abertos', 0.12);
+      coracao(128, 176, 20, '#f0567f');
+      c.fillStyle = cssDe(ARI.skin); for (const x of [108, 148]) { c.beginPath(); c.arc(x, 168, 9, 0, Math.PI * 2); c.fill(); }
+    }
+    c.restore();
+    // a dedicatória dela, à mão, na margem de baixo
+    c.fillStyle = cssDe(P.limusineRosaFundo); c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = `700 30px ${FONTE_REDONDA}`; c.fillText('Perfetto! ♥ V.', L / 2, A - 30);
+  });
+  fotos.set(pose, tex);
+  return tex;
+}
+
+/**
+ * A POLAROID DA VALENTINA, no painel (o presente da sessão de fotos na estrada): o cartão branco com a foto, de
+ * pé num cavaletezinho dourado, um tico deitado para trás, virado para os bancos.
+ */
+export function polaroid(pose: PoseDaPolaroid): THREE.Group {
+  const g = new THREE.Group();
+  const cartao = new THREE.Group();
+  cartao.position.set(0, 0.012, -0.012);
+  cartao.rotation.x = -0.28;
+  por(cartao, new THREE.Mesh(quina(0.115, 0.14, 0.004, 0.0015), toon(P.metalWhite)), 0, 0.07, 0);
+  const foto = new THREE.Mesh(new THREE.PlaneGeometry(0.115 * 0.97, 0.14 * 0.97), toon(0xffffff, { mapa: fotoDaPolaroid(pose) }));
+  foto.position.set(0, 0.07, 0.0022);
+  cartao.add(foto);
+  g.add(cartao);
+  // o cavaletezinho: as duas pernas da frente e a de trás, de arame dourado
+  const ouro = toon(P.gold);
+  for (const x of [-0.035, 0.035]) por(g, new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.03, 5), ouro), x, 0.012, 0.004);
+  const tras = por(g, new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.09, 5), ouro), 0, 0.04, -0.04);
+  tras.rotation.x = 0.45;
+  por(g, new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.08, 5).rotateZ(Math.PI / 2), ouro), 0, 0.012, 0.006);
+  return g;
+}
+
 /** os modelos, pelo id do catálogo (`ficha.ts`). Adesivo de canvas mora em `impressos.ts` */
 export const PECAS_DO_CARRO: Readonly<Record<string, () => THREE.Group>> = {
   'jean-luc-de-painel': jeanLucDePainel,
@@ -403,4 +518,7 @@ export const PECAS_DO_CARRO: Readonly<Record<string, () => THREE.Group>> = {
   'bebito-book-e-livros': bebitoBookELivros,
   'mantinha-da-estella': mantinhaDaEstella,
   'emblema-dos-gatitos': emblema,
+  'polaroid-coracao': () => polaroid('polaroid-coracao'),
+  'polaroid-beijinho': () => polaroid('polaroid-beijinho'),
+  'polaroid-modelo': () => polaroid('polaroid-modelo'),
 };

@@ -204,10 +204,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   // E O FLYNN, que vem a pé na corrida matinal (`docs/CARROS-DA-ESCOLA.md` §3): só depois de conhecido no refeitório,
   // e na viagem em que ele passa correndo não tem a bola dele escapando na calçada
   const desconhecido = (rota.encontro?.personagem === 'tializ' && !g.flag(TIA_LIZ_CONHECIDA))
-    || (rota.encontro?.personagem === 'flynn' && !g.flag('flynn-conhecido'));
+    || (rota.encontro?.personagem === 'flynn' && !g.flag('flynn-conhecido'))
+    || (rota.encontro?.personagem === 'valentina' && !g.flag(VALENTINA_CONHECIDA));
   const encontroDaRota = desconhecido ? undefined : rota.encontro;
   const semTorcida = encontroDaRota?.personagem === 'tializ';
   const semBola = encontroDaRota?.personagem === 'flynn';
+  // (e na viagem em que a Valentina passa de limusine, ela não está fazendo o ensaio de fotos na calçada)
+  const semEnsaio = encontroDaRota?.personagem === 'valentina';
   const L = rota.comprimento;
   const destino = destinoDaRota(rota.sentido);
   const ida = destino === 'parque';
@@ -521,6 +524,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   rota.eventos.forEach((e, indice) => {
     if (semTorcida && e.tipo === 'torcida') return;
     if (semBola && e.tipo === 'bola-do-flynn') return;
+    if (semEnsaio && e.tipo === 'ensaio-da-valentina') return;
     const vivo: Vivo = { e, indice, relogio: 0, assustou: false, parou: false, contou: false, bateu: false, passou: false, avisou: false };
     const lFaixa = PISTA.meios[e.faixa];
     if (e.bolhasDoCookie) { vivo.cookie = new BolhasDoCookie(naPista, e.s, rumoEm(e.s)); w.add(vivo.cookie.group); }
@@ -677,6 +681,19 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   if (encontro) w.add(encontro.carro.group);
   // a Gina: o selo de sócio que ela carimba fica colado no NOSSO para-brisa na hora (`docs/CARRINHO-DE-GOLFE-DA-GINA.md`)
   if (encontro?.personagem === 'gina') encontro.aoCarimbar = () => carro.colarAdesivo('paraBrisa', 0, 'selo-socio-do-clube');
+  // a Valentina: a polaroid da sessão de fotos vai para o primeiro lugar livre do PAINEL do nosso carro, na hora, e
+  // fica gravada na ficha (`docs/CARROS-DA-ESCOLA.md` §4)
+  if (encontro?.personagem === 'valentina') {
+    encontro.jaTemPolaroid = g.fichaDoBebitoMobile().vagas.painel.some((id) => !!id && id.startsWith('polaroid-'));
+    encontro.aoGanharPolaroid = (id) => {
+      const ficha = g.fichaDoBebitoMobile();
+      const lugar = ficha.vagas.painel.findIndex((v) => !v);
+      if (lugar < 0 || !carro.colocarPeca('painel', lugar, id)) return false;
+      ficha.vagas.painel[lugar] = id;
+      g.salvarFichaDoBebitoMobile(ficha);
+      return true;
+    };
+  }
   // o Flynn: no toca aqui, o vidro de quem vai de carona desce e o braço dela sai pela janela
   if (encontro?.personagem === 'flynn') {
     const quemVaiDeCarona = g.playerId() === pedido.motorista ? 'parceiro' : 'jogador';
@@ -939,6 +956,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       else if (encontro.personagem === 'mano') g.unlock({ id: 'mano-na-estrada', title: 'A Kombi gelada', place: 'Na estrada', icon: '🍦', note: 'O Mano passou de Kombi de sorvete, com a casquinha gigante de três bolas no teto e a musiquinha tocando. O ar do freezer embaçou o nosso para-brisa, e ele pediu desculpas com uma casquinha pra cada um e uma dancinha.' });
       else if (encontro.personagem === 'cookie') g.unlock({ id: 'cookie-na-estrada', title: 'O carrinho que serve certinho', place: 'Na estrada', icon: '🐘', note: 'O Cookie passou num carrinho cor-de-rosa do tamanho de uma bolha, espremido lá dentro: as orelhas pra fora, a tromba saindo por um furinho no para-brisa. Apertou a corneta, estendeu uma caixinha e jogou um brigadeirinho pra cada um.' });
       else if (encontro.personagem === 'tializ') g.unlock({ id: 'tializ-na-estrada', title: 'As quatro que vieram juntas', place: 'Na estrada', icon: '🐻', note: 'A Tia Liz passou de conversível azul e amarelo, com as estrelinhas da Venezuela no capô e uma mala de viagem atrás, levando a Luna, a Sol e a Estrella. Lá na Venezuela ela trabalhava numa escola quando elas eram pequenas; o sonho das quatro era se mudar, e vieram juntas. Teve torcida, confete e uma arepita pra cada um.' });
+      else if (encontro.personagem === 'valentina') g.unlock({ id: 'valentina-na-estrada', title: 'Perfetto!', place: 'Na estrada', icon: '🦩', note: 'A Valentina passou numa limusine conversível rosa, comprida que não acabava mais, com o Pietro — um pavão de quepe e luvas brancas — ao volante. Ela parou do lado, o Pietro ergueu a câmera antiga pela janela, e ela tirou a nossa foto. A polaroid ficou no painel do Bebito.' });
       else if (encontro.personagem === 'flynn') g.unlock({ id: 'flynn-na-estrada', title: 'A corrida matinal', place: 'Na estrada', icon: '🦊', note: 'O Flynn passou pela calçada correndo mais rápido que o Bebito, de bandana e regata, na corrida matinal dele: não pode ficar atrás dos rivais. Parou do lado, trotando no lugar pra não esfriar, desceu da calçada e pediu um toca aqui pela janela.' });
       else if (encontro.personagem === 'gina') g.unlock({ id: 'gina-na-estrada', title: 'A portaria sobre rodas', place: 'Na estrada', icon: '🦒', note: 'A Gina passou no carrinho de golfe do clube, com o giroflex girando e o pescoço saindo pelo toldo. Mandou a gente encostar, pediu a carteirinha que a gente não tinha, esticou o pescoço até o para-brisa e carimbou: agora o Bebito é sócio do clube.' });
       else if (encontro.personagem === 'jeanluc') g.unlock({ id: 'jeanluc-na-estrada', title: 'O pato de óculos escuros', place: 'Na estrada', icon: '🦆', note: 'O Jean-Luc passou de 2CV azul, com a faixa da França no capô, em pé no caixote para enxergar por cima do para-brisa, de boina e óculos escuros. Parou do lado, tirou a raquete pela janela e sacou um ponto de ping pong na estrada.' });

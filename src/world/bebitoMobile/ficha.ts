@@ -85,6 +85,9 @@ export const CATALOGO_DO_CARRO: readonly DetalheDoCarro[] = [
   { id: 'adesivo-da-roda-gigante', nome: 'Roda gigante', vaga: 'paraChoque', origem: 'a roda branca do Villa Lobos, onde os dois subiram na mesma cabine' },
   { id: 'adesivo-do-mania', nome: 'Mania de Churrasco', vaga: 'paraChoque', origem: 'o restaurante do Walter, achado pela porta dos fundos' },
   { id: 'adesivo-do-mano', nome: 'Sorvete do Mano', vaga: 'paraChoque', origem: 'a casquinha do quiosque do Mano: morango pro Ari, maracujá pro Renan' },
+  { id: 'polaroid-coracao', nome: 'Polaroid (coraçãozinho)', vaga: 'painel', origem: 'a foto que a Valentina tirou dos dois na estrada, com a câmera antiga da limusine' },
+  { id: 'polaroid-beijinho', nome: 'Polaroid (beijinho)', vaga: 'painel', origem: 'a foto que a Valentina tirou dos dois na estrada, com a câmera antiga da limusine' },
+  { id: 'polaroid-modelo', nome: 'Polaroid (cara de modelo)', vaga: 'painel', origem: 'a foto que a Valentina tirou dos dois na estrada, com a câmera antiga da limusine' },
   { id: 'selo-socio-do-clube', nome: 'Sócio do clube', vaga: 'paraBrisa', origem: 'o selo que a Gina, a girafa da portaria, carimbou na estrada' },
   { id: 'calota-classica', nome: 'Calota clássica', vaga: 'rodas', origem: 'a de fábrica: roda creme, calota de cromo e pneu de banda branca' },
 ];

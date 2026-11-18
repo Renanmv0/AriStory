@@ -141,6 +141,7 @@ export type SomNome =
   | 'carimbo'
   | 'buzinaDaTiaLiz'
   | 'tocaAqui'
+  | 'buzinaDaLimusine'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1441,6 +1442,21 @@ export const EFEITOS: Record<SomNome, Receita> = {
     tom(ctx, destino, { freq: nota(DO - 17), glide: nota(DO - 24), quando: t, dur: 0.07, vol: 0.07, ataque: 0.003, tipo: 'sine' });
     tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.09, dur: 0.1, vol: 0.045, ataque: 0.008, tipo: 'triangle' });
     tom(ctx, destino, { freq: nota(DO + 12), quando: t + 0.17, dur: 0.18, vol: 0.05, ataque: 0.008, tipo: 'triangle' });
+  },
+
+  /**
+   * A buzina da limusine da Valentina: chique e sem pressa — dois "fom" largos e graves (um acorde de terça,
+   * dó e mi, em dente-de-serra bem abafado com o seno uma oitava abaixo) e um terceiro mais comprido subindo para
+   * o sol, como quem anuncia uma estrela.
+   */
+  buzinaDaLimusine: ({ ctx, destino, t }) => {
+    for (const [atraso, graus, dur] of [[0, [0, 4], 0.16], [0.22, [0, 4], 0.16], [0.46, [4, 7], 0.42]] as const) {
+      for (const grau of graus) {
+        const f = nota(DO - 12 + grau);
+        tom(ctx, destino, { freq: f, quando: t + atraso, dur, vol: 0.038, ataque: 0.02, tipo: 'sawtooth', abafo: 1100 });
+        tom(ctx, destino, { freq: f / 2, quando: t + atraso, dur, vol: 0.03, ataque: 0.02, tipo: 'sine' });
+      }
+    }
   },
 
   fotoFlash: ({ ctx, destino, t }) => {
