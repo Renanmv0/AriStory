@@ -331,6 +331,13 @@ porta.
 
 ---
 
+## Guardado para depois: o lobo rival do Flynn
+
+Ideia do Renan (2026-11-18): um personagem LOBO para disputar com o Flynn. Ficou guardada de propósito ("deixa a ideia
+do lobo guardada para fazermos depois, mas vamos terminar os carros"). Hoje ele só existe na fala do Flynn na estrada
+("Vocês vão conhecer. Ele também acorda cedo…"), sem nome nem modelo. Quando chegar a vez: perguntar ao Renan quem ele
+é, como é, de onde vem e como é a disputa.
+
 ## A ordem sugerida
 
 1. **O Gatito**: o professor e a cara da escola. O ônibus amarelinho com o
