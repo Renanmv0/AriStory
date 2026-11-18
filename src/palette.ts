@@ -3107,6 +3107,16 @@ export const PALETTE = {
   limusineTapete: 0xc8283c,
   limusineDourado: 0xdcb65e,
   limusineChapeleira: 0xf7b8cf,
+  /*
+   * O ÔNIBUS ESCOLAR DOS GATITOS, estacionado na escola (`world/onibusEscolarDosGatitos.ts`): o amarelo de ônibus
+   * escolar (mais laranja que o amarelo dos Gatitos, que fica nos detalhes), o preto dos frisos e das borrachas, o
+   * vermelho do PARE e das luzes de alerta, e o rosinha de dentro das orelhinhas do teto.
+   */
+  onibusEscolarAmarelo: 0xf2ac1d,
+  onibusEscolarPreto: 0x2a282e,
+  onibusEscolarVidro: 0x5d7f99,
+  onibusEscolarPare: 0xd9332f,
+  onibusEscolarOrelha: 0xf6a9b4,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

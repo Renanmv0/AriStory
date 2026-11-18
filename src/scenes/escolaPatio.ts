@@ -7,6 +7,7 @@ import { OnibusDaCidade } from '../world/onibusDaCidade';
 import { ConversivelDaTiaLiz, CONVERSIVEL } from '../world/conversivelDaTiaLiz';
 import { LimusineDaValentina, LIMUSINE } from '../world/limusineDaValentina';
 import { DESFILOU } from '../eventos/bebitoMobile/desfileDaValentina';
+import { ONIBUS_ESCOLAR, onibusEscolarDosGatitos } from '../world/onibusEscolarDosGatitos';
 import { Vento } from '../core/shaders';
 import { toon } from '../core/materials';
 import { cascaDePinus, hortensias, margaridas, type MoitaDeMargaridas, type PeDePlanta } from '../world/plantasDeJardim';
@@ -540,7 +541,17 @@ export const escolaPatio: SceneDef = {
       w.blockBox(VAGA_DA_LIMUSINE.x, VAGA_DA_LIMUSINE.z, LIMUSINE.meio + 0.12, LIMUSINE.meiaLargura + 0.03);
       w.root.userData.limusineNaEscola = VAGA_DA_LIMUSINE;
     }
-    const reservadas = (xc: number, fila: number): boolean => (fila === 1 && [2.6, 5.2, -2.6, -5.2, ...(conversivelAqui ? [VAGA_DO_CONVERSIVEL.x] : [])].some((r) => Math.abs(xc - r) < 0.1))
+    // O ÔNIBUS ESCOLAR DOS GATITOS (`docs/CARROS-DA-ESCOLA.md` §1, a decisão do Renan: "o Gatito mora na escola!
+    // Mas deixe estacionado um ônibus escolar dos Gatitos"): sempre aqui, de lado, atravessado em quatro vagas da fila
+    // de trás (o nariz para o +X), com a porta e o letreiro para a câmera
+    const VAGA_DO_ONIBUS = { x: 9.1, z: (FILA_2.z0 + FILA_2.z1) / 2 };
+    {
+      const meio = (ONIBUS_ESCOLAR.tras + ONIBUS_ESCOLAR.frente) / 2;
+      doLote(VAGA_DO_ONIBUS.x).add(w.place(onibusEscolarDosGatitos(), VAGA_DO_ONIBUS.x - meio, 0, VAGA_DO_ONIBUS.z, Math.PI / 2));
+      w.blockBox(VAGA_DO_ONIBUS.x, VAGA_DO_ONIBUS.z, (ONIBUS_ESCOLAR.frente - ONIBUS_ESCOLAR.tras) / 2 + 0.1, ONIBUS_ESCOLAR.largura / 2 + 0.05);
+      w.root.userData.onibusEscolarNaEscola = VAGA_DO_ONIBUS;
+    }
+    const reservadas = (xc: number, fila: number): boolean => (fila === 2 && Math.abs(xc - VAGA_DO_ONIBUS.x) < 5.0) || (fila === 1 && [2.6, 5.2, -2.6, -5.2, ...(conversivelAqui ? [VAGA_DO_CONVERSIVEL.x] : [])].some((r) => Math.abs(xc - r) < 0.1))
       || (fila === 2 && limusineAqui && Math.abs(xc - VAGA_DA_LIMUSINE.x) < 3.9);
     for (const [lista, fila, giro, n] of [[VAGAS_1, 1, Math.PI, 7], [VAGAS_2, 2, 0, 9]] as const) {
       const livres = lista.map(([x0, x1]) => (x0 + x1) / 2).filter((xc) => !reservadas(xc, fila));

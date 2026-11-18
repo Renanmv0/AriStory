@@ -90,6 +90,7 @@ const PECAS = [
   ['moto-do-capy', 'viagem-de-carro&bebito&viagem=casa-clube,ari,7'],
   ['carrinho-de-golfe-da-gina', 'villa-lobos&semHalloween&golfe=-6,30,0'],
   ['limusine-da-valentina', 'villa-lobos&semHalloween&limusine=-6,30,0'],
+  ['onibus-escolar-dos-gatitos', 'escola-patio'],
   ['bolhas-do-cookie', 'viagem-de-carro&bebito&viagem=ida,ari,2'],
   ['carro-da-josefina', 'viagem-de-carro&bebito&viagem=casa-clube,ari,6'],
   ['sorveteria', 'villa-lobos'],
