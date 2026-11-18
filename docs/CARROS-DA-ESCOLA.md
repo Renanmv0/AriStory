@@ -65,6 +65,17 @@ preta, "ESCOLA DO GATITO" no alto, o emblema dos Gatitos, a porta sanfonada do l
 dobrado do lado do motorista, as luzes de alerta, a placa da linha "67 ESCOLA" (o six seven) e as duas ORELHINHAS DE
 GATO no teto. Parado: entra junto com o fundo do lote.
 
+**A segunda versão (2026-11-18, pedido do Renan: "mais bonito, com mais detalhes, melhore as texturas")** manteve tudo
+e caprichou no acabamento: a CHAPA da lataria em canvas (as emendas entre as janelas com os rebites, as emendas
+atravessando o teto, a poeira no pé), os vidros pintados (o céu refletido, os encostos azuis dos bancos, o risco de
+brilho), o caixilho de alumínio, o letreiro em letra de ônibus escolar, o número 67, os para-lamas pretos, a grade de
+cromo entre os faróis de aro, as venezianas do capô, os espelhos de capô e os retrovisores, o para-brisa com os
+limpadores, as caixas das luzes de alerta com as palas (o "67 ESCOLA" na frente, o "ESCOLAR" atrás), as escotilhas do
+teto, a placa do Mercosul, o braço de travessia listrado no para-choque, a porta de emergência com o aviso, as
+lanternas de aro, o para-choque de trás listrado, as rodas com aro, furos, calota e porcas, o tanque e os para-barros
+com a pata dos Gatitos. Tudo o que é impresso mora num atlas só: o peso caiu (vista do lote, 280 → 268 desenhos;
++15 mil triângulos). Textos novos, provisórios: a placa "GAT6A67", o "ESCOLAR" de trás e o "SAÍDA DE EMERGÊNCIA".
+
 **As ideias de antes** (ficam para referência):
 
 **⭐ A. O ônibus escolar amarelinho, em miniatura** (recomendado)

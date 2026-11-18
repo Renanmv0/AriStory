@@ -3117,6 +3117,10 @@ export const PALETTE = {
   onibusEscolarVidro: 0x5d7f99,
   onibusEscolarPare: 0xd9332f,
   onibusEscolarOrelha: 0xf6a9b4,
+  /* o céu refletido no alto dos vidros, e a placa do Mercosul (o branco e a faixa azul) */
+  onibusEscolarReflexo: 0xc4dceb,
+  onibusEscolarPlaca: 0xf7f8fa,
+  onibusEscolarPlacaAzul: 0x1f4fa8,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

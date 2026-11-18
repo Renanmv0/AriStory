@@ -900,6 +900,27 @@ algodão-doce saiu.
   subiram de 315 mil para 396 mil (a treliça e as gôndolas). A bilheteria de
   perto: 530 → 311 desenhos (ela passa pela `fundir()`).
 
+## O ônibus escolar dos Gatitos (`world/onibusEscolarDosGatitos.ts`)
+
+O molde de VEÍCULO PARADO caprichado sem pesar (o ônibus da cidade é o de veículo que anda):
+
+- **A chapa é textura com UV por triângulo** (`uvDaChapa`): pela normal de cada face, a lateral e o teto correm em
+  `z` (as emendas a cada 0,75 m caem entre as janelas e atravessam o teto na mesma linha) e a frente e a traseira só
+  levam o degradê. O canvas é quase branco (o material amarelo multiplica): emenda, rebite e poeira são preto fraco,
+  e o amarelo escurece sem mudar de tom.
+- **Tudo o que é impresso num ATLAS só** (`materialDoAtlas`, `noAtlas` leva o UV 0–1 para a região): letreiro, placas,
+  PARE, listras, pata e os VIDROS pintados (o céu refletido em cima, o encosto do banco embaixo, o risco de brilho). O
+  letreiro e os números têm o fundo VAZADO (`alphaTest`), para a letra ficar direto na chapa; o resto do canvas nasce
+  opaco, senão o mipmap come a beira das regiões de longe.
+- **O que se pendura na curva assenta por ela** (`naCapa`): as curvas da frente e da traseira são as mesmas que
+  desenham o perfil, e o para-brisa e as caixas das luzes de alerta são quadros com o `+Z` na normal (`lookAt`).
+- **Caixa de roda na linha do chão**: o arco começa onde o círculo cruza o chão da forma; começando na altura do
+  eixo, sobrava um dente de lataria em cada ponta.
+- Rodas e o braço de travessia pintados nos vértices, o resto de cor lisa pela `juntarPorCor`: vista do lote 280 →
+  268 desenhos com o ônibus novo. As faces coplanares (o `zfighting.mjs` não mede `quina()`) foram caçadas com a
+  caixa de cada malha alinhada no quadro da peça, com `?semFundir`: o fundo do capô no plano do da carroceria, as
+  quinas do contorno da porta de trás, e decalque a 1 mm da face (vai a 3–4 mm).
+
 ## O ônibus da cidade (`world/onibusDaCidade.ts`)
 
 O ônibus urbano detalhado (pedido do Renan: as mesmas cores do `bus()` de
