@@ -357,6 +357,10 @@ pintada na pose fica de vez no PAINEL do Bebito (`colocarPeca`, gravada na ficha
 calçada. E a primeira chegada de carro à escola depois da foto termina com o DESFILE DO TAPETE VERMELHO
 (`eventos/bebitoMobile/desfileDaValentina.ts`: a limusine no portão, o Pietro desenrolando o tapete, o leque aberto,
 ela descendo e desfilando); depois, a limusine mora estacionada de lado no lote da escola.
+E o GATITO mora na escola (decisão do Renan, 2026-11-18): não sai na estrada; no lugar do carro, o ÔNIBUS ESCOLAR DOS
+GATITOS (`world/onibusEscolarDosGatitos.ts`: amarelo americano de nariz comprido, os frisos pretos, "ESCOLA DO
+GATITO", o braço de PARE, a linha 67 e as orelhinhas de gato no teto) fica sempre estacionado de lado no lote da
+escola.
 E a REGRA DE QUEM APARECE na estrada (`candidatosAoEncontro`, em `rota.ts`): cada
 um só aparece nas rotas do lugar onde mora (o destino; se o destino não tem ninguém, a origem; nas duas
 pontas com gente, todos); casa ↔ escola tem a Tia Liz e as irmãs, o Flynn ou a Valentina.

@@ -8,10 +8,11 @@ para os carros da escola". É o próximo passo que já estava marcado em
 
 **O estado:** o **conversível da Tia Liz e das irmãs** (§2) está FEITO e no
 jogo (2026-11-17): o carro, a interação na estrada e o estacionado na escola.
-A **limusine da Valentina** (§4) está com o CARRO feito (2026-11-18), com o Pietro, o pavão motorista; a interação
-na estrada vem depois. O **Flynn** (§3) também está no jogo (2026-11-18), sem carro: a
+A **limusine da Valentina** (§4) está no jogo (2026-11-18), com o Pietro, o pavão motorista: a sessão de fotos na
+estrada, a polaroid no painel, o desfile do tapete vermelho na escola e a limusine estacionada no lote. O **Flynn** (§3) também está no jogo (2026-11-18), sem carro: a
 escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. O
-outro (o Gatito) é só ideia. Este documento é o cardápio para o
+Gatito mora na escola: no lugar do carro, o ÔNIBUS ESCOLAR dos Gatitos fica estacionado no lote (§1). Os carros da
+escola estão completos. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -54,6 +55,17 @@ encontro em `eventos/bebitoMobile/encontroNaEstrada.ts`, a memória em
 ---
 
 ## 1. O Gatito
+
+**FEITO (2026-11-18), na decisão do Renan: "o Gatito mora na escola! Mas deixe estacionado um ônibus escolar dos
+Gatitos".** O Gatito NÃO aparece na estrada (continua de guarda na faixa da torcida). O ÔNIBUS ESCOLAR DOS GATITOS
+(`world/onibusEscolarDosGatitos.ts`) fica sempre estacionado no lote da escola, DE LADO, atravessado em quatro vagas
+da fila de trás (do outro lado, a limusine da Valentina): o ônibus americano de nariz comprido (a carroceria e o
+capô em perfil extrudado com bisel), amarelo de ônibus escolar com os três frisos pretos, a fila de janelas na faixa
+preta, "ESCOLA DO GATITO" no alto, o emblema dos Gatitos, a porta sanfonada do lado da calçada, o braço de PARE
+dobrado do lado do motorista, as luzes de alerta, a placa da linha "67 ESCOLA" (o six seven) e as duas ORELHINHAS DE
+GATO no teto. Parado: entra junto com o fundo do lote.
+
+**As ideias de antes** (ficam para referência):
 
 **⭐ A. O ônibus escolar amarelinho, em miniatura** (recomendado)
 - O ônibus escolar americano de filme (a escola é "chique dos Estados
