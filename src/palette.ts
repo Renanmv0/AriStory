@@ -3121,6 +3121,14 @@ export const PALETTE = {
   onibusEscolarReflexo: 0xc4dceb,
   onibusEscolarPlaca: 0xf7f8fa,
   onibusEscolarPlacaAzul: 0x1f4fa8,
+  /*
+   * O GATITO LAVANDO O ÔNIBUS (`eventos/gatitoLavaOOnibus.ts`): a esponja amarela com a fibra verde, a espuma de
+   * sabão quase branca e o balde de plástico azul dos Gatitos
+   */
+  esponjaAmarela: 0xf5d35a,
+  esponjaVerde: 0x4f9a5a,
+  espumaDeSabao: 0xf8fbff,
+  baldeDeLavar: 0x4f8fd6,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

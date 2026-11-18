@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
@@ -71,6 +72,12 @@ export class Gatito extends Bicho {
   /** 0 a 1: o quanto ele já está de pé para o six seven (entra e sai sem estalo) */
   private sixSevenPeso = 0;
 
+  /** 0 a 1: o quanto ele já está de pé ESFREGANDO (a lavagem do ônibus; entra e sai sem estalo) */
+  private esfregaPeso = 0;
+  private esfregaAlvo = 0;
+  /** a esponja da lavagem, na ponta da pata da frente direita (só aparece esfregando) */
+  private readonly esponja = new THREE.Group();
+
   /** a cena liga: é aqui que ela mostra o "Six seven!" na tela */
   aoFazerSixSeven: (() => void) | null = null;
 
@@ -111,6 +118,24 @@ export class Gatito extends Bicho {
 
   get fazendoSixSeven(): boolean {
     return this.sixSevenFalta > 0;
+  }
+
+  /**
+   * LAVANDO O ÔNIBUS (`eventos/gatitoLavaOOnibus.ts`): em pé nas patas de trás, a
+   * esponja na pata da frente direita esfregando em roda e a esquerda apoiada na
+   * lataria. Quem põe ele de serviço e em cima do caixote é a cena.
+   */
+  esfregar(sim: boolean): void {
+    this.esfregaAlvo = sim ? 1 : 0;
+  }
+
+  get esfregando(): boolean {
+    return this.esfregaAlvo > 0;
+  }
+
+  /** onde está a esponja no mundo (a cena solta as bolhas dali) */
+  pontaDaEsponja(alvo: THREE.Vector3): THREE.Vector3 {
+    return this.esponja.getWorldPosition(alvo);
   }
 
   /** Os oculinhos de professor: só na hora da aula (o Renan pediu assim). */
@@ -327,6 +352,22 @@ export class Gatito extends Bicho {
       this.patas.push(pivo);
       this.corpo.add(pivo);
     }
+    // a ESPONJA da lavagem, na ponta da pata da frente direita: amarela com a fibra verde
+    // de esfregar por cima e um tufo de espuma (escondida fora da lavagem)
+    {
+      const corpoDaEsponja = new THREE.Mesh(new RoundedBoxGeometry(0.075, 0.05, 0.11, 2, 0.018), toon(P.esponjaAmarela));
+      const fibra = new THREE.Mesh(new RoundedBoxGeometry(0.077, 0.018, 0.112, 2, 0.007), toon(P.esponjaVerde));
+      fibra.position.y = -0.031;
+      this.esponja.add(corpoDaEsponja, fibra);
+      for (const [x, y, z, r] of [[0.02, 0.03, 0.03, 0.022], [-0.015, 0.032, -0.01, 0.018], [0.01, 0.026, -0.04, 0.015]] as const) {
+        const bolha = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), toon(P.espumaDeSabao));
+        bolha.position.set(x, y, z);
+        this.esponja.add(bolha);
+      }
+      this.esponja.position.set(0, -0.2, 0.02);
+      this.esponja.visible = false;
+      this.patas[1].add(this.esponja);
+    }
 
     // --------------------------------------------------------------- rabo
     // Caramelo, fino, subindo em gancho: três gomos encadeados (cada um filho
@@ -365,17 +406,24 @@ export class Gatito extends Bicho {
     const querDePe = this.sixSevenFalta > 0 ? 1 : 0;
     this.sixSevenPeso += (querDePe - this.sixSevenPeso) * Math.min(1, dt * 6);
     const pe = this.sixSevenPeso;
+    // a lavagem: o six seven ganha dela (ele larga a esponja um instante e volta)
+    this.esfregaPeso += (this.esfregaAlvo - this.esfregaPeso) * Math.min(1, dt * 4);
+    const es = this.esfregaPeso * (1 - pe);
+    /** de pé: no six seven OU esfregando */
+    const dePe = pe + es;
+    this.esponja.visible = es > 0.15;
+    this.esponja.scale.setScalar(Math.max(0.01, Math.min(1, es * 1.4)));
 
     // --------------------------------------------------------- a postura
     // sentado a frente sobe um pouco; no six seven ele fica quase em pé
-    const alvoPostura = (sentado ? -0.32 : 0) * (1 - pe) - 1.05 * pe;
+    const alvoPostura = (sentado ? -0.32 : 0) * (1 - dePe) - 1.05 * dePe;
     this.postura.rotation.x += (alvoPostura - this.postura.rotation.x) * suave;
     // em pé, o giro em volta do quadril enfiava 2 cm do traseiro no chão
     // (medido): o quadril sobe junto com o gesto
-    this.postura.position.y = QUADRIL.y + 0.04 * pe;
+    this.postura.position.y = QUADRIL.y + 0.04 * dePe;
 
     // ------------------------------------------------------------ as patas
-    if (andando && pe < 0.05) {
+    if (andando && dePe < 0.05) {
       const t = fase * 9;
       const s = Math.sin(t) * 0.55;
       // em diagonal: frente-esquerda com trás-direita
@@ -397,16 +445,26 @@ export class Gatito extends Bicho {
        */
       const balanca = Math.sin(fase * 8) * 0.62;
       const frenteBase = (-Math.PI / 2 + 1.05) * pe;
+      /*
+       * ESFREGANDO: as patas da frente deitadas para a frente (a mesma soma do six
+       * seven), a direita fazendo a RODA da esponja (sobe e desce no `x`, vai e
+       * volta no `z`, defasados de um quarto de volta) e a esquerda apoiada na
+       * lataria, um tico mais baixa. O corpo ginga junto com a roda.
+       */
+      const roda = fase * 6.5;
+      const frenteDaLavagem = (-Math.PI / 2 + 1.05) * es;
       const alvos = [
-        frenteBase + balanca * pe,
-        frenteBase - balanca * pe,
-        0.75 * pe,
-        0.75 * pe,
+        frenteBase + balanca * pe + (frenteDaLavagem + 0.28 * es),
+        frenteBase - balanca * pe + (frenteDaLavagem - 0.1 * es + Math.sin(roda) * 0.32 * es),
+        0.75 * dePe,
+        0.75 * dePe,
       ];
       for (let i = 0; i < 4; i++) {
         this.patas[i].rotation.x += (alvos[i] - this.patas[i].rotation.x) * suave;
       }
-      this.corpo.rotation.z *= 1 - suave;
+      const rodaZ = [-0.1 * es, Math.cos(roda) * 0.34 * es];
+      for (let i = 0; i < 2; i++) this.patas[i].rotation.z += (rodaZ[i] - this.patas[i].rotation.z) * suave;
+      this.corpo.rotation.z += (Math.cos(roda) * 0.05 * es - this.corpo.rotation.z) * suave;
       const respira = Math.sin(fase * 1.7) * 0.006;
       this.corpo.position.y += (-QUADRIL.y + respira - this.corpo.position.y) * suave;
     }
@@ -423,9 +481,10 @@ export class Gatito extends Bicho {
     // -------------------------------------------------------------- cabeça
     // de pé, a cabeça desfaz o giro do corpo para continuar olhando para a
     // frente (e não para o teto), e balança no ritmo do "six… seven"
-    const olhaEmVolta = andando || pe > 0.05 ? 0 : Math.sin(fase * 0.6) * 0.34;
-    this.cabeca.rotation.y = olhaEmVolta + Math.sin(fase * 5) * 0.12 * pe;
-    this.cabeca.rotation.x = -carinho * 0.22 + Math.sin(fase * 1.9) * 0.02 + 0.95 * pe;
+    const olhaEmVolta = andando || dePe > 0.05 ? 0 : Math.sin(fase * 0.6) * 0.34;
+    // esfregando, ele acompanha a esponja com a cabeça (um tico para o lado dela)
+    this.cabeca.rotation.y = olhaEmVolta + Math.sin(fase * 5) * 0.12 * pe + (0.18 + Math.cos(fase * 6.5) * 0.08) * es;
+    this.cabeca.rotation.x = -carinho * 0.22 + Math.sin(fase * 1.9) * 0.02 + 0.95 * pe + 0.9 * es;
 
     for (let i = 0; i < this.orelhas.length; i++) {
       const lado = i === 0 ? -1 : 1;

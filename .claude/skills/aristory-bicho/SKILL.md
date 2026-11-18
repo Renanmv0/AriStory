@@ -590,6 +590,19 @@ o mesmo molde, e deixaram três truques:
   pelo contorno escuro (um tubo na borda do pedaço de esfera) e pelo aro do
   olho.
 
+## Bicho que TRABALHA numa peça grande (o Gatito lavando o ônibus)
+
+`eventos/gatitoLavaOOnibus.ts` é o molde de um bicho pequeno fazendo serviço numa peça enorme:
+
+- **A pose é um peso a mais**, como o six seven (`esfregar(sim)` → `esfregaPeso`, 0 a 1): os dois somam no "de pé"
+  (`dePe`), e o six seven ganha (o peso do esfregar é multiplicado por `1 − pe`). A pata da esponja faz a RODA com o
+  `rotation.x` e o `rotation.z` defasados de um quarto de volta; a outra apoia na lataria; o corpo ginga junto.
+- **O alcance decide a altura do apoio, e se MEDE assentado**: num caixote só, de pé, a esponja ficava abaixo do
+  primeiro friso. O navegador do teste anda a ~1/10 do relógio, e a pose leva segundos de JOGO para assentar —
+  medida cedo, a esponja parecia 50 cm mais baixa. Espere `jogo.elapsed` e meça a ponta (`pontaDaEsponja`).
+- **O que é dele mora nele** (a esponja, escondida fora do serviço); o que é do lugar (os caixotes, o balde, a espuma
+  na lataria, as bolhas) mora na camada.
+
 ## Ave com cauda que abre (o Pietro, o pavão motorista)
 
 O Pietro (`entities/bichos/Pavao.ts`) é o motorista da limusine da Valentina. O que custou foto:

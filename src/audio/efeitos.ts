@@ -141,6 +141,7 @@ export type SomNome =
   | 'carimbo'
   | 'buzinaDaTiaLiz'
   | 'tocaAqui'
+  | 'esfrega'
   | 'buzinaDaLimusine'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
@@ -1436,6 +1437,17 @@ export const EFEITOS: Record<SomNome, Receita> = {
    * (um chiado curtíssimo e aberto, com o grave do impacto por baixo) e um
    * "plim" de duas notas subindo (sol e dó), de comemoração.
    */
+  /**
+   * O Gatito esfregando o ônibus: a esponja indo e voltando na lataria ("fsh-fsh", dois chiados de pano molhado,
+   * o segundo mais curto) e, de vez em quando, o rangidinho da fibra no metal (`n` par) — o "nhec" agudo e curto
+   * de quem esfrega com vontade. É fundo: baixinho, tocado a cada ~0,9 s com a dupla perto.
+   */
+  esfrega: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.16, vol: 0.047, freq: 1500, glide: 2300, q: 0.7, sustenta: 0.4 });
+    chiado(ctx, destino, { quando: t + 0.2, dur: 0.12, vol: 0.036, freq: 2100, glide: 1400, q: 0.7, sustenta: 0.4 });
+    if (n % 2 === 0) tom(ctx, destino, { freq: nota(DO + 28), glide: nota(DO + 31), quando: t + 0.08, dur: 0.06, vol: 0.012, ataque: 0.006, tipo: 'triangle' });
+  },
+
   tocaAqui: ({ ctx, destino, t }) => {
     chiado(ctx, destino, { quando: t, dur: 0.045, vol: 0.13, freq: 2300, glide: 1200, q: 0.8 });
     chiado(ctx, destino, { quando: t + 0.004, dur: 0.03, vol: 0.06, freq: 4200, q: 1.4 });

@@ -76,6 +76,15 @@ lanternas de aro, o para-choque de trás listrado, as rodas com aro, furos, calo
 com a pata dos Gatitos. Tudo o que é impresso mora num atlas só: o peso caiu (vista do lote, 280 → 268 desenhos;
 +15 mil triângulos). Textos novos, provisórios: a placa "GAT6A67", o "ESCOLAR" de trás e o "SAÍDA DE EMERGÊNCIA".
 
+**O Gatito lavando o ônibus (2026-11-18, pedido do Renan: "de vez em quando o Gatito aparece ao lado do ônibus dizendo
+que está limpando ele")** — `eventos/gatitoLavaOOnibus.ts`: em algumas visitas ao pátio (35%, só depois de conhecer o
+Gatito e nunca com a aula chamada), ele está do lado da porta do ônibus, em pé em DOIS CAIXOTES empilhados, de esponja
+na pata, esfregando a lataria em roda (a pose `esfregar` do `Gatito`); o balde azul de espuma com a esponja reserva, a
+poça, a espuma grudada no amarelo, as bolhas subindo e o "fsh-fsh" baixinho (`esfrega`) com a dupla perto. Falar com ele:
+ele larga a esponja, vira para a dupla e conta que está dando banho no ônibus (a primeira vez rende a memória "O ônibus
+brilhando" e um six seven); depois, uma fala curta sorteada, e ele volta a esfregar. As falas são PROVISÓRIAS (minhas).
+`?gatitoLavando` força, `?semGatitoLavando` tira; o teste é o `scripts/gatitoLavando.mjs`.
+
 **As ideias de antes** (ficam para referência):
 
 **⭐ A. O ônibus escolar amarelinho, em miniatura** (recomendado)

@@ -198,6 +198,10 @@ uma fora do tempo da outra, com o chiado de papel) e o estouro do confete.
 `fotoFlash` é a foto de todos (a 6d): o zumbido do flash carregando,
 subindo, e o "clic-clac" duplo do obturador no fim.
 
+**A lavagem do ônibus** (`esfrega`, o Gatito esfregando, `eventos/gatitoLavaOOnibus.ts`): dois chiados de pano
+molhado (o "fsh-fsh", o segundo mais curto) e, com `n` par, o rangidinho agudo da fibra no metal. É fundo, tocado a
+cada ~0,9 s com a dupla perto: pico 0,035 no `.wav`, abaixo do passo (0,05).
+
 **As balas na cesta** (`balas`, a caça de doces ou travessuras,
 `eventos/halloween/caca.ts`): seis toquinhos secos de triângulo, cada um
 descendo de tom (o plástico oco da cestinha), mais fracos e mais juntos, e

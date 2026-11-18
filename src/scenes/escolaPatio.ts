@@ -8,6 +8,8 @@ import { ConversivelDaTiaLiz, CONVERSIVEL } from '../world/conversivelDaTiaLiz';
 import { LimusineDaValentina, LIMUSINE } from '../world/limusineDaValentina';
 import { DESFILOU } from '../eventos/bebitoMobile/desfileDaValentina';
 import { ONIBUS_ESCOLAR, onibusEscolarDosGatitos } from '../world/onibusEscolarDosGatitos';
+import { gatitoVaiLavar, montarGatitoLavandoOOnibus } from '../eventos/gatitoLavaOOnibus';
+import { emAula } from './escolaAula';
 import { Vento } from '../core/shaders';
 import { toon } from '../core/materials';
 import { cascaDePinus, hortensias, margaridas, type MoitaDeMargaridas, type PeDePlanta } from '../world/plantasDeJardim';
@@ -550,6 +552,11 @@ export const escolaPatio: SceneDef = {
       doLote(VAGA_DO_ONIBUS.x).add(w.place(onibusEscolarDosGatitos(), VAGA_DO_ONIBUS.x - meio, 0, VAGA_DO_ONIBUS.z, Math.PI / 2));
       w.blockBox(VAGA_DO_ONIBUS.x, VAGA_DO_ONIBUS.z, (ONIBUS_ESCOLAR.frente - ONIBUS_ESCOLAR.tras) / 2 + 0.1, ONIBUS_ESCOLAR.largura / 2 + 0.05);
       w.root.userData.onibusEscolarNaEscola = VAGA_DO_ONIBUS;
+      // DE VEZ EM QUANDO, o Gatito está ao lado dele, em cima de um caixote, dando banho no ônibus (pedido do Renan):
+      // só depois de conhecido no saguão, e nunca com a aula chamada (aí ele espera a turma na Sala 1)
+      if (g.flag('gatito-conhecido') && !emAula(g) && gatitoVaiLavar()) {
+        montarGatitoLavandoOOnibus(w, { x: VAGA_DO_ONIBUS.x - 0.9, face: VAGA_DO_ONIBUS.z + ONIBUS_ESCOLAR.largura / 2 });
+      }
     }
     const reservadas = (xc: number, fila: number): boolean => (fila === 2 && Math.abs(xc - VAGA_DO_ONIBUS.x) < 5.0) || (fila === 1 && [2.6, 5.2, -2.6, -5.2, ...(conversivelAqui ? [VAGA_DO_CONVERSIVEL.x] : [])].some((r) => Math.abs(xc - r) < 0.1))
       || (fila === 2 && limusineAqui && Math.abs(xc - VAGA_DA_LIMUSINE.x) < 3.9);
