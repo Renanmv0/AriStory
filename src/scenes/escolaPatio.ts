@@ -5,6 +5,8 @@ import { PALETTE as P } from '../palette';
 import { busStop, cloud, lamp, meioFio, sebe, tree } from '../world/props';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
 import { ConversivelDaTiaLiz, CONVERSIVEL } from '../world/conversivelDaTiaLiz';
+import { LimusineDaValentina, LIMUSINE } from '../world/limusineDaValentina';
+import { DESFILOU } from '../eventos/bebitoMobile/desfileDaValentina';
 import { Vento } from '../core/shaders';
 import { toon } from '../core/materials';
 import { cascaDePinus, hortensias, margaridas, type MoitaDeMargaridas, type PeDePlanta } from '../world/plantasDeJardim';
@@ -528,7 +530,18 @@ export const escolaPatio: SceneDef = {
       w.blockBox(VAGA_DO_CONVERSIVEL.x, VAGA_DO_CONVERSIVEL.z, CONVERSIVEL.meiaLargura + 0.02, CONVERSIVEL.meio - 0.05);
       w.root.userData.conversivelNaEscola = VAGA_DO_CONVERSIVEL;
     }
-    const reservadas = (xc: number, fila: number): boolean => fila === 1 && [2.6, 5.2, -2.6, -5.2, ...(conversivelAqui ? [VAGA_DO_CONVERSIVEL.x] : [])].some((r) => Math.abs(xc - r) < 0.1);
+    // A LIMUSINE DA VALENTINA, depois do desfile do tapete vermelho (`eventos/bebitoMobile/desfileDaValentina.ts`):
+    // vazia, DE LADO, atravessada em três vagas da fila de trás (de nariz numa vaga ela não cabe: tem 6,5 m), com a
+    // porta da sala virada para a câmera
+    const limusineAqui = g.flag(DESFILOU);
+    const VAGA_DA_LIMUSINE = { x: -10.4, z: (FILA_2.z0 + FILA_2.z1) / 2 };
+    if (limusineAqui) {
+      doLote(VAGA_DA_LIMUSINE.x).add(w.place(new LimusineDaValentina(true).group, VAGA_DA_LIMUSINE.x, 0, VAGA_DA_LIMUSINE.z, Math.PI / 2));
+      w.blockBox(VAGA_DA_LIMUSINE.x, VAGA_DA_LIMUSINE.z, LIMUSINE.meio + 0.12, LIMUSINE.meiaLargura + 0.03);
+      w.root.userData.limusineNaEscola = VAGA_DA_LIMUSINE;
+    }
+    const reservadas = (xc: number, fila: number): boolean => (fila === 1 && [2.6, 5.2, -2.6, -5.2, ...(conversivelAqui ? [VAGA_DO_CONVERSIVEL.x] : [])].some((r) => Math.abs(xc - r) < 0.1))
+      || (fila === 2 && limusineAqui && Math.abs(xc - VAGA_DA_LIMUSINE.x) < 3.9);
     for (const [lista, fila, giro, n] of [[VAGAS_1, 1, Math.PI, 7], [VAGAS_2, 2, 0, 9]] as const) {
       const livres = lista.map(([x0, x1]) => (x0 + x1) / 2).filter((xc) => !reservadas(xc, fila));
       for (let k = 0; k < n && livres.length; k++) {

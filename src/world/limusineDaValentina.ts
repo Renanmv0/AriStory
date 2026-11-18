@@ -473,7 +473,8 @@ export class LimusineDaValentina {
   readonly group = new THREE.Group();
   readonly valentina: Valentina | null = null;
   readonly pietro: Pavao | null = null;
-  private readonly lata = new THREE.Group();
+  /** a carroceria (o que balança): o Pietro e a Valentina moram nela; o desfile os tira e devolve */
+  readonly lata = new THREE.Group();
   private readonly rodas: THREE.Group[] = [];
   private relogio = 0;
   private velocidade = 0;

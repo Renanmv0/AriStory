@@ -499,6 +499,14 @@ export class EncontroNaEstrada {
       const de = this.naPista(sa + (emPe ? 2.2 : 1.6), emPe ? 4.0 : 3.7, emPe ? 5.2 : 4.3);
       return { de, para: this.naPista(sa - 0.35, 2.95, 0.95) };
     }
+    if (this.carro instanceof LimusineDaValentina && this.estado.fase === 'falando') {
+      // a sessão de fotos: de frente e por cima do vão entre os dois carros, mirando a SALA da limusine (a Valentina
+      // fica 0,86 atrás do meio dela, do lado de lá) — de longe, a limusine comprida a deixava um pontinho no fundo
+      const emPe = window.innerWidth / window.innerHeight < 0.8;
+      const sl = this.estado.s;
+      const de = this.naPista(sl + (emPe ? 6.2 : 4.4), emPe ? 1.6 : 1.1, emPe ? 4.4 : 3.1);
+      return { de, para: this.naPista(sl - 0.7, -1.2, 1.15) };
+    }
     if (this.dePerto && this.carro instanceof DoisCavalosDoJeanLuc && this.carro.jeanLuc) {
       // de frente e um tico do lado do Bebito, na altura dos óculos
       const grupo = this.carro.group;

@@ -45,6 +45,8 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   tomada?: (posicao: THREE.Vector3, fase: string, trecho: number, emPe: boolean) => { de: THREE.Vector3; para: THREE.Vector3 };
   /** onde o parceiro desce e espera, a partir da descida (o de sempre: 1,3 m para o +X, e espera 2 m para o −X) */
   parceiro?: { solto: readonly [number, number]; espera: readonly [number, number] };
+  /** quando a chegada acaba de vez (a câmera e os controles já devolvidos): o desfile da Valentina na escola começa aqui */
+  aoConcluir?: () => void;
 }): void {
   const g = w.game;
   const { carro, entrada } = p;
@@ -88,6 +90,7 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
     entrada.comandar(null);
     g.setCameraOmbro(null); g.freeCompanion(); g.lockPlayer(false);
     pular.remove();
+    p.aoConcluir?.();
   };
   pular.addEventListener('pointerdown', e => e.stopPropagation());
   pular.addEventListener('click', e => {

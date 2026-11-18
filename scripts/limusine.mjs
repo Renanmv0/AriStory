@@ -8,14 +8,23 @@
  *          cabine e acima do piso, de óculos gatinho NA FRENTE dos olhos; o tapete vermelho, o flamingo do capô, a
  *          câmera e as chapeleiras; o peso; e as fotos de todos os lados, de perto de cada um, da câmera do
  *          encontro (deitada e no celular em pé), andando e VAZIA (a versão estacionada).
+ * ESTRADA  casa → escola com a Valentina conhecida: a buzina, a SESSÃO DE FOTOS (o Pietro ergue a câmera, a pose
+ *          escolhida, o flash, a polaroid voando e parando no PAINEL do Bebito da cena, gravada na ficha), a memória,
+ *          nenhum ensaio de fotos na calçada na mesma viagem; e a viagem SEGUE até a escola: a chegada animada do
+ *          Bebito e o DESFILE (a limusine na frente do portão, o Pietro com o rolo, o tapete se desenrolando, o leque,
+ *          ela descendo e desfilando até o portão, o tapete enrolado de volta e a limusine indo embora), com foto de
+ *          cada fase, a flag e a memória "O tapete vermelho"; e o pátio recarregado com a limusine ESTACIONADA de lado
+ *          no lote. Uma segunda viagem já com a polaroid: o oi, sem foto nova.
  * PIETRO   o pavão sozinho pelo atalho `?pavao=x,z,giro`: em pé com os pés no chão, o quepe por cima da cabeça e o
  *          topete por trás dele, e o LEQUE aberto (`&leque`) em pé atrás do corpo.
  *
  * Uso: node scripts/limusine.mjs /tmp/lm
- *      SO=modelo|pietro roda uma parte
+ *      SO=modelo|pietro|estrada roda uma parte; CEL=1 a estrada no celular em pé
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
 
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4177';
 if (new URL(BASE).hostname === 'renanmv0.github.io') throw Error('Use o preview isolado.');
@@ -168,6 +177,152 @@ try {
       await foto([-2.2, 2.6, -0.4], [0.2, 0.8, -0.6], 'vazia-por-dentro');
       await page.context().close();
     }
+  }
+
+  if (parte('estrada')) {
+    const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts', import.meta.url), 'utf8'), {
+      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+    }).outputText;
+    const { gerarRota } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
+    const SENTIDO = 'casa-escola';
+    const sementes = [];
+    for (let k = 1; sementes.length < 2; k++) if (gerarRota(k, SENTIDO).encontro?.personagem === 'valentina') sementes.push(k);
+    const FLAGS = ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou', 'escola-aberta', 'luna-na-escola', 'gatito-conhecido', 'valentina-conhecida'];
+    const CEL = !!process.env.CEL;
+    const sufixo = CEL ? '-celular' : '';
+    const tela = CEL ? { width: 390, height: 844 } : { width: 1100, height: 760 };
+    const page = await (await browser.newContext({ viewport: tela })).newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    await page.goto(`${BASE}/?bebito&semHalloween&cena=casa`);
+    await page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
+    await page.evaluate((flags) => { for (const f of flags) window.jogo.setFlag(f); }, FLAGS);
+    const avancar = () => page.evaluate(() => {
+      const opcoes = document.querySelectorAll('.escolhas.show button');
+      // (a pose: o "beijinho na bochecha", a segunda)
+      if (opcoes.length) { opcoes[Math.min(1, opcoes.length - 1)].click(); return; }
+      document.querySelector('.dialogue.show')?.click();
+    });
+    const viajar = async (semente, rotulo, primeira) => {
+      await page.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=${SENTIDO},ari,${semente}`);
+      await page.waitForFunction(() => window.jogo?.current?.world.root.userData.novidadesDaViagem && !window.jogo.transitioning, null, { timeout: 120000 });
+      const ensaio = await page.evaluate(() => { let n = 0; window.jogo.scene.traverse((o) => { if (o.userData.peca === 'ensaio-da-valentina') n++; }); return n; });
+      const estado = () => page.evaluate(() => {
+        const g = window.jogo;
+        const n = g.current?.world.root.userData.novidadesDaViagem;
+        const c = n?.encontro?.carro;
+        const painel = n?.bebito.encaixes.painel.map((e) => e.children.find((x) => x.name.startsWith('detalhe:'))?.name ?? null);
+        return {
+          cena: g.idDaCena, quem: n?.encontro?.personagem, fase: n?.encontro?.estado.fase,
+          buzina: g.audio.contagem.get('buzinaDaLimusine') ?? 0, flashes: c?.flashes ?? 0, noAr: c?.polaroidsNoAr ?? 0,
+          painel, escolhas: document.querySelectorAll('.escolhas.show button').length,
+          dialogo: document.querySelector('.dialogue.show')?.textContent ?? '',
+          desfile: g.current?.world.root.userData.desfileDaValentina?.estado.fase ?? null,
+        };
+      });
+      const e0 = await estado();
+      console.log(`ESTRADA (${rotulo}): semente ${semente}, encontro com ${e0.quem} | ensaio na calçada ${ensaio}`);
+      assert.equal(e0.quem, 'valentina');
+      assert.equal(ensaio, 0, 'na viagem em que ela vem de limusine, não tem o ensaio de fotos na calçada');
+      await page.mouse.click(tela.width - 20, tela.height - 20);
+      await page.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.vezes = 3; v.piloto = 'bom'; });
+      let conversa = false, escolheu = false, voou = false, flash = false, ditos = '';
+      const t0 = Date.now();
+      while (Date.now() - t0 < 400000) {
+        const e = await estado();
+        if (e.dialogo && !ditos.endsWith(e.dialogo)) ditos += ' | ' + e.dialogo;
+        if (e.fase === 'falando' && !conversa) {
+          conversa = true;
+          await page.waitForTimeout(1500);
+          await page.screenshot({ path: `${OUT}-${rotulo}-1-conversa${sufixo}.png` });
+          const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+          console.log(`  peso na conversa: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
+        }
+        if (e.escolhas && !escolheu) { escolheu = true; await page.waitForTimeout(400); await page.screenshot({ path: `${OUT}-${rotulo}-2-a-camera${sufixo}.png` }); }
+        if (e.flashes && !flash) { flash = true; await page.screenshot({ path: `${OUT}-${rotulo}-3-flash${sufixo}.png` }); }
+        if (e.noAr && !voou) { voou = true; await page.screenshot({ path: `${OUT}-${rotulo}-4-polaroid${sufixo}.png` }); }
+        if (e.fase === 'feito') break;
+        await avancar();
+        await page.waitForTimeout(90);
+      }
+      const fim = await page.evaluate(() => {
+        const save = JSON.parse(localStorage.getItem('aristory.save.v1.bebito') ?? '{}');
+        const n = window.jogo.current.world.root.userData.novidadesDaViagem;
+        return {
+          buzina: window.jogo.audio.contagem.get('buzinaDaLimusine') ?? 0, flashes: n.encontro.carro.flashes,
+          memoria: (save.memories ?? []).some((m) => m.id === 'valentina-na-estrada'),
+          painelNoCarro: n.bebito.encaixes.painel.map((e) => e.children.find((x) => x.name.startsWith('detalhe:'))?.name ?? null),
+          naFicha: window.jogo.fichaDoBebitoMobile().vagas.painel,
+        };
+      });
+      console.log(`  buzina ${fim.buzina} | flashes ${fim.flashes} | painel ${JSON.stringify(fim.painelNoCarro)} | ficha ${JSON.stringify(fim.naFicha)} | memória ${fim.memoria}`);
+      assert.ok(fim.buzina >= 3, 'a buzina na chegada, na conversa e na saída');
+      assert.ok(fim.memoria, 'a memória "Perfetto!"');
+      assert.ok(fim.naFicha.filter((id) => id?.startsWith('polaroid-')).length === 1, 'uma polaroid só, na ficha');
+      if (primeira) {
+        assert.ok(conversa && escolheu && flash && voou, `a conversa, a pose, o flash e a polaroid voando (${conversa}, ${escolheu}, ${flash}, ${voou})`);
+        assert.ok(fim.naFicha.includes('polaroid-beijinho'), 'a polaroid da pose escolhida (o beijinho) na ficha');
+        assert.ok(fim.painelNoCarro.includes('detalhe:polaroid-beijinho'), 'e no painel do Bebito da cena, na hora');
+      } else {
+        assert.equal(fim.flashes, 0, 'com a polaroid no painel, ela não tira outra foto');
+        assert.match(ditos, /melhor foto/);
+      }
+      assert.equal(await page.evaluate(() => localStorage.getItem('aristory.save.v1')), null, 'o save de verdade fica intacto');
+      return ditos;
+    };
+    await viajar(sementes[0], 'primeira', true);
+    // a viagem SEGUE até a escola: a chegada animada do Bebito e, depois dela, o DESFILE
+    await page.evaluate(() => { window.aristoryBebitoMobile.viagem.vezes = 6; window.aristoryBebitoMobile.ritmoDoPresente.vezes = 2; });
+    // (até lá, as falas do fim da viagem e da chegada vão passando)
+    for (const t = Date.now(); Date.now() - t < 600000;) {
+      if (await page.evaluate(() => window.jogo.idDaCena === 'escola-patio' && !!window.jogo.current?.world.root.userData.desfileDaValentina).catch(() => false)) break;
+      await avancar().catch(() => {});
+      await page.waitForTimeout(300);
+    }
+    const fasesVistas = new Set();
+    const t1 = Date.now();
+    let tapeteMaior = 0;
+    while (Date.now() - t1 < 500000) {
+      const d = await page.evaluate(() => {
+        const u = window.jogo.current.world.root.userData.desfileDaValentina;
+        const lim = u.limusine.group.position;
+        const v = u.limusine.valentina.group.getWorldPosition(new (lim.constructor)());
+        return { fase: u.estado.fase, tapete: u.estado.tapete, limX: +lim.x.toFixed(2), vZ: +v.z.toFixed(2), vY: +v.y.toFixed(2), leque: u.limusine.pietro.aberturaDoLeque };
+      });
+      tapeteMaior = Math.max(tapeteMaior, d.tapete);
+      if (!fasesVistas.has(d.fase)) {
+        fasesVistas.add(d.fase);
+        if (d.fase !== 'fim' && d.fase !== 'chegando') {
+          await page.waitForTimeout(d.fase === 'tapete' ? 600 : 1300);
+          await page.screenshot({ path: `${OUT}-desfile-${fasesVistas.size}-${d.fase}${sufixo}.png` });
+        }
+        console.log(`  desfile: ${d.fase} (limusine em x ${d.limX}, Valentina em z ${d.vZ}, leque ${d.leque.toFixed(2)})`);
+      }
+      if (d.fase === 'fim') break;
+      await avancar();
+      await page.waitForTimeout(120);
+    }
+    const depois = await page.evaluate(() => {
+      const save = JSON.parse(localStorage.getItem('aristory.save.v1.bebito') ?? '{}');
+      return { flag: window.jogo.flag('valentina-desfilou'), memoria: (save.memories ?? []).some((m) => m.id === 'valentina-na-escola') };
+    });
+    console.log(`  fases: ${[...fasesVistas].join(' → ')} | tapete ${tapeteMaior.toFixed(2)} | flag ${depois.flag} | memória ${depois.memoria}`);
+    for (const f of ['parada', 'pietro', 'tapete', 'descendo', 'desfilando', 'indo', 'fim']) assert.ok(fasesVistas.has(f), `o desfile passou por ${f}`);
+    assert.ok(tapeteMaior > 0.99, 'o tapete se desenrolou até o portão');
+    assert.ok(depois.flag && depois.memoria, 'a flag e a memória "O tapete vermelho"');
+    // recarregando o pátio: a limusine estacionada de lado no lote, e nada de desfile de novo
+    await page.evaluate(() => window.jogo.goTo('escola-patio'));
+    await page.waitForFunction(() => window.jogo.idDaCena === 'escola-patio' && !window.jogo.transitioning, null, { timeout: 120000 });
+    await page.waitForTimeout(1500);
+    const lote = await page.evaluate(() => ({ vaga: window.jogo.current.world.root.userData.limusineNaEscola ?? null, desfile: !!window.jogo.current.world.root.userData.desfileDaValentina }));
+    console.log(`  no lote: ${JSON.stringify(lote)}`);
+    assert.ok(lote.vaga && !lote.desfile, 'depois do desfile, a limusine mora estacionada no lote, e o desfile não repete');
+    await page.evaluate((v) => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(v.x - 6, 4.5, v.z + 8), new V(v.x, 0.8, v.z)); }, lote.vaga);
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${OUT}-no-lote${sufixo}.png` });
+    await page.evaluate(() => window.jogo.setCameraOmbro(null));
+    // a segunda viagem: já com a polaroid no painel
+    await viajar(sementes[1], 'de-novo', false);
+    await page.context().close();
   }
 
   if (parte('pietro')) {

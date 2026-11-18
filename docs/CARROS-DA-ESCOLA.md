@@ -334,8 +334,23 @@ confirmar).
   sozinho com os pés no chão e o leque abrindo. Peso: 133 malhas e ~98 mil triângulos com os dois (o Pietro passa
   pela `fundir()`: 32 malhas; a Valentina, 74), e a vista do parque com ela parada: ~405 desenhos por quadro; o carro
   vazio, de fundo, 20 malhas e ~51 mil.
-- **Na estrada (a fazer, a confirmar):** a sessão de fotos (o Pietro desenrola o tapete vermelho? abre o leque de
-  fundo?), a polaroid no painel do Bebito, e ela estacionada na escola, ocupando duas vagas.
+- **Na estrada (FEITO, 2026-11-18; o Renan aprovou o Pietro e escolheu a sessão de fotos):** a Valentina mora na
+  escola (`MORADORES.escola`), só depois de conhecida no marketing (`valentina-conhecida`), e na viagem dela o ensaio
+  de fotos da calçada não acontece. A limusine chega com a buzina chique (`buzinaDaLimusine`), para do lado, o Pietro
+  se apresenta e ERGUE A CÂMERA antiga pela janela; quem joga escolhe a POSE (coraçãozinho com as mãos, beijinho na
+  bochecha, cara de modelo), o flash dispara e a POLAROID voa até o PAINEL do Bebito — fica de vez, no primeiro lugar
+  livre do painel (`colocarPeca`, gravada na ficha), com a foto PINTADA na pose escolhida (`acessorios.ts`:
+  `polaroid`, os rostinhos com a pele e o cabelo das fichas do Ari e do Renan, e "Perfetto! ♥ V." à mão). Uma vez só:
+  com a polaroid no painel, nas outras viagens é só o oi. A memória: "Perfetto!".
+- **O TAPETE VERMELHO na escola (FEITO, o pedido do Renan: "faça a animação dela descendo e o Pietro colocando o
+  tapete vermelho quando chegarmos à escola"):** a primeira chegada de carro à escola depois da foto termina com o
+  desfile (`eventos/bebitoMobile/desfileDaValentina.ts`, chamado pela chegada animada quando ela acaba): a limusine
+  vem pela faixa da escola e para com a Valentina na frente do PORTÃO; o Pietro pula do banco alto, pega o ROLO do
+  porta-malas, põe no chão e o tapete se desenrola até o portão; ele fica do lado com o LEQUE aberto; ela DESCE por
+  cima da porta, desfila, posa, se despede e entra; ele enrola o tapete, sobe e a limusine vai embora. A memória: "O
+  tapete vermelho"; a flag `valentina-desfilou`.
+- **Estacionada:** depois do desfile, a limusine fica no lote da escola, vazia e DE LADO, atravessada em três vagas da
+  fila de trás (de nariz numa vaga ela não cabe).
 
 **As ideias de antes** (ficam para referência):
 

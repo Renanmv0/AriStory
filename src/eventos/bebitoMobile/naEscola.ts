@@ -8,6 +8,7 @@ import { animarChegadaNoParque, type ComandoDaCancela } from './chegadaNoParque'
 import { escolherDestinoDeCarro } from './partida';
 import { ritmoDoPresente, temBebitoMobile } from './presente';
 import { localDoBebito } from '../BebitoMobile';
+import { desfileDaValentina, DESFILOU } from './desfileDaValentina';
 
 /**
  * ===================================================== O BEBITO MOBILE NA ESCOLA
@@ -110,7 +111,13 @@ export function montarBebitoNaEscola(w: WorldBuilder, entrada: ComandoDaCancela,
   if (motorista) {
     viajar.enabled = false;
     // (o parceiro desce do lado, ainda na vaga vazia: nem dentro do carro, nem na vaga dos outros)
-    animarChegadaNaEscola(w, { carro, motorista, entrada, descida: DESCIDA, parceiro: { solto: [1.2, -0.4], espera: [1.1, -0.6] }, aoEstacionar: () => { viajar.enabled = true; } });
+    // o TAPETE VERMELHO da Valentina (`desfileDaValentina.ts`): a primeira chegada de carro depois da foto na estrada
+    const desfila = g.temMemoria('valentina-na-estrada') && !g.flag(DESFILOU);
+    animarChegadaNaEscola(w, {
+      carro, motorista, entrada, descida: DESCIDA, parceiro: { solto: [1.2, -0.4], espera: [1.1, -0.6] },
+      aoEstacionar: () => { viajar.enabled = !desfila; },
+      aoConcluir: desfila ? () => desfileDaValentina(w, () => { viajar.enabled = true; }) : undefined,
+    });
   }
   onibus.enabled = false;
   w.interact({
