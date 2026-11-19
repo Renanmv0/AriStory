@@ -396,7 +396,16 @@ try {
     assert.ok(memoria, 'a memória "Um contra um"');
     // o jogo volta
     const t1 = Date.now();
-    while (Date.now() - t1 < 120000 && (await estado()).m.posses === possesAntes) await page.waitForTimeout(300);
+    let registro = 0;
+    while (Date.now() - t1 < 120000 && (await estado()).m.posses === possesAntes) {
+      await page.waitForTimeout(300);
+      if (Date.now() - t1 > registro * 15000) {
+        registro++;
+        const e = await estado();
+        const eu = await page.evaluate(() => ({ p: window.jogo.playerPosition(), c: window.jogo.companionPosition() }));
+        console.log(`  esperando o jogo voltar: ${JSON.stringify({ at: e.at, bola: e.bola, est: e.est, pausado: e.pausado, f: e.f, r: e.r, eu })}`);
+      }
+    }
     assert.ok((await estado()).m.posses > possesAntes, 'e o jogo volta de onde parou');
     const peso = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
     console.log(`  peso do ginásio (vista de sempre): ${peso.calls} desenhos, ${Math.round(peso.triangles / 1000)} mil triângulos`);
