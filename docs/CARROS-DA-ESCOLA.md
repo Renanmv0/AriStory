@@ -13,7 +13,8 @@ estrada, a polaroid no painel, o desfile do tapete vermelho na escola e a limusi
 escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. O
 Gatito mora na escola: no lugar do carro, o ÔNIBUS ESCOLAR dos Gatitos fica estacionado no lote (§1). Os carros da
 escola estão completos. E o **ROCCO** (§5), o lobo rival do Flynn, capitão dos Dogões, está no jogo desde 2026-11-19:
-o modelo, a corrida dele na estrada da escola e o um contra um com o Flynn no ginásio. Este documento é o cardápio para o
+o modelo, a corrida dele na estrada da escola e o um contra um com o Flynn no ginásio — e as ideias do que vem
+depois dele estão GUARDADAS no fim do §5, a pedido do Renan. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -497,8 +498,31 @@ CONTRA UM de quadra inteira (`scenes/escolaUmContraUm.ts`), com UMA bola:
 
 **PROVISÓRIO (meu):** todas as falas e farpas do ginásio, e a memória.
 
-**O próximo passo (não feito)**: a DISPUTA de verdade entre o Flynn e o Rocco — o jogo dos Gatitos contra os Dogões,
-uma corrida dos dois, ou outra coisa que o Renan escolher.
+### Guardado para depois: as ideias do Rocco (o Renan pediu para guardar, 2026-11-19)
+
+Nada disto está feito. São as três ideias oferecidas depois do um contra um no ginásio; o Renan pediu para salvar e
+voltar nelas mais tarde. Quando voltar, perguntar qual delas (ou outra) e os detalhes antes de começar — uma de cada
+vez.
+
+1. **O JOGO DE VERDADE: Gatitos × Dogões.** A disputa oficial que o um contra um deixou em aberto de propósito (hoje
+   não tem placar nem vencedor). Ideias soltas: o placar do ginásio (`placarDeGinasio`, hoje "GATITOS 67 × VISITA
+   66") mostrando o jogo de verdade; o Rocco trazendo o time dos Dogões (outros cachorros com o uniforme vermelho e
+   cinza, o mesmo molde da ficha de atleta); a torcida das coelhinhas (a Luna, a Sol e a Estrella) na lateral e a
+   dupla na arquibancada; o Gatito de juiz ou de técnico; e um fim que respeita o jeito dos dois (rivalidade "não
+   tóxica, mas com algumas farpas" — o Flynn dá os parabéns se perder, o Rocco admite que ele é rápido). Perguntas
+   ao Renan: quem ganha (ou se a dupla decide jogando), se é basquete mesmo, e se o jogo tem dia certo (um evento,
+   como a festa da torcida) ou acontece sempre.
+2. **JOGAR JUNTO.** A dupla entra no jogo: um DOIS CONTRA DOIS (o Ari e o Renan, cada um com um dos rivais, ou os
+   dois contra eles), ou um DESAFIO DE ARREMESSO contra o Rocco (o arremesso da dupla já existe nas marcas do lance
+   livre do ginásio, com a hora certa). Perguntas ao Renan: com quem cada um joga, se tem prêmio (como o chapéu de
+   campeão do ping pong) e se o Rocco fica bravo ou ri quando perde.
+3. **AJUSTAR O ROCCO.** As falas com o texto do Renan (todas as do Rocco hoje são provisórias, minhas: na estrada,
+   no ginásio e as farpas), o número 9 da regata, a plaquinha de cachorro, o pin de osso e o escudo dos Dogões; e a
+   aparência — o RABO dele, grosso e de lado, aparece muito correndo e driblando (parece um bastão cinza): dá para
+   deixá-lo mais caído, como o de lobo de verdade, sem mudar o resto.
+
+E o que já tinha sido oferecido antes, para lembrar: o Rocco também pode aparecer em outros lugares da escola de vez
+em quando (espiando o treino do Flynn, no refeitório).
 
 ## A ordem sugerida
 

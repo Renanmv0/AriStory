@@ -355,8 +355,9 @@ no sorteio (`oRoccoCorreNoLugar`): depois de a dupla cruzar o Flynn, a primeira 
 o Bebito pela calçada, para e se apresenta (a dupla não sabe quem é), conta que treina para o jogo contra o rival e
 solta as farpas. E depois disso ele aparece no GINÁSIO dos Gatitos jogando UM CONTRA UM com o Flynn
 (`scenes/escolaUmContraUm.ts`, no lugar do treino solitário, só com o Flynn já no ginásio): uma bola, drible,
-marcação, arremesso, rebote e a posse trocando, e a conversa com os dois. A disputa de verdade dos dois é o próximo
-passo (não feito).
+marcação, arremesso, rebote e a posse trocando, e a conversa com os dois. As ideias do que vem depois (o jogo de
+verdade Gatitos × Dogões, jogar junto com eles, ajustar o Rocco) estão GUARDADAS em `docs/CARROS-DA-ESCOLA.md`, no fim
+do §5 — o Renan pediu para voltar nelas mais tarde (nada feito).
 E a LIMUSINE CONVERSÍVEL ROSA da Valentina (pedido do Renan, 2026-11-18), com um personagem novo ao volante: o
 PIETRO, o pavão motorista (`entities/bichos/Pavao.ts`, nome provisório: quepe, gravata-borboleta, luvas brancas e a
 cauda dobrada em serviço, que abre em leque) — o CARRO está feito (`world/limusineDaValentina.ts`, 6,3 m, a Valentina
