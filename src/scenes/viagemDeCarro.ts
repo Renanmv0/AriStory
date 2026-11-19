@@ -29,7 +29,7 @@ import { PORTAO_DA_ESCOLA, gradeDaEscola, portaoDaEscola } from '../world/portar
 import { MastroComBandeira, bicicletario } from '../world/patioDaEscola';
 import { posteDoEstacionamento as posteDaEscola } from '../world/estacionamentoDaEscola';
 import {
-  EVENTOS_DE_DEVAGAR, PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
+  EVENTOS_DE_DEVAGAR, PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, oRoccoCorreNoLugar, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
   type Rota,
 } from '../eventos/bebitoMobile/rota';
 import { FLAG_DO_CARRO_NA_ESCOLA, FLAG_DO_CARRO_NO_CLUBE, FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
@@ -195,6 +195,9 @@ export const viagemDeCarro: SceneDef = {
 /** o ícone do destino no painel da viagem */
 const ICONE_DO_DESTINO: Record<DestinoDeCarro, string> = { clube: '🏊', parque: '🌳', casa: '🏠', escola: '🏫' };
 
+/** a memória do primeiro encontro com o Rocco na estrada (e a marca de que a dupla já o conhece) */
+const MEMORIA_DO_ROCCO = 'rocco-na-estrada';
+
 function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const g: GameAPI = w.game;
   const rota = gerarRota(pedido.semente, pedido.sentido);
@@ -206,7 +209,16 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const desconhecido = (rota.encontro?.personagem === 'tializ' && !g.flag(TIA_LIZ_CONHECIDA))
     || (rota.encontro?.personagem === 'flynn' && !g.flag('flynn-conhecido'))
     || (rota.encontro?.personagem === 'valentina' && !g.flag(VALENTINA_CONHECIDA));
-  const encontroDaRota = desconhecido ? undefined : rota.encontro;
+  const encontroSorteado = desconhecido ? undefined : rota.encontro;
+  /*
+   * O ROCCO, o rival dos Dogões (decisões do Renan, 2026-11-19): corre no LUGAR do Flynn (o sorteio das rotas não
+   * muda) — a primeira vez logo depois de a dupla ter cruzado o Flynn na estrada, e depois meio a meio pela semente.
+   * `?roccoNaEstrada` força ele na corrida do Flynn, e `?semRocco` deixa sempre o Flynn (é o que os testes do Flynn usam).
+   */
+  const busca = new URLSearchParams(location.search);
+  const vemORocco = encontroSorteado?.personagem === 'flynn' && !busca.has('semRocco')
+    && (busca.has('roccoNaEstrada') || oRoccoCorreNoLugar(pedido.semente, g.temMemoria('flynn-na-estrada'), g.temMemoria(MEMORIA_DO_ROCCO)));
+  const encontroDaRota = vemORocco && encontroSorteado ? { ...encontroSorteado, personagem: 'rocco' as const } : encontroSorteado;
   const semTorcida = encontroDaRota?.personagem === 'tializ';
   const semBola = encontroDaRota?.personagem === 'flynn';
   // (e na viagem em que a Valentina passa de limusine, ela não está fazendo o ensaio de fotos na calçada)
@@ -694,6 +706,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       return true;
     };
   }
+  // o Rocco: a apresentação é uma vez só
+  if (encontro?.personagem === 'rocco') encontro.jaConheceORocco = g.temMemoria(MEMORIA_DO_ROCCO);
   // o Flynn: no toca aqui, o vidro de quem vai de carona desce e o braço dela sai pela janela
   if (encontro?.personagem === 'flynn') {
     const quemVaiDeCarona = g.playerId() === pedido.motorista ? 'parceiro' : 'jogador';
@@ -958,6 +972,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       else if (encontro.personagem === 'tializ') g.unlock({ id: 'tializ-na-estrada', title: 'As quatro que vieram juntas', place: 'Na estrada', icon: '🐻', note: 'A Tia Liz passou de conversível azul e amarelo, com as estrelinhas da Venezuela no capô e uma mala de viagem atrás, levando a Luna, a Sol e a Estrella. Lá na Venezuela ela trabalhava numa escola quando elas eram pequenas; o sonho das quatro era se mudar, e vieram juntas. Teve torcida, confete e uma arepita pra cada um.' });
       else if (encontro.personagem === 'valentina') g.unlock({ id: 'valentina-na-estrada', title: 'Perfetto!', place: 'Na estrada', icon: '🦩', note: 'A Valentina passou numa limusine conversível rosa, comprida que não acabava mais, com o Pietro — um pavão de quepe e luvas brancas — ao volante. Ela parou do lado, o Pietro ergueu a câmera antiga pela janela, e ela tirou a nossa foto. A polaroid ficou no painel do Bebito.' });
       else if (encontro.personagem === 'flynn') g.unlock({ id: 'flynn-na-estrada', title: 'A corrida matinal', place: 'Na estrada', icon: '🦊', note: 'O Flynn passou pela calçada correndo mais rápido que o Bebito, de bandana e regata, na corrida matinal dele: não pode ficar atrás dos rivais. Parou do lado, trotando no lugar pra não esfriar, desceu da calçada e pediu um toca aqui pela janela.' });
+      else if (encontro.personagem === 'rocco') g.unlock({ id: MEMORIA_DO_ROCCO, title: 'O rival', place: 'Na estrada', icon: '🐺', note: 'Um lobo de uniforme vermelho e cinza passou o Bebito correndo pela calçada. Parou do lado, trotando, e se apresentou: Rocco, capitão dos Dogões, treinando pra ganhar do rival dele. O rival? O Flynn. Mandou um oi pro Flynn, e um recado: é bom ele treinar.' });
       else if (encontro.personagem === 'gina') g.unlock({ id: 'gina-na-estrada', title: 'A portaria sobre rodas', place: 'Na estrada', icon: '🦒', note: 'A Gina passou no carrinho de golfe do clube, com o giroflex girando e o pescoço saindo pelo toldo. Mandou a gente encostar, pediu a carteirinha que a gente não tinha, esticou o pescoço até o para-brisa e carimbou: agora o Bebito é sócio do clube.' });
       else if (encontro.personagem === 'jeanluc') g.unlock({ id: 'jeanluc-na-estrada', title: 'O pato de óculos escuros', place: 'Na estrada', icon: '🦆', note: 'O Jean-Luc passou de 2CV azul, com a faixa da França no capô, em pé no caixote para enxergar por cima do para-brisa, de boina e óculos escuros. Parou do lado, tirou a raquete pela janela e sacou um ponto de ping pong na estrada.' });
       else if (encontro.personagem === 'estella') g.unlock({ id: 'estella-na-estrada', title: 'A torre de roupas', place: 'Na estrada', icon: '🧵', note: 'A Estella passou de lambreta, de capacete rosa e óculos de aviador, com o sidecar levando uma pilha de roupas mais alta que o Bebito. Balançou a viagem inteira e não caiu nem um pé de meia.' });

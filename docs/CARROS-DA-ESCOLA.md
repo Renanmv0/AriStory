@@ -12,7 +12,8 @@ A **limusine da Valentina** (§4) está no jogo (2026-11-18), com o Pietro, o pa
 estrada, a polaroid no painel, o desfile do tapete vermelho na escola e a limusine estacionada no lote. O **Flynn** (§3) também está no jogo (2026-11-18), sem carro: a
 escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. O
 Gatito mora na escola: no lugar do carro, o ÔNIBUS ESCOLAR dos Gatitos fica estacionado no lote (§1). Os carros da
-escola estão completos. Este documento é o cardápio para o
+escola estão completos. E o **ROCCO** (§5), o lobo rival do Flynn, capitão dos Dogões, está no jogo desde 2026-11-19:
+o modelo e a corrida dele na estrada da escola. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -425,12 +426,11 @@ porta.
 
 ---
 
-## Guardado para depois: o lobo rival do Flynn
+## 5. O Rocco, o lobo rival do Flynn
 
-Ideia do Renan (2026-11-18): um personagem LOBO para disputar com o Flynn. Ficou guardada de propósito ("deixa a ideia
-do lobo guardada para fazermos depois, mas vamos terminar os carros"). Hoje ele só existe na fala do Flynn na estrada
-("Vocês vão conhecer. Ele também acorda cedo…"), sem nome nem modelo. Quando chegar a vez: perguntar ao Renan quem ele
-é, como é, de onde vem e como é a disputa.
+Ideia do Renan (2026-11-18): um personagem LOBO para disputar com o Flynn. Ficou guardada até os carros acabarem, e
+começou em 2026-11-19. Antes dele, só a fala do Flynn na estrada já o anunciava ("Vocês vão conhecer. Ele também acorda
+cedo…").
 
 **As decisões do Renan (2026-11-19):**
 - é o **ROCCO**, um personagem inventado (ninguém de verdade por trás), um LOBO;
@@ -441,6 +441,37 @@ do lobo guardada para fazermos depois, mas vamos terminar os carros"). Hoje ele 
 - o primeiro pedaço: **a corrida dele sozinho** — ele passa o Bebito correndo pela calçada, a dupla se pergunta quem é,
   e ele para do lado para explicar que está treinando para jogar contra o rival (o Flynn). A disputa de verdade entre os
   dois fica para depois.
+
+### O que foi feito (2026-11-19): o modelo e a corrida na estrada
+
+- **O MODELO** (`entities/bichos/Rocco.ts`): o Flynn virou uma FICHA DE ATLETA (`FichaDeAtleta` em
+  `entities/bichos/Flynn.ts`: cores, orelha, focinho, rabo, boca, sobrancelha, juba, pingente, pin e o uniforme do time),
+  e o Rocco é outra ficha da mesma classe (`class Rocco extends Flynn`), como as três coelhinhas. A ficha do Flynn tem
+  os números de antes, e o modelo dele saiu idêntico (a impressão digital das malhas igual). O Rocco: lobo cinza de
+  barriga creme, um tico mais alto (1,40 contra 1,34 do Flynn, que tem as orelhas mais altas), a JUBA de lobo em volta
+  do pescoço, olho âmbar, o sorriso DE LADO (marrento) com um caninho, a sobrancelha grossa, o rabo grosso de ponta
+  escura, a faixa vermelha dos Dogões na testa, a regata vermelha com "DOGÕES" e o 9, o short cinza, a braçadeira de
+  capitão, a PLAQUINHA de cachorro no cordão (no lugar do apito) e o pin de osso. O escudo dos Dogões
+  (`world/uniformeDosDogoes.ts`): o disco branco, o "D" vermelho e duas orelhas de cachorro caídas. Atalho:
+  `?rocco=x,z,giro[&trote][&comFlynn]`.
+- **NA ESTRADA** (só nas viagens da escola): ele NÃO entra no sorteio das rotas (assim as sementes de todas as viagens
+  e os testes continuam iguais) — ele corre NO LUGAR do Flynn (`oRoccoCorreNoLugar`, em `rota.ts`): nunca antes de a
+  dupla ter cruzado o Flynn na estrada (é o Flynn quem fala dos "rivais"), sempre na primeira corrida depois, e meio a
+  meio pela semente dali em diante. Chega com um UIVO (o som `uivo`, sintetizado: a nota subindo, o vibrato e o "uuu"
+  caindo; pico 0,11 no `.wav`), passa o Bebito correndo pela calçada mais rápido que o carro (o mesmo corredor do Flynn,
+  `CorridaDoFlynn('rocco')`), para do lado trotando, chega para a beira da calçada e vira meio de frente; a câmera da
+  conversa é de frente, baixa, entre a janela da carona e ele. Na primeira vez a dupla não sabe quem é ("???") e
+  pergunta; ele se apresenta, conta do treino, do jogo contra o rival e solta as farpas no Flynn; nas outras, uma fala
+  curta sorteada. Sem toca aqui. A memória é "O rival" (`rocco-na-estrada`). Na viagem dele, a bola do Flynn pode
+  escapar na calçada (o Flynn não está correndo). `?roccoNaEstrada` força ele na corrida do Flynn, `?semRocco` deixa
+  sempre o Flynn (os testes do Flynn usam).
+- **PROVISÓRIO (meu, para o Renan aprovar ou trocar):** todas as falas dele, o número 9, a plaquinha de cachorro, o pin
+  de osso, o escudo, o uivo e o nome "Dogões" escrito com til.
+- **Testado**: `scripts/rocco.mjs` (o modelo medido e fotografado ao lado do Flynn, as rotas sem navegador, e duas
+  viagens: a apresentação e a segunda vez), e o `scripts/corridaDoFlynn.mjs` continua passando com `&semRocco`.
+
+**O próximo passo (não feito)**: a DISPUTA de verdade entre o Flynn e o Rocco — o jogo dos Gatitos contra os Dogões,
+uma corrida dos dois, ou outra coisa que o Renan escolher.
 
 ## A ordem sugerida
 

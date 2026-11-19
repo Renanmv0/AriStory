@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Flynn } from '../../entities/bichos/Flynn';
+import { Rocco } from '../../entities/bichos/Rocco';
 
 /**
  * A CORRIDA MATINAL DO FLYNN (`docs/CARROS-DA-ESCOLA.md` §3, a escolha do
@@ -15,6 +16,10 @@ import { Flynn } from '../../entities/bichos/Flynn';
  * distância de cada quadro vira a velocidade, e a velocidade vira a passada
  * (`Flynn.naEstrada`). O lado `+X` dele é o do Bebito (ele corre à direita do
  * carro): é a pata desse lado que sobe no toca aqui.
+ *
+ * O ROCCO, o rival dos Dogões, corre do mesmo jeito (ele é a mesma classe com
+ * outra ficha): `new CorridaDoFlynn('rocco')`. O campo continua `flynn`, que é
+ * o corredor de agora, seja quem for.
  */
 export class CorridaDoFlynn {
   readonly group = new THREE.Group();
@@ -29,9 +34,10 @@ export class CorridaDoFlynn {
   /** quantos tapas já saíram (o teste conta) */
   tapas = 0;
 
-  constructor() {
-    this.group.userData.peca = 'corrida-do-flynn';
-    this.flynn = new Flynn({ minX: -0.1, maxX: 0.1, minZ: -0.1, maxZ: 0.1 });
+  constructor(readonly quem: 'flynn' | 'rocco' = 'flynn') {
+    this.group.userData.peca = `corrida-do-${quem}`;
+    const area = { minX: -0.1, maxX: 0.1, minZ: -0.1, maxZ: 0.1 };
+    this.flynn = quem === 'rocco' ? new Rocco(area) : new Flynn(area);
     this.flynn.entrarEmServico();
     this.flynn.naEstrada = this.pose;
     this.group.add(this.flynn.group);
@@ -51,6 +57,11 @@ export class CorridaDoFlynn {
   /** a ponta da pata do toca aqui, no mundo */
   pata(alvo = new THREE.Vector3()): THREE.Vector3 {
     return this.flynn.pataDoToca(alvo);
+  }
+
+  /** acenar com a pata (o tchau do Rocco) */
+  acenar(): void {
+    this.flynn.acenar(1.8);
   }
 
   /** comemorar com os dois punhos para cima (o tapa certinho) */

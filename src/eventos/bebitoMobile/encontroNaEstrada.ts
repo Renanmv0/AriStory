@@ -25,8 +25,8 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
   readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc | CarrinhoDeGolfeDaGina | ConversivelDaTiaLiz | CorridaDoFlynn | LimusineDaValentina;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina', tializ: 'Tia Liz', flynn: 'Flynn', valentina: 'Valentina' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒', tializ: '🐻', flynn: '🦊', valentina: '🦩' } as const)[this.personagem]; }
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina', tializ: 'Tia Liz', flynn: 'Flynn', valentina: 'Valentina', rocco: 'Rocco' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒', tializ: '🐻', flynn: '🦊', valentina: '🦩', rocco: '🐺' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -63,6 +63,8 @@ export class EncontroNaEstrada {
    * `false` se não coube
    */
   aoGanharPolaroid: ((id: PoseDaPolaroid) => boolean) | null = null;
+  /** o Rocco: se a dupla já o conhece da estrada (a apresentação é uma vez só; depois, uma farpa e o tchau) */
+  jaConheceORocco = false;
   /** se o painel do Bebito já tem uma polaroid dela (a sessão de fotos é uma vez só) */
   jaTemPolaroid = false;
   /** o quanto o vidro do Bebito já desceu (o que a cena devolve): a agulha só aparece com ele todo embaixo */
@@ -74,6 +76,7 @@ export class EncontroNaEstrada {
         : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie()
           : personagem === 'jeanluc' ? new DoisCavalosDoJeanLuc() : personagem === 'gina' ? new CarrinhoDeGolfeDaGina()
             : personagem === 'tializ' ? new ConversivelDaTiaLiz() : personagem === 'flynn' ? new CorridaDoFlynn()
+              : personagem === 'rocco' ? new CorridaDoFlynn('rocco')
               : personagem === 'valentina' ? new LimusineDaValentina() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
@@ -84,7 +87,9 @@ export class EncontroNaEstrada {
     if (e.fase === 'esperando') {
       if (viagem.s < this.s - 60 || !podeComecar) return;
       e.fase = 'alinhando'; e.tempo = 0;
-      this.g.toast(({
+      this.g.toast(this.personagem === 'rocco' && !this.jaConheceORocco
+        ? 'Passos pesados na calçada, um uniforme vermelho e cinza… quem é esse lobo passando o Bebito?!'
+        : ({
         noel: 'Uma buzinadinha atrás… é o Noel!',
         capy: 'Capacete vermelho no retrovisor… é o Capy!',
         walter: 'Cheirinho de cachorro-quente no retrovisor… é o Walter!',
@@ -97,12 +102,13 @@ export class EncontroNaEstrada {
         tializ: 'Um conversível azul e amarelo cheio de pompom… é a Tia Liz com as meninas!',
         flynn: 'Passos rápidos na calçada e uma bandana azul… é o Flynn, correndo MAIS RÁPIDO que o Bebito!',
         valentina: 'Um carro rosa que não acaba mais, com um pavão ao volante… é a limusine da Valentina!',
+        rocco: 'Vermelho e cinza na calçada, mais rápido que o carro… é o Rocco, o capitão dos Dogões!',
       } as const)[this.personagem], this.icone);
       // (o Mano chega tocando a musiquinha da Kombi, e o Cookie apertando a corneta com a tromba)
       this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie'
         : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : this.personagem === 'gina' ? 'apito'
           : this.personagem === 'tializ' ? 'buzinaDaTiaLiz' : this.personagem === 'flynn' ? 'apito'
-            : this.personagem === 'valentina' ? 'buzinaDaLimusine' : 'buzinaDoBebito');
+            : this.personagem === 'valentina' ? 'buzinaDaLimusine' : this.personagem === 'rocco' ? 'uivo' : 'buzinaDoBebito');
       if (this.carro instanceof CarrinhoDoCookie) this.carro.buzinar();
     }
     if (e.fase === 'feito') return;
@@ -111,7 +117,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0, tializ: 5.4, flynn: 3.6, valentina: 5.8 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0, tializ: 5.4, flynn: 3.6, valentina: 5.8, rocco: 3.4 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -120,7 +126,7 @@ export class EncontroNaEstrada {
         // do para-brisa dele)
         // (o Flynn para na altura da janela de quem vai de carona: o banco da frente fica meio metro à frente do meio do
         // Bebito, e ele um tico adiante, com a pata vindo para trás)
-        this.parada = this.inicioDaFreada + 8.75 - (this.personagem === 'gina' ? 1.5 : this.personagem === 'flynn' ? 0.85 : 0);
+        this.parada = this.inicioDaFreada + 8.75 - (this.personagem === 'gina' ? 1.5 : this.personagem === 'flynn' || this.personagem === 'rocco' ? 0.85 : 0);
       }
     } else if (e.fase === 'freando') {
       // Ele freia adiante e o Bebito alcança a parada; nunca desliza de ré
@@ -139,10 +145,11 @@ export class EncontroNaEstrada {
         if (this.personagem === 'tializ') this.g.som('buzinaDaTiaLiz');
         if (this.personagem === 'flynn') this.g.som('apito');
         if (this.personagem === 'valentina') this.g.som('buzinaDaLimusine');
+        if (this.personagem === 'rocco') this.g.som('uivo');
       });
     } else if (e.fase === 'saindo') {
-      // (o Flynn dispara de novo: sai mais rápido que qualquer carro)
-      e.relativo = this.personagem === 'flynn' ? 5 * e.tempo + 6 * e.tempo * e.tempo : 4 * e.tempo + 3.5 * e.tempo * e.tempo;
+      // (o Flynn dispara de novo: sai mais rápido que qualquer carro; e o Rocco também)
+      e.relativo = this.carro instanceof CorridaDoFlynn ? 5 * e.tempo + 6 * e.tempo * e.tempo : 4 * e.tempo + 3.5 * e.tempo * e.tempo;
       if (e.relativo > 65) {
         e.fase = 'feito'; this.carro.group.visible = false;
         this.g.toast(({
@@ -158,6 +165,7 @@ export class EncontroNaEstrada {
           tializ: 'Lá se vai o conversível, com os pompons balançando e a bandeirinha no vento.',
           flynn: 'E lá vai o Flynn, sumindo na frente do Bebito. A pé.',
           valentina: 'Lá se vai a limusine, devagar e com estilo, o leque do Pietro aparecendo pela porta.',
+          rocco: 'E lá vai o Rocco, sumindo na frente do Bebito. Mais um que corre mais que carro.',
         } as const)[this.personagem], this.icone);
       }
     }
@@ -174,11 +182,13 @@ export class EncontroNaEstrada {
        */
       this.naBeira += (this.alvoDaBeira - this.naBeira) * Math.min(1, dt * 3);
       const k = THREE.MathUtils.smoothstep(this.naBeira, 0, 1);
-      // (o degrau: ele fica na altura da calçada até passar da guia, a 3,5)
-      const l = 4.6 - 1.3 * k;
+      // (o degrau: ele fica na altura da calçada até passar da guia, a 3,5; o Rocco não desce, só chega para a beira
+      // da calçada e vira meio de frente para o carro, para conversar)
+      const rocco = this.carro.quem === 'rocco';
+      const l = 4.6 - (rocco ? 0.35 : 1.3) * k;
       p = this.naPista(e.s, l, l > 3.55 ? ALTO_DA_CALCADA : 0);
       this.carro.group.position.copy(p);
-      this.carro.group.rotation.y = this.rumo(e.s) + 0.75 * k;
+      this.carro.group.rotation.y = this.rumo(e.s) + (rocco ? 0.6 : 0.75) * k;
       this.janela += (this.alvoDaJanela - this.janela) * Math.min(1, dt * 2.5);
       let bate = 0;
       if (this.tapaDaCarona >= 0) {
@@ -418,6 +428,45 @@ export class EncontroNaEstrada {
       await g.say(['Agora deixa eu ir, que o aquecimento tá esfriando. Até a escola!'], 'Flynn');
       return;
     }
+    if (this.personagem === 'rocco') {
+      /*
+       * O ROCCO, o capitão dos Dogões (decisões do Renan, 2026-11-19): marrento mas gente boa, rivalidade "não tóxica,
+       * mas com algumas farpas". Na primeira vez a dupla não sabe quem é, e ele para trotando para explicar que está
+       * treinando para jogar contra o rival. As falas são PROVISÓRIAS (minhas).
+       */
+      const corrida = this.carro as CorridaDoFlynn;
+      const motorista = this.carona === ARI.name ? RENAN.name : ARI.name;
+      this.alvoDaBeira = 1;
+      g.som('uivo');
+      if (!this.jaConheceORocco) {
+        await g.say(['Opa! Bom dia, motorizados!'], '???');
+        await g.say(['Um lobo correndo mais rápido que o carro?! Quem é você?'], this.carona);
+        await g.say(['Rocco. Capitão dos Dogões, a escola do outro lado da cidade.'], 'Rocco');
+        await g.say(['E por que tá correndo desse jeito?'], motorista);
+        await g.say(['Treino. Tem jogo contra o meu rival, e dessa vez eu não perco.'], 'Rocco');
+        await g.say(['Rival… Peraí. Você é o rival do Flynn?!'], this.carona);
+        await g.say(['O Flynn é que é o MEU rival. A raposinha acha que acorda cedo…'], 'Rocco');
+        await g.say(['…mas quando ela levanta, eu já tô no segundo quilômetro.'], 'Rocco');
+        await g.say(['Ele falou a mesma coisa de você.'], motorista);
+        corrida.comemorar();
+        await g.say(['Hah! Claro que falou. Ele é rápido, isso eu admito. É por isso que tem graça ganhar dele.'], 'Rocco');
+        corrida.acenar();
+        await g.say(['Avisa ele que os Dogões mandaram um oi. E que é bom ele treinar.'], 'Rocco');
+      } else {
+        await g.say(['Os motorizados de novo! Indo pra escola dos Gatitos?'], 'Rocco');
+        await g.say(['Rocco! Treinando de novo?'], this.carona);
+        const farpas = [
+          'Todo dia. Fala pro Flynn que hoje eu corri dois quilômetros a mais que ontem.',
+          'O Flynn já passou por aqui? …Então eu tô atrasado. Isso não pode.',
+          'Dogão não descansa. Bom… só depois do almoço.',
+        ];
+        await g.say([farpas[Math.floor(Math.random() * farpas.length)]], 'Rocco');
+        corrida.acenar();
+        await g.say(['Até o jogo! E torçam pro time certo, hein.'], 'Rocco');
+      }
+      this.alvoDaBeira = 0;
+      return;
+    }
     if (this.personagem === 'valentina') {
       const limusine = this.carro as LimusineDaValentina;
       g.som('buzinaDaLimusine');
@@ -499,6 +548,14 @@ export class EncontroNaEstrada {
       const de = this.naPista(sa + (emPe ? 2.2 : 1.6), emPe ? 4.0 : 3.7, emPe ? 5.2 : 4.3);
       return { de, para: this.naPista(sa - 0.35, 2.95, 0.95) };
     }
+    if (this.personagem === 'rocco' && this.estado.fase === 'falando') {
+      // a conversa com o Rocco: de frente, baixa, entre a janela da carona e a calçada — com a tomada de longe, ele
+      // ficava um bonequinho no canto da tela, e a apresentação dele pede o rosto
+      const emPe = window.innerWidth / window.innerHeight < 0.8;
+      const sr = this.estado.s;
+      const de = this.naPista(sr + (emPe ? 5.2 : 4.3), emPe ? 2.8 : 2.5, emPe ? 2.6 : 2.15);
+      return { de, para: this.naPista(sr - 0.7, 3.3, 1.0) };
+    }
     if (this.carro instanceof LimusineDaValentina && this.estado.fase === 'falando') {
       // a sessão de fotos: de frente e por cima do vão entre os dois carros, mirando a SALA da limusine (a Valentina
       // fica 0,86 atrás do meio dela, do lado de lá) — de longe, a limusine comprida a deixava um pontinho no fundo
@@ -520,7 +577,7 @@ export class EncontroNaEstrada {
     // (o carrinho do Cookie é miúdo, e os óculos do Jean-Luc também: com a tela deitada a tomada chega mais perto, para ele não virar um
     // pontinho ao lado do Bebito; no celular em pé fica a de sempre, que é a que cabe os dois)
     const emPe = window.innerWidth / window.innerHeight < 0.8;
-    const longe = emPe ? 1.65 : this.personagem === 'cookie' || this.personagem === 'jeanluc' || this.personagem === 'tializ' || this.personagem === 'flynn' ? 0.8 : 1;
+    const longe = emPe ? 1.65 : this.personagem === 'cookie' || this.personagem === 'jeanluc' || this.personagem === 'tializ' || this.personagem === 'flynn' || this.personagem === 'rocco' ? 0.8 : 1;
     const alvo = this.naPista(viagem.s + 1, 0, 1.25);
     // A tomada fica sobre a pista, sem um poste da calçada entre a lente e os carros.
     return { de: this.naPista(viagem.s + 10 * longe, 3.5 * longe, 4.8 * longe), para: alvo };

@@ -264,6 +264,21 @@ parecido com outro que já existe ganha ficha, não cópia do arquivo. A
 PERSONALIDADE também é modelo: o sorrisão e a orelha em pé da Sol, o olhar
 sereno e a orelha caída da Estrella — ela é lida de longe antes da fala.
 
+**Bicho que já existe sem ficha vira ficha antes do irmão.** O Rocco, o lobo
+rival do Flynn, nasceu assim: o `Flynn.ts` ganhou a `FichaDeAtleta` (cores,
+orelha, focinho, rabo, boca, sobrancelha, juba, pingente, pin e o uniforme
+do time inteiro, até o escudo como função) e a `FICHA_DO_FLYNN` com os
+números que estavam espalhados no código. A prova de que o Flynn não mudou
+é a IMPRESSÃO DIGITAL do modelo montado (ordem e nome dos filhos, material,
+vértices e caixa de cada malha), igual antes e depois, com e sem `fundir` —
+a foto de longe não pega um milímetro. Daí o irmão é uma ficha e uma linha:
+`class Rocco extends Flynn { constructor(a) { super(a, FICHA_DO_ROCCO); } }`.
+O que muda o JEITO entra na ficha como escolha (`boca: 'de-lado'`,
+`pingente: 'plaquinha'`, `juba: true`), e não como `if (rocco)` no corpo.
+Cuidados que custaram foto: boca num focinho comprido tem que ficar NA PELE
+do focinho (um ponto do elipsoide), senão some dentro dele; e o rabo dobrado
+mais fundo atravessa o chão — meça o pé do último gomo.
+
 **Olhar calmo é um TRAÇO, não uma tampa.** A primeira pálpebra da Estrella
 foi uma meia esfera de pelo por cima do olho: de longe passava, de perto era
 um calombo marrom tapando o branco, com o cílio boiando acima — olho de sono.

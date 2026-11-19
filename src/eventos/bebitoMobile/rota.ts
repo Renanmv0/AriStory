@@ -34,7 +34,7 @@ export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('esc
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
 /** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
 export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina' | 'tializ' | 'flynn' | 'valentina';
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina' | 'tializ' | 'flynn' | 'valentina' | 'rocco';
 /** onde cada viagem COMEÇA (o par do `DESTINO`) */
 const ORIGEM: Record<Sentido, DestinoDeCarro> = {
   'ida': 'casa', 'volta': 'parque', 'parque-clube': 'parque', 'clube-parque': 'clube', 'casa-clube': 'casa', 'clube-casa': 'clube',
@@ -75,6 +75,18 @@ export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNa
   if (!candidatos.length) return null;
   const valor = sorteio(semente * 97 + SENTIDOS.indexOf(sentido) * 131 + 43)();
   return candidatos[Math.min(candidatos.length - 1, Math.floor(valor * candidatos.length))];
+}
+
+/**
+ * O ROCCO, o lobo capitão dos Dogões e rival do Flynn (decisões do Renan, 2026-11-19): só nas viagens da escola, e
+ * NÃO é morador sorteado — ele corre no LUGAR do Flynn, para o sorteio de todas as rotas continuar o mesmo. Depois de
+ * a dupla já ter cruzado o Flynn na estrada (é ele quem fala dos "rivais"), a próxima corrida sorteada para o Flynn é a
+ * do Rocco; dali em diante, a semente decide entre os dois, meio a meio.
+ */
+export function oRoccoCorreNoLugar(semente: number, flynnJaPassou: boolean, roccoJaPassou: boolean): boolean {
+  if (!flynnJaPassou) return false;
+  if (!roccoJaPassou) return true;
+  return sorteio(semente * 61 + 977)() < 0.5;
 }
 
 /** o pedido que a cena de partida deixa para a cena da viagem */

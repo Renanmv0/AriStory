@@ -33,6 +33,7 @@ export type SomNome =
   | 'sentar'
   | 'miado'
   | 'latido'
+  | 'uivo'
   | 'apito'
   | 'gluglu'
   | 'cantarolar'
@@ -483,6 +484,60 @@ export const EFEITOS: Record<SomNome, Receita> = {
   // do miado: lá a curva é longa e escorregada, aqui cada uma tem 0,1 s e cai
   // rápido. Latido comprido vira uivo. O `n` alterna o grau da pentatônica,
   // senão o cachorro late a mesma nota a vida inteira.
+  /**
+   * O UIVO DO ROCCO, o lobo capitão dos Dogões — um "auuuu" curto e simpático, não de filme de terror.
+   *
+   * Uivo não cabe no `tom()`: ele SUSTENTA (o `tom` decai sozinho, que é a cara de marimba). Então é montado à mão:
+   * uma serra abafada (a garganta) e um seno uma oitava abaixo (o peito), com a nota subindo do "a" até o "uuu",
+   * segurando um tico e caindo no fim; um vibrato lento (um LFO na frequência) é o que faz soar bicho e não sirene.
+   * O "a" do começo é um sopro curtinho. O ganho nasce em quase zero, como todo nó montado à mão (ver a skill de som).
+   */
+  uivo: ({ ctx, destino, t, n }) => {
+    const base = nota(DO - 12 + PENTA[n % 2 === 0 ? 3 : 4]);
+    const DUR = 1.05;
+    chiado(ctx, destino, { quando: t, dur: 0.09, vol: 0.03, freq: 1300, glide: 800, q: 1 });
+    const ganho = ctx.createGain();
+    ganho.gain.value = 0.0001;
+    ganho.gain.setValueAtTime(0.0001, t);
+    ganho.gain.exponentialRampToValueAtTime(0.045, t + 0.14);
+    ganho.gain.setValueAtTime(0.045, t + 0.5);
+    // (o "uuu" caindo tem que se OUVIR: desce em reta até quase o fim, e só ali apaga de vez)
+    ganho.gain.linearRampToValueAtTime(0.012, t + 0.9);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, t + DUR);
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = 'lowpass';
+    filtro.frequency.setValueAtTime(900, t);
+    filtro.frequency.linearRampToValueAtTime(1500, t + 0.3);
+    filtro.frequency.linearRampToValueAtTime(800, t + DUR);
+    ganho.connect(filtro);
+    filtro.connect(destino);
+    // o vibrato: ~5,5 Hz, mais fundo no meio do uivo
+    const lfo = ctx.createOscillator();
+    lfo.frequency.setValueAtTime(5.5, t);
+    const fundura = ctx.createGain();
+    fundura.gain.setValueAtTime(0, t);
+    fundura.gain.linearRampToValueAtTime(base * 0.035, t + 0.4);
+    lfo.connect(fundura);
+    for (const [tipo, mult, vol] of [['sawtooth', 1, 1], ['sine', 0.5, 1.4]] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = tipo;
+      const f = osc.frequency;
+      f.setValueAtTime(base * 0.62 * mult, t);
+      f.exponentialRampToValueAtTime(base * mult, t + 0.24);
+      f.linearRampToValueAtTime(base * 1.04 * mult, t + 0.55);
+      f.exponentialRampToValueAtTime(base * 0.66 * mult, t + DUR);
+      fundura.connect(f);
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      osc.connect(g);
+      g.connect(ganho);
+      osc.start(t);
+      osc.stop(t + DUR + 0.05);
+    }
+    lfo.start(t);
+    lfo.stop(t + DUR + 0.05);
+  },
+
   latido: ({ ctx, destino, t, n }) => {
     const base = nota(DO + PENTA[n % 2 === 0 ? 0 : 1] - 12);
     for (const [i, atraso] of [0, 0.14].entries()) {

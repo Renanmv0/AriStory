@@ -202,6 +202,14 @@ subindo, e o "clic-clac" duplo do obturador no fim.
 molhado (o "fsh-fsh", o segundo mais curto) e, com `n` par, o rangidinho agudo da fibra no metal. É fundo, tocado a
 cada ~0,9 s com a dupla perto: pico 0,035 no `.wav`, abaixo do passo (0,05).
 
+**O uivo do Rocco** (`uivo`, o lobo dos Dogões na estrada da escola): uivo
+SUSTENTA, e o `tom()` decai sozinho — então é montado à mão: uma serra
+abafada (a garganta) e um seno uma oitava abaixo (o peito), a nota subindo
+do "a" até o "uuu", segurando e caindo, com um LFO na frequência (o vibrato
+de ~5,5 Hz, que faz soar bicho e não sirene). A queda é em RETA até perto do
+fim: em rampa exponencial o "uuu" caindo sumia antes de se ouvir. Pico 0,11
+no `.wav` (a primeira versão saiu com 0,18, alto demais perto das buzinas).
+
 **As balas na cesta** (`balas`, a caça de doces ou travessuras,
 `eventos/halloween/caca.ts`): seis toquinhos secos de triângulo, cada um
 descendo de tom (o plástico oco da cestinha), mais fracos e mais juntos, e

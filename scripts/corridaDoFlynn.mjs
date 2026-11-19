@@ -63,7 +63,7 @@ try {
     const sufixo = CEL ? '-celular' : '';
     const viajar = async (semente, rotulo, conhecido, acertar) => {
       await page.evaluate(([flags, conhecido]) => { for (const f of flags) window.jogo.setFlag(f); window.jogo.setFlag('flynn-conhecido', conhecido); }, [FLAGS, conhecido]);
-      await page.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=${SENTIDO},ari,${semente}`);
+      await page.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=${SENTIDO},ari,${semente}&semRocco`);
       await page.waitForFunction(() => window.jogo?.current?.world.root.userData.novidadesDaViagem && !window.jogo.transitioning, null, { timeout: 120000 });
       const bolaNaCena = () => page.evaluate(() => { let n = 0; window.jogo.scene.traverse((o) => { if (o.userData.peca === 'bola-do-flynn') n++; }); return n; });
       if (!conhecido) {

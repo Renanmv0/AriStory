@@ -259,7 +259,8 @@ if (rocco && rocco.length >= 2 && rocco.slice(0, 2).every(Number.isFinite)) {
       mundo.add(mundo.place(bicho.group, rocco[0] + i * Math.cos(giro) * 0.9, 0, rocco[1] - i * Math.sin(giro) * 0.9, giro));
       mundo.onUpdate((dt) => bicho.update(dt));
     });
-    (window as unknown as { rocco: Rocco }).rocco = bichos[0] as Rocco;
+    (window as unknown as { rocco: Rocco; flynnDoLado?: Flynn }).rocco = bichos[0] as Rocco;
+    (window as unknown as { flynnDoLado?: Flynn }).flynnDoLado = bichos[1];
   });
 }
 const carro = params.get('carro')?.split(',').map(Number);
