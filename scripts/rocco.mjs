@@ -374,7 +374,9 @@ try {
     await page.keyboard.press('KeyE');
     const falas = [];
     let fotoDaConversa = false;
-    for (let i = 0; i < 160; i++) {
+    // (por tempo, e não por voltas: a letra aparece aos poucos e cada fala leva várias voltas no navegador do teste)
+    const t2 = Date.now();
+    while (Date.now() - t2 < 300000) {
       const e = await estado();
       const dialogo = await page.evaluate(() => document.querySelector('.dialogue.show') ? `${document.querySelector('.dialogue .who')?.textContent}: ${document.querySelector('.dialogue .text')?.textContent}` : '');
       if (dialogo) {
