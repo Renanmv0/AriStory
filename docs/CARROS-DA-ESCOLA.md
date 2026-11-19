@@ -432,6 +432,16 @@ do lobo guardada para fazermos depois, mas vamos terminar os carros"). Hoje ele 
 ("Vocês vão conhecer. Ele também acorda cedo…"), sem nome nem modelo. Quando chegar a vez: perguntar ao Renan quem ele
 é, como é, de onde vem e como é a disputa.
 
+**As decisões do Renan (2026-11-19):**
+- é o **ROCCO**, um personagem inventado (ninguém de verdade por trás), um LOBO;
+- capitão do time de OUTRA escola, a **ESCOLA DOS DOGÕES** (um time de cachorro, já que nós somos os Gatitos), de
+  **vermelho e cinza** (com detalhe branco);
+- **marrento, mas gente boa**: uma rivalidade "não tóxica, mas com algumas farpas";
+- aparece **só nas viagens da escola**;
+- o primeiro pedaço: **a corrida dele sozinho** — ele passa o Bebito correndo pela calçada, a dupla se pergunta quem é,
+  e ele para do lado para explicar que está treinando para jogar contra o rival (o Flynn). A disputa de verdade entre os
+  dois fica para depois.
+
 ## A ordem sugerida
 
 1. **O Gatito**: o professor e a cara da escola. O ônibus amarelinho com o

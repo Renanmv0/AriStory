@@ -25,6 +25,8 @@ import { CarrinhoDoCookie } from './world/carrinhoDoCookie';
 import { DoisCavalosDoJeanLuc } from './world/doisCavalosDoJeanLuc';
 import { CarrinhoDeGolfeDaGina } from './world/carrinhoDeGolfeDaGina';
 import { ConversivelDaTiaLiz } from './world/conversivelDaTiaLiz';
+import { Flynn } from './entities/bichos/Flynn';
+import { Rocco } from './entities/bichos/Rocco';
 import { Pavao } from './entities/bichos/Pavao';
 import { LimusineDaValentina } from './world/limusineDaValentina';
 import {
@@ -238,6 +240,26 @@ if (pavao && pavao.length >= 2 && pavao.slice(0, 2).every(Number.isFinite)) {
     mundo.add(mundo.place(bicho.group, pavao[0], 0, pavao[1], Number.isFinite(pavao[2]) ? pavao[2] : 0));
     mundo.onUpdate((dt) => bicho.update(dt));
     (window as unknown as { pavao: Pavao }).pavao = bicho;
+  });
+}
+// `?rocco=x,z,giro`: o Rocco, o lobo capitão dos Dogões (o rival do Flynn), parado nesse ponto, para o
+// `scripts/rocco.mjs` fotografar de perto (`&trote` corre no lugar; `&comFlynn` põe o Flynn do lado, para comparar)
+const rocco = params.get('rocco')?.split(',').map(Number);
+if (rocco && rocco.length >= 2 && rocco.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const giro = Number.isFinite(rocco[2]) ? rocco[2] : 0;
+    const bichos: Flynn[] = [new Rocco({ minX: -0.05, maxX: 0.05, minZ: -0.05, maxZ: 0.05 })];
+    if (params.has('comFlynn')) bichos.push(new Flynn({ minX: -0.05, maxX: 0.05, minZ: -0.05, maxZ: 0.05 }));
+    bichos.forEach((bicho, i) => {
+      bicho.entrarEmServico();
+      if (params.has('trote')) bicho.naEstrada = { corrida: 0, trote: true, tocaAqui: 0, estica: 0 };
+      // (o Flynn, quando vem junto, fica à direita do Rocco, no x dele)
+      mundo.add(mundo.place(bicho.group, rocco[0] + i * Math.cos(giro) * 0.9, 0, rocco[1] - i * Math.sin(giro) * 0.9, giro));
+      mundo.onUpdate((dt) => bicho.update(dt));
+    });
+    (window as unknown as { rocco: Rocco }).rocco = bichos[0] as Rocco;
   });
 }
 const carro = params.get('carro')?.split(',').map(Number);

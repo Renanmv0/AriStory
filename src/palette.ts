@@ -1679,6 +1679,24 @@ export const PALETTE = {
   flynnApito: 0xc9d1d9,
   flynnTenisFaixa: 0xf26b4a,
 
+  // O ROCCO, o lobo capitão dos DOGÕES (a escola rival, de cachorro — nós somos os Gatitos): o cinza de lobo (o claro
+  // do focinho, do peito e da juba, o chumbo das meias e da ponta do rabo), o olho amarelo-dourado. E o time de
+  // VERMELHO E CINZA com detalhe branco (a escolha do Renan); a plaquinha de cachorro e a corrente de metal
+  roccoPelo: 0x8e939c,
+  roccoPeloClaro: 0xe8e5de,
+  roccoPeloEscuro: 0x474b55,
+  roccoOrelhaDentro: 0xd8c8c3,
+  roccoNariz: 0x222024,
+  roccoOlho: 0xe3b23c,
+  roccoPupila: 0x1f1c1e,
+  roccoBochecha: 0xc9a5a2,
+  dogoesVermelho: 0xc9343c,
+  dogoesCinza: 0x3e414a,
+  dogoesCinzaClaro: 0xb9bdc4,
+  dogoesBranco: 0xf5f3ee,
+  dogoesSola: 0xe6e1d6,
+  dogoesCorrente: 0x9aa0a8,
+
   // A VALENTINA, a flamingo italiana do marketing dos Gatitos: o rosa de
   // flamingo (mais claro no rosto e no topete, coral forte nas asas, a ponta
   // das penas de voo quase preta), a perna rosa-salmão, o bico claro com a
@@ -2176,6 +2194,7 @@ export const PALETTE = {
   falaSol: 0xff9a2c, // o laranja da presilha de sol
   falaEstrella: 0x2fb3a6, // o turquesa (a estrela já é amarela como a Gina)
   falaFlynn: 0xc4562a, // a ferrugem da raposa
+  falaRocco: 0x6b7280, // o cinza do lobo
   falaValentina: 0xd2337a, // o fúcsia de flamingo (mais forte que o rosa do Ari)
   falaLiz: 0x7d8a2e, // o verde-oliva da blusa dela
   falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
