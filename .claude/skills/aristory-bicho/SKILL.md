@@ -279,6 +279,19 @@ Cuidados que custaram foto: boca num focinho comprido tem que ficar NA PELE
 do focinho (um ponto do elipsoide), senão some dentro dele; e o rabo dobrado
 mais fundo atravessa o chão — meça o pé do último gomo.
 
+**Dois bichos jogando JUNTOS** (o um contra um do Flynn e do Rocco,
+`scenes/escolaUmContraUm.ts`): uma máquina de estados só para os dois e
+para a bola (quem ataca, quem defende, a fase da bola), e a bola tem UM dono
+por vez — no drible quem a põe a cada quadro é a pata (`bolaDoDrible`), na
+pegada e no arremesso ela vai para a `maoDaBola` com `attach`, e no ar ela é
+da cena. Três lições da foto: quem marca em pé, parado, NÃO pode andar com
+`seguir` para gingar (bicho que anda vira para onde anda e marcaria de
+lado) — a ginga é um deslize curto na posição; com a câmera de `+X/+Z`, a
+jogada que fica na diagonal da câmera esconde um atrás do outro (a cesta da
+esquerda foi espelhada para o outro lado da linha); e pausar para conversar
+só num ponto SEGURO (ninguém no meio de um arremesso, a bola em alguma mão
+ou no chão, e os dois perto), com quem tem a bola quicando no lugar.
+
 **Olhar calmo é um TRAÇO, não uma tampa.** A primeira pálpebra da Estrella
 foi uma meia esfera de pelo por cima do olho: de longe passava, de perto era
 um calombo marrom tapando o branco, com o cílio boiando acima — olho de sono.

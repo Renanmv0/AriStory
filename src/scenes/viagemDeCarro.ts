@@ -29,7 +29,7 @@ import { PORTAO_DA_ESCOLA, gradeDaEscola, portaoDaEscola } from '../world/portar
 import { MastroComBandeira, bicicletario } from '../world/patioDaEscola';
 import { posteDoEstacionamento as posteDaEscola } from '../world/estacionamentoDaEscola';
 import {
-  EVENTOS_DE_DEVAGAR, PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, oRoccoCorreNoLugar, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
+  EVENTOS_DE_DEVAGAR, PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, MEMORIA_DO_ROCCO, oRoccoCorreNoLugar, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
   type Rota,
 } from '../eventos/bebitoMobile/rota';
 import { FLAG_DO_CARRO_NA_ESCOLA, FLAG_DO_CARRO_NO_CLUBE, FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
@@ -194,9 +194,6 @@ export const viagemDeCarro: SceneDef = {
 
 /** o ícone do destino no painel da viagem */
 const ICONE_DO_DESTINO: Record<DestinoDeCarro, string> = { clube: '🏊', parque: '🌳', casa: '🏠', escola: '🏫' };
-
-/** a memória do primeiro encontro com o Rocco na estrada (e a marca de que a dupla já o conhece) */
-const MEMORIA_DO_ROCCO = 'rocco-na-estrada';
 
 function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const g: GameAPI = w.game;

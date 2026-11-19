@@ -83,6 +83,9 @@ export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNa
  * a dupla já ter cruzado o Flynn na estrada (é ele quem fala dos "rivais"), a próxima corrida sorteada para o Flynn é a
  * do Rocco; dali em diante, a semente decide entre os dois, meio a meio.
  */
+/** a memória do primeiro encontro com o Rocco na estrada — é também a marca de que a dupla já o conhece */
+export const MEMORIA_DO_ROCCO = 'rocco-na-estrada';
+
 export function oRoccoCorreNoLugar(semente: number, flynnJaPassou: boolean, roccoJaPassou: boolean): boolean {
   if (!flynnJaPassou) return false;
   if (!roccoJaPassou) return true;

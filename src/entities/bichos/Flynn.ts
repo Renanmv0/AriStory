@@ -254,6 +254,21 @@ export class Flynn extends Bicho {
   naEstrada: { corrida: number; trote: boolean; tocaAqui: number; estica: number } | null = null;
   private readonly pata = new THREE.Vector3();
   private readonly outraPata = new THREE.Vector3();
+  /**
+   * O UM CONTRA UM (o Rocco no ginásio, `scenes/escolaUmContraUm.ts`): `driblando` baixa a pata direita na frente e
+   * a faz empurrar a bola no ritmo do quique (`faseDoDrible`: a bola na mão em 0, π, 2π…; no chão em π/2, 3π/2…), e
+   * `marcando` (0 a 1, a cena mistura) é a defesa — o tronco um tico mais dobrado e os dois braços abertos e altos,
+   * fechando o caminho. Desligados (o padrão), nada abaixo muda o Flynn de sempre.
+   */
+  driblando = false;
+  marcando = 0;
+  /** a fase do quique (rad): a bola na mão a cada meia volta, e no chão no meio */
+  faseDoDrible = 0;
+  private misturaDrible = 0;
+  /** chamado a cada quique da bola no chão (a cena toca o som) */
+  aoQuicarODrible: (() => void) | null = null;
+  /** o arremesso que só PEGA (para no peito e acaba): a bola vai para o drible */
+  private soAtePeito = false;
   /** a ficha: quem ele é (o Flynn, ou o Rocco que herda dele) */
   protected readonly ficha: FichaDeAtleta;
 
@@ -295,6 +310,34 @@ export class Flynn extends Bicho {
   /** pega a bola do chão à frente dele e arremessa (o relógio em `tempoNoArremesso`) */
   arremessar(): void {
     this.tempoDoArremesso = 0;
+  }
+
+  /** abaixa e pega a bola do chão à frente, até o peito — e o gesto acaba ali (para driblar, e não arremessar) */
+  pegarDoChao(): void {
+    this.tempoDoArremesso = 0;
+    this.soAtePeito = true;
+  }
+
+  /**
+   * ARREMESSA COM A BOLA JÁ NA MÃO (vindo do drible): o gesto começa no meio da pegada, agachado com a bola subindo
+   * para o peito — o "junta e sobe" do arremesso de quem vinha driblando.
+   */
+  arremessarDaMao(): void {
+    this.tempoDoArremesso = ARREMESSO.PEGA + 0.12;
+    this.soAtePeito = false;
+  }
+
+  /**
+   * Onde a bola do drible está agora, no mundo: embaixo da pata direita, descendo até o chão e voltando no ritmo do
+   * quique (`raio` é o da bola). Só faz sentido com `driblando`.
+   */
+  bolaDoDrible(raio: number, alvo = new THREE.Vector3()): THREE.Vector3 {
+    const braco = this.bracos[1];
+    braco.updateWorldMatrix(true, false);
+    braco.localToWorld(alvo.set(0, -0.205, 0.02));
+    const topo = alvo.y - raio * 0.9;
+    alvo.y = raio + Math.max(0, topo - raio) * Math.abs(Math.cos(this.faseDoDrible));
+    return alvo;
   }
 
   get estaArremessando(): boolean {
@@ -965,6 +1008,16 @@ export class Flynn extends Bicho {
     const aceno = this.misturaAceno;
     const festa = this.misturaFesta;
     const corre = this.misturaCorrida;
+    // o drible e a marcação (o um contra um): misturados, para a pose não estalar
+    this.misturaDrible += ((this.driblando ? 1 : 0) - this.misturaDrible) * suave;
+    const drible = this.misturaDrible;
+    if (this.driblando) {
+      // um quique a cada ~0,4 s (correndo, um tico mais rápido); o chão é a meia volta ímpar
+      const antes = Math.floor(this.faseDoDrible / Math.PI + 0.5);
+      this.faseDoDrible += (dt * Math.PI) / (andando ? 0.36 : 0.42);
+      if (Math.floor(this.faseDoDrible / Math.PI + 0.5) !== antes) this.aoQuicarODrible?.();
+    }
+    const marca = Math.max(0, Math.min(1, this.marcando));
     // correndo, a cadência sobe de 10 para 17: num relógio próprio, para a fase não pular
     // (na estrada, a passada ainda acelera com a velocidade: a 2 corridas, uma vez e meia; trotando, um tico mais lenta)
     const ritmo = estrada ? (estrada.corrida > 0.05 ? Math.min(1.8, 0.6 + 0.45 * estrada.corrida) : 0.8) : 1;
@@ -979,7 +1032,7 @@ export class Flynn extends Bicho {
      * (`… - dobra`), e por isso a pata vai ao chão com o tronco dobrado.
      */
     // (trotando no lugar ele fica mais em pé; na disparada, mais deitado)
-    let dobra = corre * (estrada ? (estrada.corrida > 0.05 ? Math.min(0.36, 0.2 + 0.06 * estrada.corrida) : 0.08) : 0.24);
+    let dobra = corre * (estrada ? (estrada.corrida > 0.05 ? Math.min(0.36, 0.2 + 0.06 * estrada.corrida) : 0.08) : 0.24) + marca * 0.22;
     let pulo = 0;
     /** os pesos dos três jeitos de braço do arremesso: no chão, no peito, no alto */
     let noChao = 0;
@@ -1010,6 +1063,11 @@ export class Flynn extends Bicho {
       const meio = SOLTA - NO_PEITO - 0.04;
       if (Math.abs(a - SOLTA) < meio) pulo = Math.cos(((a - SOLTA) / meio) * (Math.PI / 2)) * 0.26;
       if (a >= FIM) this.tempoDoArremesso = -1;
+      // (só pegando: acaba com a bola no peito, e quem segue é o drible)
+      if (this.soAtePeito && a >= NO_PEITO) {
+        this.tempoDoArremesso = -1;
+        this.soAtePeito = false;
+      }
     }
 
     // ------------------------------------------------ as pernas e o pulinho
@@ -1071,6 +1129,25 @@ export class Flynn extends Bicho {
         const estica = estrada!.estica;
         z += (2.35 - 0.4 * estica - z) * toca;
         x += (-0.25 - 0.15 * estica - x) * toca;
+      }
+      /*
+       * O DRIBLE: a direita baixa na frente, um tico aberta, e EMPURRA a bola — desce com ela e volta a tempo de
+       * recebê-la (a bola é da cena, que a põe embaixo desta pata: `bolaDoDrible`); a esquerda protege, aberta na
+       * frente do corpo. A MARCAÇÃO: os dois braços abertos e altos, fechando o caminho.
+       */
+      if (drible > 0) {
+        if (lado > 0) {
+          const empurra = 1 - Math.abs(Math.cos(this.faseDoDrible));
+          z += (0.34 - z) * drible;
+          x += (-0.62 + 0.3 * empurra - dobra - x) * drible;
+        } else {
+          z += (-0.5 - z) * drible;
+          x += (-0.75 - dobra - x) * drible;
+        }
+      }
+      if (marca > 0) {
+        z += (lado * 1.2 - z) * marca;
+        x += (-0.45 - dobra - x) * marca;
       }
       if (lado > 0 && aceno > 0) {
         const alto = lado * (Math.PI - 0.45) + Math.sin(t * 13) * 0.3;

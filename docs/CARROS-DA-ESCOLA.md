@@ -13,7 +13,7 @@ estrada, a polaroid no painel, o desfile do tapete vermelho na escola e a limusi
 escolha do Renan foi ele vir A PÉ, na corrida matinal, mais rápido que o Bebito, e um toca aqui pela janela. O
 Gatito mora na escola: no lugar do carro, o ÔNIBUS ESCOLAR dos Gatitos fica estacionado no lote (§1). Os carros da
 escola estão completos. E o **ROCCO** (§5), o lobo rival do Flynn, capitão dos Dogões, está no jogo desde 2026-11-19:
-o modelo e a corrida dele na estrada da escola. Este documento é o cardápio para o
+o modelo, a corrida dele na estrada da escola e o um contra um com o Flynn no ginásio. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -469,6 +469,28 @@ cedo…").
   de osso, o escudo, o uivo e o nome "Dogões" escrito com til.
 - **Testado**: `scripts/rocco.mjs` (o modelo medido e fotografado ao lado do Flynn, as rotas sem navegador, e duas
   viagens: a apresentação e a segunda vez), e o `scripts/corridaDoFlynn.mjs` continua passando com `&semRocco`.
+
+### O um contra um no ginásio (2026-11-19)
+
+Pedido do Renan: "depois de encontrar o Rocco pela primeira vez, ele aparece no ginásio dos Gatitos jogando basquete
+com o Flynn". Com a memória da estrada e o Flynn já no ginásio (o Módulo 2), o treino solitário dele dá lugar a um UM
+CONTRA UM de quadra inteira (`scenes/escolaUmContraUm.ts`), com UMA bola:
+
+- cada um ATACA uma cesta (o Flynn a da direita, o Rocco a da esquerda) e defende a outra; quem ataca DRIBLA de uma
+  ponta à outra (a bola quicando embaixo da pata direita, gingando de um lado para o outro), para na beira do garrafão
+  e arremessa; quem defende corre na frente, chega primeiro, MARCA de braços abertos e pula no arremesso;
+- entra (cai pela rede e rola) ou bate no aro (o rebote); quem defendia pega a bola do chão e a posse troca; quem fez
+  a cesta comemora antes de voltar correndo, e às vezes sai uma farpa no canto da tela;
+- na cesta da esquerda a jogada é ESPELHADA para o outro lado da linha das cestas: na raia, quem marca ficava bem
+  atrás de quem arremessava na linha da câmera e sumia;
+- falar com eles ("Falar com o Flynn e o Rocco") espera um ponto seguro (a bola no chão, ou quem dribla já perto de
+  quem marca), os dois param — quem tem a bola continua quicando no lugar —, a apresentação, a memória "Um contra um"
+  e o jogo volta de onde parou; nas outras vezes, uma conversa curta em roda;
+- sem placar oficial e sem vencedor: o "quem está ganhando" só aparece nas farpas (o jogo de verdade fica para o
+  Renan escolher). O Flynn e o Rocco ganharam o DRIBLE e a MARCAÇÃO na ficha de atleta (`driblando`, `marcando`,
+  `pegarDoChao`, `arremessarDaMao`, `bolaDoDrible`); desligados, o Flynn é o de sempre.
+
+**PROVISÓRIO (meu):** todas as falas e farpas do ginásio, e a memória.
 
 **O próximo passo (não feito)**: a DISPUTA de verdade entre o Flynn e o Rocco — o jogo dos Gatitos contra os Dogões,
 uma corrida dos dois, ou outra coisa que o Renan escolher.

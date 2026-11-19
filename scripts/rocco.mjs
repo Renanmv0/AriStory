@@ -12,8 +12,14 @@
  *          nem vidro descendo, a memória "O rival" e o save de verdade intacto); e uma segunda viagem já conhecendo,
  *          com a fala curta.
  *
+ * GINASIO  o UM CONTRA UM com o Flynn no ginásio dos Gatitos: sem a memória da estrada, o treino do Flynn de sempre
+ *          (e nada do Rocco); com ela mas antes do Módulo 2 (o Flynn ainda no refeitório), nada; com as duas, os dois
+ *          jogando — os pés no chão, a posse trocando, a bola quicando no drible, cesta dos dois, nunca um em cima do
+ *          outro, fotos de perto de cada momento (drible, marcação, arremesso, rebote, a pegada) nas duas cestas, e a
+ *          CONVERSA (os dois param num ponto seguro, a apresentação, a memória "Um contra um" e o jogo voltando).
+ *
  * Uso: node scripts/rocco.mjs /tmp/rc
- *      SO=modelo|rotas|estrada roda uma parte; CEL=1 a estrada no celular em pé
+ *      SO=modelo|rotas|estrada|ginasio roda uma parte; CEL=1 a estrada no celular em pé
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
@@ -55,7 +61,7 @@ if (parte('rotas')) {
   assert.ok(SEGUNDA, 'tem uma rota de segunda vez para o teste');
 }
 
-const browser = parte('modelo') || parte('estrada') ? await chromium.launch({
+const browser = parte('modelo') || parte('estrada') || parte('ginasio') ? await chromium.launch({
   executablePath: process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium',
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
 }) : null;
@@ -235,6 +241,165 @@ try {
     };
     await viajar(PRIMEIRA, 'primeira', true);
     await viajar(SEGUNDA, 'segunda', false);
+    await page.context().close();
+  }
+  // ---------------------------------------------------------------- o ginásio
+  if (parte('ginasio')) {
+    const page = await (await browser.newContext({ viewport: { width: 1100, height: 760 } })).newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    const M1 = ['oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo', 'horta-da-josefina', 'fica-a-dica', 'tudo-acaba-em-inho'];
+    const BASICO = ['escola-aberta', 'luna-na-escola', 'gatito-conhecido', 'escola-visitada', 'escola-ginasio', 'flynn-conhecido', 'flynn-treinando'];
+    const pronto = () => page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
+    const jogo = () => page.evaluate(() => {
+      let u = null, f = null;
+      window.jogo.current.world.root.traverse((o) => {
+        if (!u && o.userData?.teste?.umContraUm) u = o;
+        if (!f && o.userData?.teste?.flynn) f = o;
+      });
+      return { umContraUm: !!u, treinoDoFlynn: !!f?.userData.teste.treino };
+    });
+    /** um save limpo (no preview), com o que cada caso pede */
+    const abrir = async (rotulo, { modulo2, rocco }) => {
+      await page.goto(`${BASE}/?semHalloween&cena=escola`);
+      await pronto();
+      await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
+      await page.goto(`${BASE}/?semHalloween&cena=escola`);
+      await pronto();
+      await page.evaluate(([flags, m1, modulo2, rocco]) => {
+        const j = window.jogo;
+        for (const f of flags) j.setFlag(f);
+        if (modulo2) {
+          j.setFlag('festa-da-torcida');
+          for (const id of m1) { j.save.abrirLicao(id); j.save.concluirLicao(id, 3); }
+          j.save.abrirLicao('um-dia-de-gatito');
+        }
+        if (rocco) j.unlock({ id: 'rocco-na-estrada', title: 'O rival', place: 'Na estrada', icon: '🐺', note: 'teste' });
+      }, [BASICO, M1, modulo2, rocco]);
+      await page.goto(`${BASE}/?semHalloween&cena=escola-ginasio&em=0,5`);
+      await pronto();
+      await page.waitForTimeout(800);
+      const r = await jogo();
+      console.log(`GINÁSIO (${rotulo}): um contra um ${r.umContraUm} | treino do Flynn ${r.treinoDoFlynn}`);
+      return r;
+    };
+    let r = await abrir('sem conhecer o Rocco', { modulo2: true, rocco: false });
+    assert.ok(!r.umContraUm && r.treinoDoFlynn, 'sem a memória da estrada, o treino do Flynn de sempre');
+    r = await abrir('antes do Módulo 2', { modulo2: false, rocco: true });
+    assert.ok(!r.umContraUm && !r.treinoDoFlynn, 'com o Flynn ainda no refeitório, ninguém joga');
+    r = await abrir('os dois', { modulo2: true, rocco: true });
+    assert.ok(r.umContraUm && !r.treinoDoFlynn, 'com as duas coisas, o um contra um no lugar do treino');
+
+    const u = (f) => page.evaluate((f) => {
+      let t = null;
+      window.jogo.current.world.root.traverse((o) => { if (!t && o.userData?.teste?.umContraUm) t = o.userData.teste.umContraUm; });
+      return new Function('u', `return (${f})(u)`)(t);
+    }, f.toString());
+    const estado = () => u((t) => {
+      const b = t.posicaoDaBola();
+      return { el: window.jogo.elapsed, at: t.atacante, bola: t.bola, est: t.estados(), pts: t.pontos, pausado: t.pausado,
+        f: { x: t.flynn.x, z: t.flynn.z }, r: { x: t.rocco.x, z: t.rocco.z }, b: { x: b.x, y: b.y, z: b.z }, m: JSON.parse(JSON.stringify(t.medidas)) };
+    });
+    // os pés no chão (os dois parados, um instante)
+    const pes = await u((t) => {
+      const min = (g) => { let m = 99; g.updateMatrixWorld(true); g.traverse((o) => { if (o.isMesh && o.visible) { o.geometry.computeBoundingBox(); m = Math.min(m, o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld).min.y); } }); return m; };
+      return { flynn: min(t.flynn.group), rocco: min(t.rocco.group) };
+    });
+    console.log(`  pés: Flynn ${pes.flynn.toFixed(3)} · Rocco ${pes.rocco.toFixed(3)}`);
+    assert.ok(pes.flynn > -0.03 && pes.rocco > -0.03, 'ninguém abaixo do chão');
+
+    // a câmera segue a jogada de perto (quem ataca, ou o meio dos dois quando estão perto)
+    await page.evaluate(() => {
+      let t = null;
+      window.jogo.current.world.root.traverse((o) => { if (!t && o.userData?.teste?.umContraUm) t = o.userData.teste.umContraUm; });
+      const foco = new t.flynn.group.constructor();
+      window.jogo.current.world.root.add(foco);
+      window.jogo.focusCamera(foco);
+      window.jogo.setZoom(5.5);
+      window.__seguir = true;
+      const loop = () => {
+        if (!window.__seguir) return;
+        const a = t.atacante === 'flynn' ? t.flynn : t.rocco, d = t.atacante === 'flynn' ? t.rocco : t.flynn;
+        const perto = Math.hypot(a.x - d.x, a.z - d.z) < 3.5;
+        foco.position.set(perto ? (a.x + d.x) / 2 : a.x, 0.9, perto ? (a.z + d.z) / 2 : a.z);
+        requestAnimationFrame(loop);
+      };
+      loop();
+    });
+    const fotos = new Set();
+    let ultimo = '';
+    let maiorBola = 0, menorBola = 99, fora = 0;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 420000) {
+      const e = await estado();
+      if (e.bola === 'drible') { maiorBola = Math.max(maiorBola, e.b.y); menorBola = Math.min(menorBola, e.b.y); }
+      // ninguém sai da quadra (22 × 12, o meio em z = -0,5)
+      for (const q of [e.f, e.r]) if (Math.abs(q.x) > 11 || Math.abs(q.z + 0.5) > 6) fora++;
+      const chave = `${e.est[e.at]}-${e.bola}-${e.at}`;
+      if (chave !== ultimo) {
+        ultimo = chave;
+        const nome = `${e.at}-${e.est[e.at]}-${e.bola}`;
+        if (!fotos.has(nome) && ['driblando-drible', 'arremessando-arco', 'depois-caindo', 'depois-rebote', 'pegando-na-mao', 'arremessando-na-mao'].some((k) => nome.endsWith(k))) {
+          fotos.add(nome);
+          await page.waitForTimeout(nome.endsWith('driblando-drible') ? 900 : 120);
+          await page.screenshot({ path: `${OUT}-ginasio-${nome}.png` });
+        }
+      }
+      if (e.m.cestas.flynn >= 1 && e.m.cestas.rocco >= 1 && e.m.erros >= 1 && e.m.posses >= 4) break;
+      await page.waitForTimeout(120);
+    }
+    const fim = await estado();
+    console.log(`  ${fim.el.toFixed(0)} s de jogo: ${fim.m.posses} trocas de posse, cestas Flynn ${fim.m.cestas.flynn} · Rocco ${fim.m.cestas.rocco}, ${fim.m.erros} no aro, ${fim.m.quiques} quiques no drible (a bola de ${menorBola.toFixed(2)} a ${maiorBola.toFixed(2)} m), o mais perto um do outro ${fim.m.menorDistancia.toFixed(2)} m`);
+    assert.ok(fim.m.cestas.flynn >= 1 && fim.m.cestas.rocco >= 1, 'os dois fazem cesta');
+    assert.ok(fim.m.erros >= 1, 'e uma bate no aro (o rebote)');
+    assert.ok(fim.m.posses >= 4, 'a posse troca');
+    assert.ok(fim.m.quiques > 10 && menorBola < 0.2 && maiorBola > 0.4, 'a bola quica no drible, do chão até a pata');
+    assert.ok(fim.m.menorDistancia > 0.6, 'nunca um em cima do outro');
+    assert.equal(fora, 0, 'ninguém sai da quadra');
+
+    // A CONVERSA: a dupla chega perto de quem está com a bola, o prompt, e o E
+    await page.evaluate(() => { window.__seguir = false; window.jogo.focusCamera(null); window.jogo.setZoom(13); });
+    let prompt = '';
+    for (let i = 0; i < 120 && !/Flynn e o Rocco/.test(prompt); i++) {
+      const e = await estado();
+      if (e.bola === 'drible' || e.bola === 'chao') {
+        const a = e.at === 'flynn' ? e.f : e.r;
+        await page.evaluate(({ x, z }) => window.jogo.debugPlace(x + 0.7, z + 0.7, Math.atan2(-0.7, -0.7)), a);
+      }
+      await page.waitForTimeout(150);
+      prompt = await page.evaluate(() => document.querySelector('.prompt.show .label')?.textContent ?? '');
+    }
+    console.log(`  prompt: "${prompt}"`);
+    assert.match(prompt, /Falar com o Flynn e o Rocco/);
+    const possesAntes = (await estado()).m.posses;
+    await page.keyboard.press('KeyE');
+    const falas = [];
+    let fotoDaConversa = false;
+    for (let i = 0; i < 160; i++) {
+      const e = await estado();
+      const dialogo = await page.evaluate(() => document.querySelector('.dialogue.show') ? `${document.querySelector('.dialogue .who')?.textContent}: ${document.querySelector('.dialogue .text')?.textContent}` : '');
+      if (dialogo) {
+        assert.ok(e.pausado, 'conversando, o jogo para');
+        await page.waitForTimeout(450);
+        const d = await page.evaluate(() => `${document.querySelector('.dialogue .who')?.textContent}: ${document.querySelector('.dialogue .text')?.textContent}`);
+        if (!falas.includes(d)) falas.push(d);
+        if (!fotoDaConversa && /rival|melhor/.test(d)) {
+          fotoDaConversa = true;
+          await page.screenshot({ path: `${OUT}-ginasio-conversa.png` });
+        }
+        await page.keyboard.press('KeyE');
+      } else if (falas.length > 3 && !e.pausado) break;
+      await page.waitForTimeout(150);
+    }
+    console.log('  ' + falas.join('\n  '));
+    const memoria = await page.evaluate(() => window.jogo.temMemoria('um-contra-um-no-ginasio'));
+    assert.ok(falas.some((f) => /^Rocco: /.test(f)) && falas.some((f) => /^Flynn: /.test(f)), 'os dois falam');
+    assert.ok(memoria, 'a memória "Um contra um"');
+    // o jogo volta
+    const t1 = Date.now();
+    while (Date.now() - t1 < 120000 && (await estado()).m.posses === possesAntes) await page.waitForTimeout(300);
+    assert.ok((await estado()).m.posses > possesAntes, 'e o jogo volta de onde parou');
+    const peso = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+    console.log(`  peso do ginásio (vista de sempre): ${peso.calls} desenhos, ${Math.round(peso.triangles / 1000)} mil triângulos`);
     await page.context().close();
   }
   assert.deepEqual(erros, []);
