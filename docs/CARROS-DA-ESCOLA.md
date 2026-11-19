@@ -490,6 +490,11 @@ CONTRA UM de quadra inteira (`scenes/escolaUmContraUm.ts`), com UMA bola:
   Renan escolher). O Flynn e o Rocco ganharam o DRIBLE e a MARCAÇÃO na ficha de atleta (`driblando`, `marcando`,
   `pegarDoChao`, `arremessarDaMao`, `bolaDoDrible`); desligados, o Flynn é o de sempre.
 
+- **o peso**: o atleta não era juntado (~150 pedaços cada). Os pivôs da pose (corpo, pernas, braços, gomos do rabo,
+  orelhas, olhos, pontas da faixa) ganharam nome e a `fundir` passou a juntar o resto: o Flynn foi de 140 para 83
+  malhas e o Rocco de 158 para 82, com os mesmos triângulos e a mesma imagem. O ginásio (vista de cima, zoom 22): o
+  treino de antes, 701 desenhos por quadro; o mesmo treino agora, 644; o um contra um, 722.
+
 **PROVISÓRIO (meu):** todas as falas e farpas do ginásio, e a memória.
 
 **O próximo passo (não feito)**: a DISPUTA de verdade entre o Flynn e o Rocco — o jogo dos Gatitos contra os Dogões,

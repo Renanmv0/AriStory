@@ -1,3 +1,4 @@
+import { fundir } from '../../world/fundir';
 import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
@@ -288,6 +289,28 @@ export class Flynn extends Bicho {
     this.ficha = ficha;
     this.montar();
     this.prontoParaAparecer(ficha.peca);
+    /*
+     * MENOS DESENHO, MESMA IMAGEM: o atleta são ~150 pedaços (cada listra, cada botão, cada gomo), e o um contra um
+     * pôs dois deles no ginásio. A `fundir` junta por material o que se mexe junto — e o que se mexe são os grupos
+     * abaixo, que ganham NOME para virar fronteira (sem nome, ela os trataria como fixos e os juntaria ao corpo).
+     */
+    this.nomearOQueSeMexe();
+    fundir(this.group);
+  }
+
+  /** os pivôs da pose (sem nome, a `fundir` juntaria os pedaços deles ao corpo, e eles parariam de mexer) */
+  private nomearOQueSeMexe(): void {
+    const p = this.ficha.peca;
+    const nomear = (o: THREE.Object3D, nome: string): void => {
+      if (!o.name) o.name = nome;
+    };
+    nomear(this.corpo, `${p}-corpo`);
+    this.pernas.forEach((o, i) => nomear(o, `${p}-perna-${i}`));
+    this.bracos.forEach((o, i) => nomear(o, `${p}-braco-${i}`));
+    this.gomosDoRabo.forEach((o, i) => nomear(o, `${p}-rabo-${i}`));
+    this.orelhas.forEach((o, i) => nomear(o, `${p}-orelha-${i}`));
+    this.olhos.forEach((o, i) => nomear(o, `${p}-olho-${i}`));
+    this.pontasDaBandana.forEach((o, i) => nomear(o, `${p}-ponta-da-faixa-${i}`));
   }
 
   // ---------------------------------------------------------------- gestos

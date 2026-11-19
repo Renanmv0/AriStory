@@ -292,6 +292,13 @@ esquerda foi espelhada para o outro lado da linha); e pausar para conversar
 só num ponto SEGURO (ninguém no meio de um arremesso, a bola em alguma mão
 ou no chão, e os dois perto), com quem tem a bola quicando no lugar.
 
+**Bicho de muitos pedaços também se junta** (o Flynn e o Rocco, 140 e 158
+malhas): a `fundir(this.group)` no fim do construtor, DEPOIS de dar nome a
+todo pivô que a pose mexe (corpo, pernas, braços, gomos, orelhas, olhos,
+pontas da faixa) — grupo sem nome ela trata como fixo, junta ao pai e ele
+para de mexer. Prova: os mesmos triângulos e materiais com e sem
+`?semFundir`, a caixa igual e a foto igual.
+
 **Olhar calmo é um TRAÇO, não uma tampa.** A primeira pálpebra da Estrella
 foi uma meia esfera de pelo por cima do olho: de longe passava, de perto era
 um calombo marrom tapando o branco, com o cílio boiando acima — olho de sono.
