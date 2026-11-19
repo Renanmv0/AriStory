@@ -236,16 +236,53 @@ export function montarOUmContraUm(w: WorldBuilder, q: QuadraDoTreino): { flynn: 
     }
     return false;
   };
-  /** anda até o alvo (ou espera, se a dupla está na frente); devolve se chegou */
+  /** o quadro de agora (o `ir` conta quanto tempo cada um esperou a dupla) */
+  let dtAgora = 0;
+  /** o desvio de quem cansou de esperar a dupla sair da frente, e quanto tempo já esperou */
+  const desvios = new Map<Flynn, THREE.Vector3>();
+  const esperando = new Map<Flynn, number>();
+  /**
+   * Anda até o alvo; devolve se chegou. Com a dupla na frente ele ESPERA (os dois são educados) — e se ela não sai em
+   * um segundo, CONTORNA: um ponto 1,3 para o lado contrário de quem está no caminho, e dali segue. Sem isso, a dupla
+   * parada onde a conversa a deixou travava o jogo inteiro.
+   */
   const ir = (b: Flynn, alvo: THREE.Vector3, velocidade: number, chegou = 0.12): boolean => {
     if (Math.hypot(alvo.x - b.x, alvo.z - b.z) < chegou) {
       b.entrarEmServico();
+      desvios.delete(b);
+      esperando.delete(b);
       return true;
+    }
+    const desvio = desvios.get(b);
+    if (desvio) {
+      if (Math.hypot(desvio.x - b.x, desvio.z - b.z) < 0.2) desvios.delete(b);
+      else {
+        b.seguir(desvio.x, desvio.z, velocidade);
+        return false;
+      }
     }
     if (barrado(b, alvo)) {
       b.entrarEmServico();
+      const ja = (esperando.get(b) ?? 0) + dtAgora;
+      esperando.set(b, ja);
+      if (ja > 1) {
+        esperando.delete(b);
+        const dist = Math.hypot(alvo.x - b.x, alvo.z - b.z);
+        const ux = (alvo.x - b.x) / dist;
+        const uz = (alvo.z - b.z) / dist;
+        // de que lado do caminho está quem barra? o desvio vai pelo outro
+        const p = [g0.playerPosition(), g0.companionPosition()]
+          .sort((a, c) => Math.hypot(a.x - b.x, a.z - b.z) - Math.hypot(c.x - b.x, c.z - b.z))[0];
+        const lado = Math.sign((p.x - b.x) * uz - (p.z - b.z) * ux) || 1;
+        const d = new THREE.Vector3(b.x + ux * 1.1 + uz * lado * 1.3, 0, b.z + uz * 1.1 - ux * lado * 1.3);
+        // (dentro da quadra)
+        d.x = THREE.MathUtils.clamp(d.x, -10.3, 10.3);
+        d.z = THREE.MathUtils.clamp(d.z, -6, 5);
+        desvios.set(b, d);
+      }
       return false;
     }
+    esperando.delete(b);
     b.seguir(alvo.x, alvo.z, velocidade);
     return false;
   };
@@ -535,7 +572,9 @@ export function montarOUmContraUm(w: WorldBuilder, q: QuadraDoTreino): { flynn: 
       // (perto um do outro, a conversa é no meio dos dois; se a dupla barrou quem dribla longe, é com quem está perto)
       const juntos = Math.hypot(flynn.x - rocco.x, flynn.z - rocco.z) < 4;
       const m = juntos ? meioDosDois() : maisPerto();
-      const meio = posicionarParaConversar(g, m, -0.4, 2.1);
+      // (a dupla DE LADO na tela — na frente dos dois, o cabelo do Ari tapava o Flynn —, do lado do meio da quadra: na
+      // cesta da direita, à direita deles ela ia parar embaixo da tabela)
+      const meio = posicionarParaConversar(g, m, m.x > 0 ? -2.2 : 1.5, 1.0);
       foco.position.set(m.x, 1.0, m.z);
       for (const a of Object.values(atletas)) a.bicho.encarar(meio.x, meio.z);
       g.focusCamera(foco);
@@ -617,6 +656,7 @@ export function montarOUmContraUm(w: WorldBuilder, q: QuadraDoTreino): { flynn: 
 
   w.onUpdate((dt) => {
     relogio += dt;
+    dtAgora = dt;
     passo(dt);
     flynn.update(dt);
     rocco.update(dt);
