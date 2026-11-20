@@ -389,6 +389,35 @@ console.log('\n5. a semana no save');
   ok(Object.keys(P.PREMIOS).length === 6 && P.PREMIO_DA_SEMANA.selo, `os prêmios: ${Object.values(P.PREMIOS).map((p) => p.nome).join(', ')}`);
 }
 
+// ======================================================== o Jean-Luc disfarçado
+console.log('\n6. o Jean-Luc, todo dia com um disfarce');
+{
+  const disfarces = [];
+  for (const dia of P.DIAS) {
+    for (const [rotulo, caminho] of [['certo', certa], ['errado', errada], ['barrando', barrando]]) {
+      const fila = caminho.porDia[dia.numero - 1].fila;
+      const jl = fila.filter((v) => v.ficha === 'jeanluc');
+      if (jl.length !== 1) disfarces.push(`XX dia ${dia.numero} (${rotulo}): ${jl.length} Jean-Lucs`);
+      else if (rotulo === 'certo') disfarces.push(`${jl[0].nome} (${jl[0].rosto.enfeite})`);
+    }
+  }
+  const enfeites = new Set(disfarces.map((d) => d.split('(')[1]));
+  ok(disfarces.length === 6 && enfeites.size === 6 && !disfarces.some((d) => d.startsWith('XX')),
+    `ele vem nos seis dias, com seis disfarces: ${disfarces.join(', ')}`);
+  // barrado SEM a lupa também conta como pego
+  const lembra = (decidir) => {
+    const s = novoSave();
+    for (const dia of P.DIAS.slice(0, 2)) P.registrarODia(s, dia.numero, jogarODia(dia.numero, 1, P.fatosAntesDoDia(s, dia.numero), decidir).fim);
+    const f = P.fatosAntesDoDia(s, 3);
+    return { vezes: P.vezesPego((x) => f.has(x)), fala: P.montarDia(3, 1, f).fila.find((v) => v.ficha === 'jeanluc').chegada[1] };
+  };
+  const semLupa = lembra(barraTudo);
+  const comLupa = lembra(jogarCerto);
+  const deixando = lembra(jogarErrado);
+  ok(semLupa.vezes === 2 && comLupa.vezes === 2 && deixando.vezes === 0,
+    `ele lembra de cada dia em que não passou, barrado com ou sem a lupa (na quarta: "${semLupa.fala}"; deixado entrar: "${deixando.fala}")`);
+}
+
 // ============================================================== um dia, por escrito
 console.log('\n   a fila do dia 2 (semente 1, jogando certo):');
 for (const v of certa.porDia[1].fila) {

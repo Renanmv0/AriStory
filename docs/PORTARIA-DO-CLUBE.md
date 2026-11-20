@@ -477,11 +477,26 @@ acessório), o jeito vem com a espécie.
 - **Capy (capivara salva-vidas)**: chega de moto e de capacete (a foto só
   bate depois de apontar e ele tirar). Tique: alonga o pescoço, confere o
   apito. Na sexta ele pede RIGOR: "Portaria é a primeira linha de segurança!".
-- **Jean-Luc (pato francês)**: sobe no caixote para alcançar a janela e
-  ajeita os óculos escuros. Dramático: "C'est une catastrophe!". Ter: a
-  carteirinha do "Club de Ping-Pong de Paris" ("C'est la même chose!").
-  Apontado, desmaia de mentira no caixote. Sáb: o DISFARCE de bigode com a
-  carteirinha do Noel — apontado, o bigode cai devagar.
+- **Jean-Luc (pato francês) — TODO DIA UM DISFARCE** (pedido do Renan,
+  2026-11-20: "algum dos personagens deve voltar todos os dias com um disfarce
+  diferente, só para ser engraçado"). Sobe no caixote para alcançar a janela,
+  dramático ("C'est une catastrophe!"), e cada disfarce cai pela ferramenta que
+  o dia ensina:
+  - seg: a TARTARUGA, de casco de papelão, com a carteirinha da Josefina (a foto);
+  - ter: o MONSIEUR CANARD, de óculos com nariz e bigodinho, com a carteirinha
+    do "Club de Ping-Pong de Paris" (o escudo, a lista: "C'est la même chose!");
+  - qua: a JEANNE, de peruca de franja igual à da Alpacina, com um convite
+    datado de 14 de julho (a data);
+  - qui: o JEAN-PIERRE da Croissant Express, entregando croissants e bolinhas
+    na "Mesa de Ping Pong" que o clube não tem (o destino);
+  - sex: o SEU HIPÓLITO ENCOLHIDO, de touca, boia e travesseiro na barriga,
+    com a carteirinha do hipopótamo (a foto) e uma raquete na sacola;
+  - sáb: o NOEL DE BIGODE, com a carteirinha do Noel (a foto) — e o Noel de
+    verdade chega logo atrás se o falso passar.
+  Ele LEMBRA de cada dia em que não passou (barrado com ou sem a lupa) e chega
+  dizendo que desta vez o disfarce é perfeito; os que passam viram manchete
+  ruim, e os pegos, "o disfarce do dia". Apontado, o disfarce cai (o casco
+  escorrega, a peruca, o travesseiro, o bigode).
 - **Estella (ovelha costureira)**: qua, convidada do Noel. Tira a fita métrica
   e mede a janela do guichê ("Bonita, querida, mas a cortina está curta").
   Entra elogiando o uniforme da dupla.
@@ -541,6 +556,11 @@ jogando certo (com folga) e também perguntando o nome de todo mundo.
 Os dias têm ROTEIRO (os da história, na ordem) e FIGURANTES sorteados por
 semente entre eles. "Pega com" diz a ferramenta que resolve.
 
+Em TODO dia, por último ou no meio, vem o Jean-Luc com o disfarce do dia
+(§11): o casco (seg), o Monsieur Canard (ter), a Jeanne (qua), a Croissant
+Express (qui), o hipopótamo encolhido (sex) e o bigode de Noel (sáb) — 🔴 em
+todos.
+
 **Dia 1 · segunda · O primeiro dia** (a carteirinha; a Gina ensina o 🔍)
 | quem | o que tem | o certo | pega com |
 |---|---|---|---|
@@ -554,7 +574,7 @@ semente entre eles. "Pega com" diz a ferramenta que resolve.
 | bode | vencida | 🔴 | o calendário |
 
 **Dia 2 · terça · A lista de sócios** (a prancheta; a Gina ensina o 💬)
-Bento (🟢) · Jean-Luc, carteirinha de Paris (🔴: 🔍 o escudo / a lista) · Beto
+Bento (🟢) · o Monsieur Canard, carteirinha de Paris (🔴: 🔍 o escudo / a lista) · Beto
 com a carteirinha do Bento (🔴: 💬 o número) · Dona Preguiça (🟢: paciência) ·
 texugo riscado na lista (🔴) · panda-vermelho com número que não existe (🔴) ·
 Seu Hipólito, ainda vencido (🔴) · Alpacina de tranças (🟢) · dois figurantes.
