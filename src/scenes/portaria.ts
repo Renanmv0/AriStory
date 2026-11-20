@@ -5,13 +5,13 @@ import { PALETTE as P } from '../palette';
 import { diaDaPortariaPedido, portariaNestaPagina } from '../eventos/portariaDoClube';
 import {
   Expediente, FICHAS, NOME_DO_ITEM, PERGUNTA, carimboCerto, diferencas, falaDaSaida, fatosAntesDoDia, fichaDe, proibidosNaSacola, registrarODia, rotuloDaPista,
-  type Assunto, type Carimbo, type ItemDaSacola, type Pista, type Visitante,
+  type Assunto, type Carimbo, type ItemDaSacola, type Pista, type Retrato, type Visitante,
 } from '../minigames/portaria';
 import type { EstadoDaMesa } from '../ui/mesaDaPortaria';
 import { fundir, fundirComoFundo } from '../world/fundir';
 import { GUARITA_DO_CLUBE, GuaritaDoClube } from '../world/guaritaDoClube';
 import { Gina } from '../entities/bichos/Gina';
-import { CARIMBOS, MESA_DA_PORTARIA, MesaDaPortaria } from '../world/mesaDaPortaria';
+import { MESA_DA_PORTARIA, MesaDaPortaria } from '../world/mesaDaPortaria';
 import { alturaDoElevador, ElevadorDoBalcao, modeloDoVisitante, type ModeloDeVisitante } from '../world/visitantesDaPortaria';
 import { arvore } from '../world/arvores';
 import { lamp, muroDoClube, portaoDoClube, sebe } from '../world/props';
@@ -39,7 +39,7 @@ import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeCh
 /** o olho de quem joga, sentado no banco do meio (a câmera de primeira pessoa) */
 const OLHO = { de: new THREE.Vector3(0, 1.7, 0.44), para: new THREE.Vector3(1.3, 0.95, 2.9), lente: 62 };
 /** no celular em pé a mesa de papel cobre a metade de baixo: o olho sobe para o guichê */
-const OLHO_EM_PE = { de: new THREE.Vector3(0, 1.7, 0.44), para: new THREE.Vector3(0, 1.1, 2.9), lente: 74 };
+const OLHO_EM_PE = { de: new THREE.Vector3(0, 1.7, 0.44), para: new THREE.Vector3(0, 0.92, 2.9), lente: 74 };
 
 /** a tomada de abertura do dia: de fora do guichê, um tico à esquerda da tela, os três lá dentro */
 const ABERTURA = { de: new THREE.Vector3(1.1, 2.05, 4.9), para: new THREE.Vector3(-0.15, 1.5, 0.6), lente: 44, lenteEmPe: 70 };
@@ -284,6 +284,9 @@ function montarAPortaria(w: WorldBuilder): void {
       janela: j && v ? {
         rosto: v.rosto,
         tapado: v.tapado && !j.corrigidas.has('rostoTapado') ? v.tapado : undefined,
+        grupo: (v.grupo ?? []).map((f) => FICHAS[f]?.retrato).filter((r): r is Retrato => !!r),
+        escondido: v.escondido ? FICHAS[v.escondido]?.retrato ?? null : null,
+        escondidoAchado: j.corrigidas.has('alguemEscondido'),
         docs: v.docs,
         sacola: v.sacola ?? [],
         confiscados: j.confiscados,
@@ -308,7 +311,7 @@ function montarAPortaria(w: WorldBuilder): void {
     ex.passar(dt);
     if (ex.hora !== horaMostrada) {
       horaMostrada = ex.hora;
-      desenhar();
+      painel.atualizarHora(ex.hora, ex.fechou);
     }
   });
 
@@ -346,21 +349,28 @@ function montarAPortaria(w: WorldBuilder): void {
     if (ocupado || !ex.janela) return;
     const ficha = fichaDe(ex.janela.visitante);
     const r = ex.perguntar(a);
+    // (com a resposta no balão, o carimbo espera: carimbar no meio da fala embaralhava as falas)
+    ocupado = true;
     desenhar();
     await painel.falar(g.playerName(), [PERGUNTA[a]]);
     await painel.falar(nomeNaJanela(), r.falas, ficha.icone);
+    ocupado = false;
+    desenhar();
   };
 
   const apontar = async (a: Pista, b: Pista): Promise<void> => {
     if (ocupado || !ex.janela) return;
     const ficha = fichaDe(ex.janela.visitante);
     const r = ex.apontar(a, b);
+    ocupado = true;
     desenhar();
     if (r.diferenca) {
       g.som('acertou');
       painel.avisar(`🔍 Não bate: ${rotuloDaPista(a)} × ${rotuloDaPista(b)}`);
     } else painel.avisar('🔍 Isso bate. Nada de errado aí.');
     await painel.falar(nomeNaJanela(), r.falas, ficha.icone);
+    ocupado = false;
+    desenhar();
   };
 
   const confiscar = (item: ItemDaSacola): void => {
@@ -374,9 +384,15 @@ function montarAPortaria(w: WorldBuilder): void {
   const ajuda = async (): Promise<void> => {
     if (ocupado || !ex.janela) return;
     const dica = ex.ajuda();
+    if (!dica) {
+      painel.avisar('💡 Acabaram as dicas de hoje.');
+      return;
+    }
+    ocupado = true;
     desenhar();
-    if (dica) await painel.falar(g.companionName(), [dica]);
-    else painel.avisar('💡 Acabaram as dicas de hoje.');
+    await painel.falar(g.companionName(), [dica]);
+    ocupado = false;
+    desenhar();
   };
 
   const responderOferta = async (aceitou: boolean): Promise<void> => {
@@ -414,7 +430,10 @@ function montarAPortaria(w: WorldBuilder): void {
         await m.irPara(x, z, 1.5);
         if (c !== 'hojeNao' && x > 5) abrirCancela = false;
       }
-      m.group.visible = false;
+      // chegou longe: sai da cena de vez
+      m.group.removeFromParent();
+      m.dispose();
+      indo.splice(indo.indexOf(m), 1);
     })();
     if (chamado) modeloDe(chamado);
     andarAFila();
@@ -434,25 +453,33 @@ function montarAPortaria(w: WorldBuilder): void {
     await painel.falar('Gina', fim.falaDaGina, '🦒');
     await painel.envelope(fim, { abriu: reg.abriu, recorde: reg.recorde });
     acabou = true;
+    voltarAoClube();
+  };
+
+  /** solta os dois dos bancos, devolve a câmera e o controle, e volta ao clube na frente da guarita */
+  const voltarAoClube = (): void => {
     painel.fechar();
+    g.setSitting(false);
+    g.mostrarCabeca('jogador', true);
+    g.setCameraOmbro(null);
+    g.releasePlayer(-19.35, 5.1, Math.PI);
+    g.releaseCompanion(-18.6, 5.3, Math.PI);
+    g.lockPlayer(false);
     g.goTo('clube', 'da-guarita');
   };
 
-  // a mesa 3D também se toca: a campainha, os carimbos, a lupa, a prancheta, o manual, o calendário e os papéis
-  w.clicavel(mesa.campainha, { dica: '🛎️ Chamar o próximo', alturaDaDica: 0.15, aoClicar: () => void chamar() });
-  for (const c of CARIMBOS) {
-    w.clicavel(mesa.carimbos[c], { dica: c === 'entra' ? '✅ ENTRA' : c === 'soClube' ? '🟡 SÓ O CLUBE' : '⛔ HOJE NÃO', alturaDaDica: 0.2, aoClicar: () => void carimbar(c) });
-  }
-  w.clicavel(mesa.lupa, { dica: '🔍 Lupa', alturaDaDica: 0.12, aoClicar: () => painel.lupa(true) });
-  w.clicavel(mesa.prancheta, { dica: '📋 Lista de sócios', alturaDaDica: 0.12, aoClicar: () => painel.abrirFolha('lista') });
-  w.clicavel(mesa.manual, { dica: '📖 Manual', alturaDaDica: 0.12, aoClicar: () => painel.abrirFolha('manual') });
-  w.clicavel(mesa.calendario, { dica: '🗓️ Hoje', alturaDaDica: 0.2, aoClicar: () => painel.abrirFolha('hoje') });
-  for (const tipo of ['carteirinha', 'convite', 'conviteColetivo', 'cracha', 'ordem', 'exame'] as const) {
-    w.clicavel(mesa.papelDe(tipo), { alturaDaDica: 0.1, aoClicar: () => {
-      mesa.trazerParaLeitura(tipo);
-      painel.abrirFolha(tipo);
-    } });
-  }
+  /** largar o dia no meio: nada se grava, nada se paga */
+  const sair = async (): Promise<void> => {
+    if (acabou) return;
+    acabou = true;
+    ocupado = true;
+    await painel.falar('Gina', ['Já vai? Tudo bem, eu seguro a guarita. O dia de hoje fica para outra vez.'], '🦒');
+    voltarAoClube();
+  };
+
+  // A MESA 3D é o que se VÊ: a campainha afunda, o carimbo desce, a lupa sobe e o papel escolhido vem para a
+  // leitura — mas quem se toca é a mesa em tela. (O motor não deixa clicar no mundo com o jogador travado na
+  // cadeira, e no celular um carimbo de dois centímetros na tela não serve de botão.)
 
   // ---- o começo do dia: a mesa abre, a Gina dá o recado e a fila se forma
   const abrirAMesa = (): void => painel.abrir({
@@ -464,6 +491,8 @@ function montarAPortaria(w: WorldBuilder): void {
     ajuda: () => void ajuda(),
     responderOferta: (s) => void responderOferta(s),
     terminar: () => void terminar(),
+    sair: () => void sair(),
+    lupaMudou: (sim) => mesa.erguerLupa(sim),
     abriuPapel: (tipo) => mesa.trazerParaLeitura(tipo),
   });
   w.aoDesmontar(() => painel.fechar());

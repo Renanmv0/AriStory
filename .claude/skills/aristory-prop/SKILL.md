@@ -1387,6 +1387,11 @@ PERTO, em primeira pessoa, por quem está sentado no meio da guarita:
 - **O carimbo que bate de verdade**: as etapas são pontos (casa, almofada,
   papel, de volta) e a tinta entra no papel no quadro do contato
   (`redesenhar` com o carimbo).
+- **Mesa 3D de VER, mesa em tela de TOCAR**: o `Apontador` não atira com o
+  jogador travado (`lockPlayer`), e a primeira pessoa trava o jogador na
+  cadeira — `w.clicavel` numa peça dessa cena nunca dispara. As ferramentas
+  são da mesa em tela (`ui/mesaDaPortaria.ts`); a mesa 3D só anima o que ela
+  manda.
 - **O ELEVADOR DO BALCÃO**: a guarita é de girafa (balcão a 1,25, a altura da
   cabeça da dupla) e quase todo visitante é menor; o disco num pistão de três
   gomos sobe cada um até o alto da cabeça chegar a 1,95

@@ -559,7 +559,7 @@ const COOKIE: FichaDaPortaria = {
 
 const GATITO: FichaDaPortaria = {
   id: 'gatito', nome: 'Gatito', icone: '🐱',
-  retrato: R('gato', 'azulPelucia', 'remendoNaOrelha'),
+  retrato: R('gato', 'creme', 'manchaCaramelo'),
   personalidade: 'o professor de pelúcia: organizado, orgulhoso da turma, e com o "six seven" na ponta da língua',
   jeito: 'professor',
   bordao: 'Six seven!',
@@ -639,7 +639,7 @@ const SOL: FichaDaPortaria = {
 
 const ESTRELLA: FichaDaPortaria = {
   id: 'estrella', nome: 'Estrella', icone: '🐰',
-  retrato: R('coelha', 'cinza', 'lacoRosa'),
+  retrato: R('coelha', 'marrom', 'lacoRosa'),
   personalidade: 'a irmã das estrelinhas: não para quieta, gira atrás da fila',
   jeito: 'animado',
   bordao: 'Olha a minha estrelinha!',

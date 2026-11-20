@@ -210,6 +210,18 @@ export function pintarRetrato(c: CanvasRenderingContext2D, x: number, y: number,
     c.beginPath(); c.moveTo(cx, cy - ry); c.lineTo(cx, cy - ry * 0.45); c.stroke(); c.setLineDash([]); c.strokeStyle = 'rgba(40,30,30,0.55)';
   }
 
+  if (r.marca === 'manchaCaramelo') {
+    // o Gatito: a mancha caramelo cobrindo o lado direito da cabeça e a orelha (o branco do resto é o creme)
+    c.save();
+    elipse(c, cx, cy, rx, ry);
+    c.clip();
+    c.fillStyle = css(P.gatitoCaramelo);
+    elipse(c, cx + rx * 0.75, cy - ry * 0.45, rx * 0.75, ry * 0.7, -0.4);
+    c.fill();
+    c.restore();
+    c.fillStyle = css(P.gatitoCaramelo);
+    c.beginPath(); c.moveTo(cx + rx * 0.5, cy - ry * 0.55); c.lineTo(cx + rx * 0.9, cy - ry * 1.27); c.lineTo(cx + rx * 1.16, cy - ry * 0.5); c.fill();
+  }
   // ---- o focinho
   const fy = cy + ry * 0.35;
   switch (d.focinho) {

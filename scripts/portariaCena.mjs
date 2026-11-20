@@ -136,7 +136,22 @@ if (!SO || SO === 'dia') {
     const c = await page.evaluate(() => window.portaria.conferir());
     if (!c) break;
     const feitas = { id: c.id, perguntas: [], apontados: [], confiscados: [], carimbo: c.carimbo };
-    if (visita === 0) await page.screenshot({ path: `${OUT}-janela${sufixo}.png` });
+    if (visita === 0) {
+      await page.screenshot({ path: `${OUT}-janela${sufixo}.png` });
+      // O RELÓGIO NÃO REDESENHA A MESA: um botão segurado por dois segundos (o relógio andando) continua o mesmo,
+      // e a rolagem do manual fica onde estava
+      const botao = await page.$('[data-acao="lupa"]');
+      const m0 = await page.evaluate(() => window.portaria.ex.minutos);
+      await espera(2500);
+      const m1 = await page.evaluate(() => window.portaria.ex.minutos);
+      ok(await botao.evaluate((el) => el.isConnected), `o relógio andou (${m0.toFixed(2)} → ${m1.toFixed(2)} min) sem trocar os botões da mesa`);
+      ok(m1 > m0, 'o relógio anda com alguém na janela');
+      await page.click('[data-aba="manual"]');
+      await page.$eval('.pt-manual', (el) => { el.scrollTop = 40; });
+      await espera(1500);
+      const rolou = await page.$eval('.pt-manual', (el) => el.scrollTop);
+      ok(rolou > 0 || (await page.$eval('.pt-manual', (el) => el.scrollHeight <= el.clientHeight)), `a rolagem do manual fica com o relógio andando (${rolou})`);
+    }
     // a oferta pela fresta: recusar
     if (await page.isVisible('[data-acao="oferta:nao"]')) {
       await page.click('[data-acao="oferta:nao"]');
@@ -229,6 +244,17 @@ if (!SO || SO === 'dia') {
   ok(!depois.naPortaria && depois.cena === 'clube', `a mesa fechou e a dupla voltou ao clube (${depois.cena})`);
   ok(depois.vezes === 1, `o save ganhou o dia ${DIA} (${depois.vezes})`);
   ok(depois.saldo - saldoAntes === daCena.total, `a carteira ganhou R$ ${daCena.total} (${depois.saldo - saldoAntes})`);
+  // de volta ao clube, a dupla anda de novo
+  // (o navegador de teste roda poucos quadros por segundo: o que se mede é sair do lugar, e o controle destravado)
+  const p0 = await page.evaluate(() => window.jogo.playerPosition().toArray());
+  await page.keyboard.down('KeyS');
+  await espera(3000);
+  await page.keyboard.up('KeyS');
+  await espera(300);
+  const p1 = await page.evaluate(() => window.jogo.playerPosition().toArray());
+  const andou = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
+  const travado = await page.evaluate(() => window.jogo.player?.locked ?? null);
+  ok(travado === false && andou > 0.05, `de volta ao clube, a dupla anda (${andou.toFixed(2)} m, travado: ${travado})`);
   await page.screenshot({ path: `${OUT}-volta${sufixo}.png` });
 }
 

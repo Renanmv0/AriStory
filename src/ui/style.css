@@ -7411,6 +7411,16 @@ body.portaria-aberta .prompt { display: none !important; }
   box-shadow: 0 3px 10px rgba(30, 20, 10, 0.18);
 }
 .portaria .pt-hora.fechou { background: #ffd8cf; color: #8a2a1e; }
+.portaria .pt-topo .pt-sair {
+  pointer-events: auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 14px;
+  background: rgba(255, 250, 242, 0.94);
+  box-shadow: 0 3px 10px rgba(30, 20, 10, 0.18);
+  cursor: pointer;
+}
 
 /* ---- a mesa: o feltro verde de escrivaninha */
 .portaria .pt-painel {
@@ -7705,7 +7715,17 @@ body.portaria-aberta .prompt { display: none !important; }
 .portaria .pt-boletim article.ruim { border-left-color: #d8423a; }
 .portaria .pt-boletim h5 { margin: 0; font-size: 14px; }
 .portaria .pt-boletim p { margin: 0; font-size: 13px; }
-.portaria .pt-env .pt-grande { width: 100%; border: 0; border-radius: 14px; font-weight: 900; cursor: pointer; }
+.portaria .pt-env .pt-grande {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  /* o botão fica sempre à vista, mesmo com o envelope comprido rolando por baixo */
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 -8px 14px #fff6e4;
+}
 
 @keyframes pt-entra { from { transform: translateY(-6px); opacity: 0; } }
 @keyframes pt-pisca { 50% { opacity: 0.2; } }
@@ -7741,6 +7761,7 @@ body.portaria-aberta .prompt { display: none !important; }
   .portaria .pt-linha span { font-size: 14px; }
   .portaria .pt-balao { left: 10px; right: 10px; top: 50px; }
   .portaria .pt-aviso { left: 10px; right: 10px; bottom: calc(60vh + 16px); }
-  .portaria .pt-flutuante { left: 10px; right: 10px; bottom: calc(60vh + 12px); }
+  /* (o popover fica por cima da folha, e não do guichê: o rosto de quem pergunta continua à vista) */
+  .portaria .pt-flutuante { left: 14px; right: 14px; bottom: 112px; }
   .portaria .pt-pop { max-width: none; }
 }

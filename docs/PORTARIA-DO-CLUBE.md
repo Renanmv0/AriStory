@@ -86,15 +86,20 @@
   CARIMBOS no porta-carimbos (o carimbo sai, molha na almofada e DESCE no papel — a tinta fica nele), a
   campainha de balcão, a lupa de latão, a prancheta com a lista de sócios, o calendário de mesa, o manual de
   argola e a luminária de braço com a poça de luz pintada. Os papéis são um `PapelPintado` por TIPO, a cena
-  inteira (redesenhado a cada visitante), e tudo se toca na mesa 3D também (`w.clicavel`).
+  inteira (redesenhado a cada visitante). A mesa 3D é o que se VÊ (a campainha afunda, o carimbo desce, a lupa
+  sobe, o papel escolhido vem para a leitura); quem se TOCA é a mesa em tela — o motor não deixa clicar no
+  mundo com o jogador travado na cadeira, e no celular um carimbo de dois centímetros não serve de botão.
 - **O pintor dos papéis e dos retratos** (`src/world/papeisDaPortaria.ts`): um pintor, duas saídas — a
   textura na mesa e a folha grande na tela; os campos caem nos retângulos de `minigames/portaria/campos.ts`.
 - **A mesa em tela** (`src/ui/mesaDaPortaria.ts`, `GameAPI.mesaDaPortaria()`): o feltro verde com as abas
-  dos papéis, a lista, o calendário e o manual; a folha aberta grande; o ROSTO de quem está na janela (o
-  mesmo pintor da foto) e a TRANSCRIÇÃO; a 🔍 lupa (cada campo, o rosto, cada resposta, a lista, o
+  dos papéis, a lista, o calendário e o manual; a folha aberta grande; a FOTO DA JANELA (o mesmo pintor da
+  foto: quem está no balcão, os rostinhos de quem veio junto e, de quem está escondido, só as orelhas até a
+  lupa achar) e a TRANSCRIÇÃO; a 🔍 lupa (cada campo, o rosto, cada resposta, a lista, o
   calendário, as seções do manual e a "bancada vazia" são alvos), o 💬, a 🎒 sacola, a 💡 dica, os carimbos,
   a 🛎️ campainha e o 🏁 fim do dia; o balão de quem fala (o relógio para enquanto ele está aberto) e o
-  ENVELOPE da Gina com as estrelas e o Boletim do Clube. No computador a mesa fica à esquerda (a câmera vira
+  ENVELOPE da Gina com as estrelas e o Boletim do Clube; o 🚪 (dois toques) larga o dia no meio, sem gravar
+  nada. O relógio do expediente só mexe no relógio: a mesa não se redesenha a cada minuto (botão trocado no
+  meio do toque perdia o clique, e a rolagem do manual voltava ao topo). No computador a mesa fica à esquerda (a câmera vira
   um tico para a cena cair à direita); no celular em pé, embaixo (a câmera olha o guichê).
 - **A cena**: a guarita de verdade, o portão e o muro à direita da tela (de onde vem a fila), a cancela à
   esquerda (por onde quem entra segue), a Gina na bancada do monitor e o parceiro sentado na do fichário; a
@@ -110,13 +115,15 @@
   Jean-Luc, a Estella, o Mano, o Cookie, o Gatito, a Tia Liz, as irmãs, o Flynn, o Rocco, a Valentina e o
   Pietro) vem com o modelo de verdade; os NOVOS (o Seu Hipólito, as alpacas, o Bento e o Beto, o Tatá, a
   Dona Preguiça, os figurantes) ainda são um RECORTE DE PAPELÃO pintado com o retrato, de pé numa base. O
-  disfarce do Jean-Luc aparece no rosto da mesa, ainda não no corpo; e as animações de cada ficha (a
-  chegada, o tique, o entra, o barrado, o apontado) ainda não existem — eles só andam, viram e falam.
+  disfarce do Jean-Luc aparece no rosto da mesa, ainda não no corpo; quem vem em GRUPO (o netinho, as irmãs,
+  os Dogões, o Pietro) aparece só na foto da janela, e no 3D vem só quem fala; e as animações de cada ficha
+  (a chegada, o tique, o entra, o barrado, o apontado) ainda não existem — eles só andam, viram e falam.
 - **O teste**: `node scripts/portariaCena.mjs` — escondida sem a chave; e um DIA INTEIRO jogado pela tela
   por um robô guiado pela conferência de verdade (pergunta, aponta cada diferença CLICANDO os alvos — cada
   um conferido como o elemento de cima no próprio centro —, tira da sacola, recusa o agrado, carimba), o
   envelope da cena igual ao do mesmo dia jogado só pelo `Expediente`, a carteira, o save e a volta ao
-  clube. `CEL=1` no celular em pé; `DIA=n` escolhe o dia.
+  clube (e a dupla anda de novo); e, no meio do primeiro atendimento, o relógio andando sem trocar os botões
+  da mesa e sem perder a rolagem do manual. `CEL=1` no celular em pé; `DIA=n` escolhe o dia.
 
 **Falta**: a parte 2 (os modelos dos visitantes novos e a ANIMAÇÃO de cada ficha, o disfarce do Jean-Luc
 no corpo, a Gina apertando o botão do elevador) e a parte 3 (os prêmios das três estrelas, a memória, os

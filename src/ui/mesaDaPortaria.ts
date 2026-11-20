@@ -41,6 +41,11 @@ export interface JanelaDaMesa {
   rosto: Retrato;
   /** o rosto tapado (o capacete do Capy), até a lupa apontar */
   tapado?: string;
+  /** quem veio junto (a turma, o netinho, o motorista): os rostinhos na mesma foto */
+  grupo: readonly Retrato[];
+  /** quem está escondido atrás (a Luna): só as orelhas, até a lupa achar */
+  escondido: Retrato | null;
+  escondidoAchado: boolean;
   docs: readonly Documento[];
   sacola: readonly ItemDaSacola[];
   confiscados: readonly ItemDaSacola[];
@@ -78,6 +83,10 @@ export interface AcoesDaMesa {
   ajuda(): void;
   responderOferta(aceitou: boolean): void;
   terminar(): void;
+  /** largar o dia no meio (o dia não conta) */
+  sair(): void;
+  /** a lupa ligou ou desligou (a lupa 3D sobe da mesa) */
+  lupaMudou?(sim: boolean): void;
   /** a folha aberta mudou (a mesa 3D traz o papel para a leitura) */
   abriuPapel?(tipo: TipoDeDocumento): void;
 }
@@ -96,6 +105,8 @@ export interface PainelDaPortaria {
   readonly falando: boolean;
   abrir(acoes: AcoesDaMesa): void;
   desenhar(e: EstadoDaMesa): void;
+  /** só o relógio (o tique do expediente NÃO redesenha a mesa: botão trocado no meio do toque perde o clique) */
+  atualizarHora(hora: string, fechou: boolean): void;
   /** o balão: uma fala por vez, toque para seguir; resolve quando a última fecha */
   falar(quem: string, falas: readonly string[], icone?: string): Promise<void>;
   /** o recadinho curto que some sozinho (a lupa achou, a sacola, o relógio) */
@@ -139,6 +150,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   private filaDeFalas: Array<{ quem: string; fala: string; icone?: string; pronto?: () => void }> = [];
   private timerDoAviso = 0;
   private observador: ResizeObserver | null = null;
+  private sairPedido = 0;
 
   private readonly topo: HTMLElement;
   private readonly abas: HTMLElement;
@@ -194,7 +206,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
     this.aberta = true;
     this.raiz.classList.add('show');
     document.body.classList.add('portaria-aberta');
-    this.observador ??= new ResizeObserver(() => this.pintarFolha());
+    this.observador ??= new ResizeObserver(() => this.pintarFolha(true));
     this.observador.observe(this.folha);
     this.aoMudar?.();
   }
@@ -231,11 +243,20 @@ export class MesaDaPortaria implements PainelDaPortaria {
     this.raiz.classList.toggle('lupa', this.modoLupa);
   }
 
+  atualizarHora(hora: string, fechou: boolean): void {
+    const chip = this.topo.querySelector('.pt-hora');
+    if (!chip) return;
+    chip.textContent = `🕘 ${hora}`;
+    chip.classList.toggle('fechou', fechou);
+    if (this.estado) this.estado = { ...this.estado, hora, fechou };
+  }
+
   private pintarTopo(): void {
     const e = this.estado!;
     this.topo.innerHTML = `
       <span class="pt-dia">📅 Dia ${e.dia.numero} · ${escapar(e.dia.nome)}</span>
       <span class="pt-hora${e.fechou ? ' fechou' : ''}">🕘 ${e.hora}</span>
+      <button class="pt-sair" data-acao="sair" title="largar o dia">🚪</button>
       <span class="pt-fila">👥 ${e.esperando}</span>
       <span class="pt-dicas" title="dicas do parceiro">💡 ${e.ajudas}</span>`;
   }
@@ -266,16 +287,27 @@ export class MesaDaPortaria implements PainelDaPortaria {
       style="left:${x * 100}%;top:${y * 100}%;width:${l * 100}%;height:${a * 100}%"></button>`;
   }
 
+  /** o que a folha mostrou da última vez (nada mudou: não repinta, e a rolagem do manual fica) */
+  private chaveDaFolha = '';
+  private docsDaFolha: readonly Documento[] | null = null;
+
   /** A FOLHA ABERTA, pintada na resolução da tela */
-  private pintarFolha(): void {
+  private pintarFolha(forcar = false): void {
     const e = this.estado;
     if (!e) return;
     const caixa = this.folha.getBoundingClientRect();
     if (caixa.width < 20 || caixa.height < 20) return;
+    const chave = JSON.stringify([this.aba, Math.round(caixa.width), Math.round(caixa.height), this.modoLupa, this.primeira, e.regras.length, !!e.janela, e.podeChamar]);
+    if (!forcar && chave === this.chaveDaFolha && this.docsDaFolha === (e.janela?.docs ?? null)) return;
+    this.chaveDaFolha = chave;
+    this.docsDaFolha = e.janela?.docs ?? null;
+    const rolagem = this.folha.querySelector('.pt-manual')?.scrollTop ?? 0;
     const dpr = Math.min(2.5, window.devicePixelRatio || 1);
     const aba = this.aba;
     if (aba.tipo === 'manual') {
       this.folha.innerHTML = this.htmlDoManual(e);
+      const manual = this.folha.querySelector('.pt-manual');
+      if (manual) manual.scrollTop = rolagem;
       const capa = this.folha.querySelector<HTMLCanvasElement>('canvas.pt-escudo');
       if (capa) {
         capa.width = 96 * dpr;
@@ -356,18 +388,24 @@ export class MesaDaPortaria implements PainelDaPortaria {
     const e = this.estado!;
     const j = e.janela;
     if (!j) {
+      this.chaveDoRosto = '';
       this.rosto.innerHTML = '<div class="pt-polaroid vazia"><span>a janela está vazia</span></div>';
       this.transcricao.innerHTML = '';
       return;
     }
-    this.rosto.innerHTML = `<div class="pt-polaroid"><canvas></canvas>${this.alvo('rosto', 0, 0, 1, 1)}<span>na janela</span></div>`;
-    const tela = this.rosto.querySelector('canvas')!;
-    const dpr = Math.min(2.5, window.devicePixelRatio || 1);
-    tela.width = 120 * dpr;
-    tela.height = 140 * dpr;
-    const c = tela.getContext('2d')!;
-    c.scale(dpr, dpr);
-    pintarRetrato(c, 0, 0, 120, 140, j.rosto, { tapado: j.tapado });
+    const chaveDoRosto = JSON.stringify([j.rosto, j.tapado, j.grupo, j.escondido, j.escondidoAchado, this.primeira === 'rosto']);
+    if (chaveDoRosto !== this.chaveDoRosto || !this.rosto.querySelector('canvas')) {
+      this.chaveDoRosto = chaveDoRosto;
+      this.rosto.innerHTML = `<div class="pt-polaroid"><canvas></canvas>${this.alvo('rosto', 0, 0, 1, 1)}<span>na janela</span></div>`;
+      const tela = this.rosto.querySelector('canvas')!;
+      const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+      tela.width = 120 * dpr;
+      tela.height = 140 * dpr;
+      const c = tela.getContext('2d')!;
+      c.scale(dpr, dpr);
+      pintarFotoDaJanela(c, j);
+    } else this.rosto.querySelector('.pt-alvo')?.classList.toggle('escolhida', this.primeira === 'rosto');
+    const rolagem = this.transcricao.scrollTop;
 
     const linhas = j.transcricao.map((t) => {
       const pista = pistaDaTranscricao(t.assunto);
@@ -376,7 +414,9 @@ export class MesaDaPortaria implements PainelDaPortaria {
         <b>${escapar(ROTULO_CURTO[t.assunto] ?? t.assunto)}</b><span>${escapar(t.valor)}</span></button>`;
     }).join('');
     this.transcricao.innerHTML = linhas || `<p class="pt-dica-vazia">${e.ferramentas.includes('perguntar') ? 'O que ele responder fica anotado aqui.' : 'Confira os papéis com a 🔍 lupa.'}</p>`;
+    this.transcricao.scrollTop = rolagem;
   }
+  private chaveDoRosto = '';
 
   private pintarFerramentas(): void {
     const e = this.estado!;
@@ -468,6 +508,14 @@ export class MesaDaPortaria implements PainelDaPortaria {
       case 'ajuda': this.acoes.ajuda(); break;
       case 'chamar': this.acoes.chamar(); break;
       case 'terminar': this.acoes.terminar(); break;
+      case 'sair':
+        // dois toques: o primeiro avisa, o segundo (em três segundos) larga o dia
+        if (Date.now() - this.sairPedido < 3000) this.acoes.sair();
+        else {
+          this.sairPedido = Date.now();
+          this.avisar('🚪 Toque de novo para largar o dia (ele não conta).');
+        }
+        break;
       case 'oferta:sim': this.acoes.responderOferta(true); break;
       case 'oferta:nao': this.acoes.responderOferta(false); break;
       default:
@@ -480,6 +528,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   }
 
   lupa(sim: boolean): void {
+    if (this.modoLupa !== sim) this.acoes?.lupaMudou?.(sim);
     this.modoLupa = sim;
     this.primeira = null;
     this.popover = null;
@@ -502,6 +551,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
     }
     const a = this.primeira;
     this.modoLupa = false;
+    this.acoes!.lupaMudou?.(false);
     this.primeira = null;
     this.desenhar(this.estado!);
     this.acoes!.apontar(a, pista);
@@ -583,6 +633,34 @@ export class MesaDaPortaria implements PainelDaPortaria {
       }, { once: true });
     });
   }
+}
+
+/**
+ * A FOTO DA JANELA: quem está no balcão, e quem veio junto em rostinhos na
+ * frente dos ombros dele (a mesma conta de cabeças do 💬 "Quantos vocês
+ * são?"). Quem está ESCONDIDO atrás só mostra as orelhas, até a lupa achar.
+ */
+function pintarFotoDaJanela(c: CanvasRenderingContext2D, j: JanelaDaMesa): void {
+  const gr = c.createLinearGradient(0, 0, 0, 140);
+  gr.addColorStop(0, '#d9ecf4');
+  gr.addColorStop(1, '#a9cfe0');
+  c.fillStyle = gr;
+  c.fillRect(0, 0, 120, 140);
+  if (j.escondido && !j.escondidoAchado) {
+    // só o alto da cabeça, atrás do ombro
+    c.save();
+    c.beginPath();
+    c.rect(0, 0, 120, 46);
+    c.clip();
+    pintarRetrato(c, -14, 22, 60, 70, j.escondido, { fundo: false });
+    c.restore();
+  }
+  pintarRetrato(c, j.grupo.length ? 18 : 0, 0, j.grupo.length ? 100 : 120, j.grupo.length ? 118 : 140, j.rosto, { tapado: j.tapado, fundo: false });
+  const juntos = [...j.grupo, ...(j.escondido && j.escondidoAchado ? [j.escondido] : [])];
+  juntos.forEach((r, i) => {
+    const l = 46;
+    pintarRetrato(c, 2 + i * (l - 8), 140 - 58, l, 58, r, { fundo: false });
+  });
 }
 
 /** a data por extenso para a mesa ("segunda, 23/11/2026") */
