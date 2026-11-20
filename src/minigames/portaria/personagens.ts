@@ -419,7 +419,7 @@ const TEXUGO: FichaDaPortaria = {
 
 const NOEL: FichaDaPortaria = {
   id: 'noel', nome: 'Noel', icone: '🦃',
-  retrato: R('peru', 'marrom', 'barbelaVermelha'),
+  retrato: R('peru', 'peru', 'barbelaVermelha', { enfeite: 'boneDoNoel' }),
   personalidade: 'o dono do bar de sucos: sempre atrasado, sempre com caixas, sempre em MAIÚSCULAS',
   jeito: 'afobado',
   bordao: 'BEBITOS! ESQUECI O GELO!',
@@ -439,7 +439,7 @@ const NOEL: FichaDaPortaria = {
 
 const JOSEFINA: FichaDaPortaria = {
   id: 'josefina', nome: 'Josefina', icone: '🐢',
-  retrato: R('tartaruga', 'verde', 'cascoDeFlor'),
+  retrato: R('tartaruga', 'tartaruga', 'cascoDeFlor', { enfeite: 'lacoNaCabeca' }),
   personalidade: 'a jardineira: doce, devagar, e sempre com uma mudinha para alguém',
   jeito: 'doce',
   bordao: 'Bom dia, meus amores!',
@@ -459,7 +459,7 @@ const JOSEFINA: FichaDaPortaria = {
 
 const CAPY: FichaDaPortaria = {
   id: 'capy', nome: 'Capy', icone: '🦫',
-  retrato: R('capivara', 'caramelo', 'apitoNoPeito'),
+  retrato: R('capivara', 'capivara', 'apitoNoPeito', { enfeite: 'oculosNaCabeca' }),
   personalidade: 'o salva-vidas: segurança acima de tudo, até na portaria',
   jeito: 'seguranca',
   bordao: 'Segurança não tira folga!',
@@ -479,7 +479,7 @@ const CAPY: FichaDaPortaria = {
 
 const JEANLUC: FichaDaPortaria = {
   id: 'jeanluc', nome: 'Jean-Luc', icone: '🦆',
-  retrato: R('pato', 'branco', 'bicoLaranja', { enfeite: 'boinaEOculosEscuros' }),
+  retrato: R('pato', 'pato', 'bicoLaranja', { enfeite: 'boina' }),
   personalidade: 'o pato francês: dramático, competitivo e convencido de que charme é documento',
   jeito: 'dramatico',
   bordao: 'Bonjour, mes amis!',
@@ -499,7 +499,7 @@ const JEANLUC: FichaDaPortaria = {
 
 const ESTELLA: FichaDaPortaria = {
   id: 'estella', nome: 'Estella', icone: '🐑',
-  retrato: R('ovelha', 'branca', 'oculosDeCostura'),
+  retrato: R('ovelha', 'ovelha', 'oculosDeCostura'),
   personalidade: 'a costureira: elegante, "querida" para todo mundo, e mede tudo o que vê',
   jeito: 'elegante',
   bordao: 'Bom dia, queridos!',
@@ -519,7 +519,7 @@ const ESTELLA: FichaDaPortaria = {
 
 const MANO: FichaDaPortaria = {
   id: 'mano', nome: 'Mano', icone: '🐧',
-  retrato: R('pinguim', 'azulMarinho', 'peitoBranco'),
+  retrato: R('pinguim', 'pinguim', 'peitoBranco', { enfeite: 'chapeuDeCasquinha' }),
   personalidade: 'o sorveteiro: curto, animado, e resolve tudo com uma casquinha e uma dancinha',
   jeito: 'animado',
   bordao: 'EU VOU QUERER.',
@@ -539,7 +539,7 @@ const MANO: FichaDaPortaria = {
 
 const COOKIE: FichaDaPortaria = {
   id: 'cookie', nome: 'Cookie', icone: '🐘',
-  retrato: R('elefante', 'cinzaRosado', 'quepeDaBilheteria'),
+  retrato: R('elefante', 'elefante', 'quepeDaBilheteria'),
   personalidade: 'o da bilheteria da roda: enorme, delicado, fala baixinho e ama coisa pequenininha',
   jeito: 'fofo',
   bordao: 'Oi, bebitos… não se assustem, sou só eu.',
@@ -559,7 +559,7 @@ const COOKIE: FichaDaPortaria = {
 
 const GATITO: FichaDaPortaria = {
   id: 'gatito', nome: 'Gatito', icone: '🐱',
-  retrato: R('gato', 'creme', 'manchaCaramelo'),
+  retrato: R('gato', 'gatito', 'manchaCaramelo'),
   personalidade: 'o professor de pelúcia: organizado, orgulhoso da turma, e com o "six seven" na ponta da língua',
   jeito: 'professor',
   bordao: 'Six seven!',
@@ -579,7 +579,7 @@ const GATITO: FichaDaPortaria = {
 
 const TIALIZ: FichaDaPortaria = {
   id: 'tializ', nome: 'Tia Liz', icone: '🐻',
-  retrato: R('ursa', 'caramelo', 'trancaComMolinhas'),
+  retrato: R('ursa', 'liz', 'trancaComMolinhas', { cabelo: 'cachosDourados' }),
   personalidade: 'a tia da cantina: carinhosa, mãezona das três irmãs, e sempre com merenda',
   jeito: 'carinhosa',
   bordao: '¡Mis niños!',
@@ -599,7 +599,7 @@ const TIALIZ: FichaDaPortaria = {
 
 const LUNA: FichaDaPortaria = {
   id: 'luna', nome: 'Luna', icone: '🐰',
-  retrato: R('coelha', 'branca', 'lacoAzul'),
+  retrato: R('coelha', 'luna', 'presilhaDeLua'),
   personalidade: 'a irmã tímida: se esconde atrás da Tia Liz e só aparece quando chamam',
   jeito: 'timido',
   bordao: '…',
@@ -619,7 +619,7 @@ const LUNA: FichaDaPortaria = {
 
 const SOL: FichaDaPortaria = {
   id: 'sol', nome: 'Sol', icone: '🐰',
-  retrato: R('coelha', 'caramelo', 'lacoAmarelo'),
+  retrato: R('coelha', 'sol', 'presilhaDeSol'),
   personalidade: 'a irmã que pula: só as orelhas aparecem na janela, de pulo em pulo',
   jeito: 'animado',
   bordao: 'OI! OI! OI!',
@@ -639,7 +639,7 @@ const SOL: FichaDaPortaria = {
 
 const ESTRELLA: FichaDaPortaria = {
   id: 'estrella', nome: 'Estrella', icone: '🐰',
-  retrato: R('coelha', 'marrom', 'lacoRosa'),
+  retrato: R('coelha', 'estrella', 'estrelaNaCabeca'),
   personalidade: 'a irmã das estrelinhas: não para quieta, gira atrás da fila',
   jeito: 'animado',
   bordao: 'Olha a minha estrelinha!',
@@ -659,7 +659,7 @@ const ESTRELLA: FichaDaPortaria = {
 
 const FLYNN: FichaDaPortaria = {
   id: 'flynn', nome: 'Flynn', icone: '🦊',
-  retrato: R('raposa', 'laranja', 'bandanaAzul'),
+  retrato: R('raposa', 'flynn', 'bandanaAzul'),
   personalidade: 'o presidente da atlética: não para de trotar e não fica atrás de rival nenhum',
   jeito: 'atleta',
   bordao: 'E aí, bebitos! Sem pressão nenhuma!',
@@ -679,7 +679,7 @@ const FLYNN: FichaDaPortaria = {
 
 const ROCCO: FichaDaPortaria = {
   id: 'rocco', nome: 'Rocco', icone: '🐺',
-  retrato: R('lobo', 'cinza', 'cicatrizNaSobrancelha'),
+  retrato: R('lobo', 'rocco', 'cicatrizNaSobrancelha', { enfeite: 'faixaDosDogoes' }),
   personalidade: 'o capitão dos Dogões: marrento, mas gente boa — e sempre tentando um jeitinho',
   jeito: 'marrento',
   bordao: 'Rocco. Capitão dos Dogões.',
@@ -700,7 +700,7 @@ const ROCCO: FichaDaPortaria = {
 /** os DOGÕES, o time do Rocco (cachorros de uniforme vermelho e cinza): uma turma só na janela, em coro */
 const DOGOES: FichaDaPortaria = {
   id: 'dogoes', nome: 'os Dogões', icone: '🐶',
-  retrato: R('cachorro', 'variado', 'uniformeVermelho'),
+  retrato: R('cachorro', 'dogao', 'uniformeVermelho'),
   personalidade: 'o time do Rocco: falam em coro e latem o grito de guerra',
   jeito: 'marrento',
   bordao: 'DO-GÕES! DO-GÕES!',
@@ -720,7 +720,7 @@ const DOGOES: FichaDaPortaria = {
 
 const VALENTINA: FichaDaPortaria = {
   id: 'valentina', nome: 'Valentina', icone: '🦩',
-  retrato: R('flamingo', 'rosa', 'oculosGatinho'),
+  retrato: R('flamingo', 'valentina', 'oculosGatinho'),
   personalidade: 'a do marketing: diva italiana que transforma qualquer janela num ensaio de fotos',
   jeito: 'diva',
   bordao: 'Ciao, bebitos!',
@@ -740,7 +740,7 @@ const VALENTINA: FichaDaPortaria = {
 
 const PIETRO: FichaDaPortaria = {
   id: 'pietro', nome: 'Pietro', icone: '🦚',
-  retrato: R('pavao', 'azulPavao', 'quepeDeMotorista'),
+  retrato: R('pavao', 'pavao', 'quepeDeMotorista'),
   personalidade: 'o motorista: formal, de luvas brancas, e abre o leque quando fica contente',
   jeito: 'formal',
   bordao: 'Buongiorno. Pietro, motorista da signorina Valentina.',

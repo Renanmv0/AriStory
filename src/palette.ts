@@ -1168,6 +1168,37 @@ export const PALETTE = {
   carimboEntra: 0x2e9a5b,
   carimboHojeNao: 0xd8423a,
   carimboSoClube: 0xe0a21e,
+  // os VISITANTES NOVOS da portaria (`entities/bichos/VisitanteDaPortaria.ts`): o que cada um tem de só seu
+  portariaToalha: 0xf7f4ee, // a toalha do Seu Hipólito, no ombro
+  portariaToalhaListra: 0x5aa0d6,
+  portariaBoiaPato: 0xf6c93a, // a boia de patinho na cintura dele
+  portariaBoiaBico: 0xf08a2a,
+  portariaChinelo: 0x3f86c6,
+  portariaPerola: 0xf7f0e2, // o colar de pérolas da Dona Alpacina (e da prima)
+  portariaColete: 0x4f8a5a, // o colete do Bento
+  portariaCamisa: 0xf7f5ef,
+  portariaGravata: 0xc23b48,
+  portariaRelogio: 0xd9b45e,
+  portariaBoneBeto: 0xd8453a, // o boné virado do Beto
+  portariaCamisetaBeto: 0xf09a3e,
+  portariaChiclete: 0xf7a6c4,
+  portariaPapita: 0xf2b53a, // o amarelo do Papita Delivery (o boné e a mochila térmica do Tatá)
+  portariaPapitaEscuro: 0xc98a22,
+  portariaCelular: 0x2b2f3a,
+  portariaXale: 0xb7a3d9, // o xale de crochê da Dona Preguiça
+  portariaXaleFlor: 0xf6c3d2,
+  portariaBengala: 0x8a5a2a,
+  portariaOculosNatacao: 0x3aa6d8, // os óculos de natação da lontra
+  portariaSino: 0xe0b84a, // o sininho do bode
+  portariaColeira: 0xc94040,
+  portariaGorro: 0x7fa8e0, // o gorro de dormir do coala
+  portariaGorroListra: 0xf7f4ee,
+  portariaLeque: 0xf2d27a, // o leque de papel do texugo (reclama do calor)
+  dogaoPelo: 0xc08a5a, // os Dogões, o time do Rocco
+  dogaoPeloClaro: 0xf3e6d2,
+  dogaoPeloEscuro: 0x6b4630,
+  dogaoOrelhaDentro: 0xe9c3b0,
+  dogaoBochecha: 0xeaa58f,
 
   // o deque de descanso da beira da piscina. A madeira é mais clara e mais
   // acinzentada que a do deque do restaurante de propósito: aqui é tábua que
