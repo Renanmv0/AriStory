@@ -76,6 +76,40 @@ export const FICHA_DO_ROCCO: FichaDeAtleta = {
   },
 };
 
+/**
+ * OS DOGÕES, o time do Rocco (a portaria do clube, `world/visitantesDaPortaria.ts`): o mesmo atleta, de
+ * cachorro — o pelo caramelo e creme, a orelha curta e mais aberta, o focinho mais curto, o rabo que abana
+ * para cima e o sorriso aberto (o capitão é que é marrento) — e o uniforme do time, com o número 7.
+ */
+export const FICHA_DO_DOGAO: FichaDeAtleta = {
+  ...FICHA_DO_ROCCO,
+  peca: 'dogao',
+  semente: 20261121,
+  escala: 1.3,
+  pelo: P.dogaoPelo,
+  peloClaro: P.dogaoPeloClaro,
+  peloEscuro: P.dogaoPeloEscuro,
+  orelhaDentro: P.dogaoOrelhaDentro,
+  bochecha: P.dogaoBochecha,
+  olho: P.flynnOlho,
+  orelha: { raio: 0.075, alto: 0.1, abre: 0.42, ponta: 0.35 },
+  focinho: { comprido: 1.05, largo: 1.1 },
+  rabo: {
+    gomos: [
+      { comp: 0.05, larg: 0.04, dobra: -2.0 },
+      { comp: 0.06, larg: 0.05, dobra: -0.35 },
+      { comp: 0.06, larg: 0.045, dobra: -0.4 },
+      { comp: 0.05, larg: 0.035, dobra: -0.35 },
+    ],
+    ponta: 'clara',
+    abana: 0.8,
+  },
+  boca: 'sorriso',
+  sobrancelha: { giro: 0, grossa: 0.005 },
+  juba: false,
+  time: { ...FICHA_DO_ROCCO.time, costas: 'DOGÕES', numero: '7' },
+};
+
 export class Rocco extends Flynn {
   /** a voz dele na caixa de fala: o nome e o cinza de lobo (`vozes.ts`) */
   static override readonly voz: VozDaFala = { nome: 'Rocco', cor: P.falaRocco };

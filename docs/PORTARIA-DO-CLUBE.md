@@ -111,13 +111,38 @@
   nove, quem é chamado sobe no elevador, fala, passa os papéis; quem entra segue pela cancela, o barrado
   volta pelo portão; os chamados da fila chegam do portão; às 17h o portão fecha; o envelope paga a
   carteira, grava o dia e a dupla volta ao clube na frente da guarita.
-- **SUBSTITUTOS DECLARADOS (a parte 2 troca)**: quem já tem modelo no jogo (a Josefina, o Noel, o Capy, o
-  Jean-Luc, a Estella, o Mano, o Cookie, o Gatito, a Tia Liz, as irmãs, o Flynn, o Rocco, a Valentina e o
-  Pietro) vem com o modelo de verdade; os NOVOS (o Seu Hipólito, as alpacas, o Bento e o Beto, o Tatá, a
-  Dona Preguiça, os figurantes) ainda são um RECORTE DE PAPELÃO pintado com o retrato, de pé numa base. O
-  disfarce do Jean-Luc aparece no rosto da mesa, ainda não no corpo; quem vem em GRUPO (o netinho, as irmãs,
-  os Dogões, o Pietro) aparece só na foto da janela, e no 3D vem só quem fala; e as animações de cada ficha
-  (a chegada, o tique, o entra, o barrado, o apontado) ainda não existem — eles só andam, viram e falam.
+- **Ainda declarado**: o disfarce do Jean-Luc aparece no rosto da mesa, ainda não no corpo; quem vem em
+  GRUPO (as irmãs, os Dogões, o Pietro) aparece só na foto da janela, e no 3D vem só quem fala (o netinho é
+  a exceção: vem no colo da avó); e das cinco animações de cada ficha só o TIQUE existe (abaixo).
+
+**Feito (2026-11-21), a CENA, parte 2a: os visitantes NOVOS de verdade, e as carteirinhas parecidas com os
+personagens** (pedido do Renan: "cada um precisa ter algum traço visual específico" e "revise todos e deixe
+mais parecidos com os personagens mesmo"):
+- **Os modelos** (`src/entities/bichos/VisitanteDaPortaria.ts`): UMA classe montada pela FOTO do dia (a
+  espécie dá o corpo, a cor e a marca saem do `Retrato`, o traço sai da ficha), olho colado no crânio, o que
+  mexe com nome e o resto na `fundir`. O traço de cada um: o Seu Hipólito de sobrancelhas brancas, toalha
+  listrada no ombro, BOIA DE PATINHO e chinelo; a Dona Alpacina de colar de pérolas, cílios, a pinta e o
+  PENTEADO DO DIA em lã (franja, coque, tranças, black power, moicano, coque alto, troféu); a Alpacona maior,
+  de sobrancelha grossa e sem a pinta; o Bento de colete verde, camisa, gravata-borboleta, relógio e topete
+  (a pinta na orelha esquerda); o Beto de camiseta laranja, BONÉ VIRADO e bola de chiclete; o Tatá de boné e
+  MOCHILA TÉRMICA do Papita, a faixa no peito e o celular; a Dona Preguiça de XALE de crochê, coque, óculos
+  de leitura com correntinha, BENGALA e o netinho no colo; a lontra de ÓCULOS DE NATAÇÃO e pedrinha; o bode
+  de chifre, barbicha e SINO; o coala de GORRO DE DORMIR; o panda-vermelho ABRAÇADO NO RABO listrado; o
+  texugo de braços cruzados com o LEQUE. Os Dogões são o atleta do Rocco de cachorro (`FICHA_DO_DOGAO`, em
+  `entities/bichos/Rocco.ts`, o número 7). Cada um faz o seu TIQUE parado (se abanar, ajeitar o cabelo,
+  bater o pé, o chiclete crescer e estourar, o celular, o bocejo, a pedrinha, a teimosia, o cochilo, se
+  esconder, o leque). O elevador do balcão sobe pelo `alturaDoRosto` (o penteado não empurra a cara para
+  baixo do balcão).
+- **As carteirinhas** (`src/world/retratosDaPortaria.ts`): o retrato de cada personagem que já existe foi
+  refeito a partir da foto de perto do modelo, na cor dele (`PELAGEM` ganhou as cores de cada um) e com a
+  assinatura dele — a lua e o laço amarelo da Luna, o sol da Sol, a estrela e as orelhas caídas da Estrella,
+  os cachos dourados e as molinhas da Tia Liz, o boné e a cabeça azulada do Noel, o laço da Josefina, os
+  óculos esportivos do Capy, a boina e a camisa da França do Jean-Luc, os óculos dourados e a fita métrica
+  da Estella, a casquinha do Mano, o quepe azul do Cookie, a linguinha do Gatito, as faixas do Flynn e do
+  Rocco, os óculos gatinho da Valentina e o quepe do Pietro; e os novos com os traços dos modelos.
+- **O teste**: `node scripts/visitantes.mjs` (os pés no chão, a altura do rosto, as peças com nome, e as
+  fotos de perto, de frente e de costas de cada um). Peso: na primeira pessoa com os modelos novos, ~160
+  desenhos e 57 mil triângulos (com os recortes eram ~138 e 46 mil).
 - **O teste**: `node scripts/portariaCena.mjs` — escondida sem a chave; e um DIA INTEIRO jogado pela tela
   por um robô guiado pela conferência de verdade (pergunta, aponta cada diferença CLICANDO os alvos — cada
   um conferido como o elemento de cima no próprio centro —, tira da sacola, recusa o agrado, carimba), o
@@ -125,8 +150,8 @@
   clube (e a dupla anda de novo); e, no meio do primeiro atendimento, o relógio andando sem trocar os botões
   da mesa e sem perder a rolagem do manual. `CEL=1` no celular em pé; `DIA=n` escolhe o dia.
 
-**Falta**: a parte 2 (os modelos dos visitantes novos e a ANIMAÇÃO de cada ficha, o disfarce do Jean-Luc
-no corpo, a Gina apertando o botão do elevador) e a parte 3 (os prêmios das três estrelas, a memória, os
+**Falta**: o resto da parte 2 (as outras quatro ANIMAÇÕES de cada ficha — a chegada, o entra, o barrado e o
+apontado —, o disfarce do Jean-Luc no corpo, o grupo no elevador, a Gina apertando o botão do elevador) e a parte 3 (os prêmios das três estrelas, a memória, os
 sons próprios — o carimbo, a campainha, o elevador —, as falas do Renan). O DESENHO está abaixo, com as
 decisões do Renan de 2026-11-20 já incorporadas (§1).
 

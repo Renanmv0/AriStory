@@ -244,7 +244,7 @@ function montarAPortaria(w: WorldBuilder): void {
   const modeloDe = (v: Visitante): ModeloDeVisitante => {
     let m = modelos.get(v.id);
     if (!m) {
-      m = modeloDoVisitante(v.ficha, v.rosto);
+      m = modeloDoVisitante(v.ficha, v.rosto, v.grupo ?? []);
       m.group.position.set(PORTAO_DE_FORA[0], 0, PORTAO_DE_FORA[1]);
       w.add(m.group);
       modelos.set(v.id, m);

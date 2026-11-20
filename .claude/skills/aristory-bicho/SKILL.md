@@ -661,6 +661,35 @@ O Pietro (`entities/bichos/Pavao.ts`) é o motorista da limusine da Valentina. O
 - **Ao volante** (`aoVolante`, nasce `null`): as pernas para a frente, as asas nas dez e dez, a cabeça para onde a
   cena manda (giro negativo é o `−X`) e a cauda para o lado da porta.
 
+## Muitos bichos de UMA classe, montados pela FOTO (os visitantes da portaria)
+
+`entities/bichos/VisitanteDaPortaria.ts` monta dez espécies (hipopótamo,
+alpaca, porquinho, tamanduá, preguiça, lontra, bode, coala, panda-vermelho,
+texugo) numa classe só, porque o minigame da Portaria julga uma FOTO: o
+`Retrato` do dia (espécie, cor, marca, penteado, enfeite) é o mesmo que o
+pintor da carteirinha usa (`world/retratosDaPortaria.ts`), então o corpo e a
+foto não se desencontram — a pinta no focinho da Alpacina, a pinta na orelha
+esquerda do Bento, o chifre torto do bode, o narizão do coala estão nos dois.
+
+- **O corpo sai de um PLANO por espécie** (quadril, tronco, crânio, pescoço,
+  escala, grossura dos membros), o rosto e as orelhas de um `switch`, e o
+  TRAÇO de cada personagem de um bloco próprio (a boia do Hipólito, a mochila
+  do Tatá, o gorro do coala). Personagem que pede algo novo ganha um bloco,
+  não uma classe.
+- **Pousar na casca** (`pousar(obj, ângulo x, ângulo y, folga)`): olho,
+  pinta, bochecha, sobrancelha e lente vão num ponto do elipsoide do crânio,
+  virados pela normal. O que mora em cima de OUTRA peça (a máscara da
+  preguiça, por cima da cara clara que avança 4 cm) precisa da folga dessa
+  peça — com a folga do crânio, a cara clara tapou a máscara inteira.
+- **O que a pata segura desce até o chão, não além**: a bengala da vovó
+  nasceu com 32 cm e a pata dela fica a 17 cm do chão — atravessou o piso
+  (o teste mede o ponto mais baixo de cada um).
+- **O elevador lê o rosto** (`alturaDoRosto`), e não o alto da caixa.
+- **Tique por ficha**: um ciclo de 6 s em que, parado, o bicho faz o gesto
+  dele na segunda metade (`ciclo > 0,55`), somado por cima da pose — o
+  chiclete do Beto escala até estourar, o texugo cruza um braço e abana o
+  leque com o outro.
+
 ## A cor da fala (todo bicho que fala tem a sua)
 
 Sugestão do Ari: quando um personagem fala, a etiqueta do nome e o pontilhado

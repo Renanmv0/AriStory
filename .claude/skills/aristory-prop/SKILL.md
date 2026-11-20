@@ -1397,11 +1397,10 @@ PERTO, em primeira pessoa, por quem está sentado no meio da guarita:
   gomos sobe cada um até o alto da cabeça chegar a 1,95
   (`alturaDoElevador(modelo)` mede pela caixa das malhas). O `Bicho` não
   escreve o próprio `y`, então a cena só copia a altura do disco nele.
-- **O recorte de papelão** (o substituto dos visitantes novos até a parte 2):
-  o retrato da ficha num corpo pintado, com a borda branca de adesivo (a
-  figura desenhada 16 vezes em volta, em branco, por baixo), num
-  `recortePintado` — o único material NÃO cacheado do kit, que o recorte
-  descarta quando sai.
+- **O elevador sobe pelo ROSTO, não pelo alto**: quem declara
+  `alturaDoRosto` (os visitantes novos) põe o meio da cara a 1,74; os outros,
+  o alto da caixa a 1,95 — com a caixa, o black power da Alpacina empurrava a
+  cara para baixo do balcão.
 
 ## O carrinho de golfe da Gina (`world/carrinhoDeGolfeDaGina.ts`)
 

@@ -1,41 +1,39 @@
 /**
  * OS VISITANTES DA PORTARIA EM 3D — quem anda na fila e para no balcão.
  *
- * ETAPA 1 DA CENA (`docs/PORTARIA-DO-CLUBE.md`): quem já tem modelo no jogo
- * (a Josefina, o Noel, o Capy, o Jean-Luc, a Estella, o Mano, o Cookie, o
- * Gatito, a Tia Liz, as três irmãs, o Flynn, o Rocco, a Valentina e o Pietro)
- * vem com o modelo de verdade, pela classe dele; os NOVOS (o Seu Hipólito, a
- * Dona Alpacina, o Bento, o Tatá, os figurantes…) ainda são um SUBSTITUTO
- * declarado: um recorte de papelão pintado com o retrato da ficha, de pé numa
- * base. A etapa 2 troca o recorte por um bicho modelado e dá a cada um a
- * animação dele (a ficha já diz qual).
+ * Quem já tem modelo no jogo (a Josefina, o Noel, o Capy, o Jean-Luc, a
+ * Estella, o Mano, o Cookie, o Gatito, a Tia Liz, as três irmãs, o Flynn, o
+ * Rocco, a Valentina e o Pietro) vem pela classe dele; os Dogões, pela ficha
+ * de atleta do time (`FICHA_DO_DOGAO`); e os NOVOS (o Seu Hipólito, as
+ * alpacas, os gêmeos, o Tatá, a Dona Preguiça e os figurantes) pelo
+ * `VisitanteDaPortaria`, montado pela foto do dia, cada um com o seu traço.
  *
- * O ROSTO QUE SE JULGA NÃO É ESTE: é o `Visitante.rosto` pintado pelo
- * `pintarRetrato` na mesa (o mesmo pintor e a mesma escala da foto). O 3D é o
- * cenário vivo — por isso um disfarce do Jean-Luc ainda não aparece no corpo
- * dele aqui, e aparece no rosto da mesa.
+ * O ROSTO QUE SE JULGA é o `Visitante.rosto` pintado na mesa (o mesmo pintor
+ * e a mesma escala da foto); o 3D é o mesmo bicho, vivo. O disfarce do
+ * Jean-Luc ainda aparece só no rosto da mesa, e quem vem em grupo só na foto
+ * da janela (o netinho é a exceção: vem no colo da avó).
  */
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import { recortePintado, toon } from '../core/materials';
+import { toon } from '../core/materials';
 import type { Bicho, AreaDoBicho } from '../entities/bichos/Bicho';
 import { Capy } from '../entities/bichos/Capy';
 import { Cookie } from '../entities/bichos/Cookie';
 import { Estella } from '../entities/bichos/Estella';
 import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { Flynn } from '../entities/bichos/Flynn';
+import { VisitanteDaPortaria } from '../entities/bichos/VisitanteDaPortaria';
 import { Gatito } from '../entities/bichos/Gatito';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { Josefina } from '../entities/bichos/Josefina';
 import { Mano } from '../entities/bichos/Mano';
 import { Noel } from '../entities/bichos/Noel';
 import { Pavao } from '../entities/bichos/Pavao';
-import { Rocco } from '../entities/bichos/Rocco';
+import { FICHA_DO_DOGAO, Rocco } from '../entities/bichos/Rocco';
 import { TiaLiz } from '../entities/bichos/TiaLiz';
 import { Valentina } from '../entities/bichos/Valentina';
 import type { Retrato } from '../minigames/portaria/tipos';
 import { macia, por } from './moveisDaBoutique';
-import { PELAGEM, pintarRetrato } from './papeisDaPortaria';
 
 /** um visitante em 3D: o grupo, o andar e o virar */
 export interface ModeloDeVisitante {
@@ -99,148 +97,28 @@ class VisitanteDeVerdade implements ModeloDeVisitante {
   dispose(): void {}
 }
 
-/** a figura inteira pintada: a cabeça pelo retrato, o corpo na pelagem, e a borda branca de adesivo */
-function pintarFigura(r: Retrato): HTMLCanvasElement {
-  const L = 256;
-  const A = 512;
-  const fig = document.createElement('canvas');
-  fig.width = L;
-  fig.height = A;
-  const c = fig.getContext('2d')!;
-  const pelo = PELAGEM[r.cor] ?? P.peloCaramelo;
-  const cor = `#${pelo.toString(16).padStart(6, '0')}`;
-  c.lineJoin = 'round';
-  c.strokeStyle = 'rgba(40,30,30,0.55)';
-  c.lineWidth = 3;
-  // as pernas e os pés
-  for (const lado of [-1, 1]) {
-    c.fillStyle = cor;
-    c.beginPath(); c.roundRect(L / 2 + lado * 34 - 20, 330, 40, 140, 18); c.fill(); c.stroke();
-    c.fillStyle = 'rgba(40,30,30,0.75)';
-    c.beginPath(); c.ellipse(L / 2 + lado * 36, 470, 30, 14, 0, 0, Math.PI * 2); c.fill();
-  }
-  // os braços
-  for (const lado of [-1, 1]) {
-    c.fillStyle = cor;
-    c.beginPath(); c.roundRect(L / 2 + lado * 80 - 18, 230, 36, 130, 16); c.fill(); c.stroke();
-  }
-  // o corpo
-  c.fillStyle = cor;
-  c.beginPath(); c.ellipse(L / 2, 300, 78, 100, 0, 0, Math.PI * 2); c.fill(); c.stroke();
-  c.fillStyle = 'rgba(255,255,255,0.35)';
-  c.beginPath(); c.ellipse(L / 2, 315, 46, 64, 0, 0, Math.PI * 2); c.fill();
-  // a cabeça (o retrato sem o fundo de estúdio, por cima dos ombros)
-  pintarRetrato(c, 0, 0, L, 256, r, { fundo: false });
-  // a borda de adesivo: a figura engordada em branco por trás
-  const tela = document.createElement('canvas');
-  tela.width = L;
-  tela.height = A;
-  const t = tela.getContext('2d')!;
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    t.drawImage(fig, Math.cos(a) * 7, Math.sin(a) * 7);
-  }
-  t.globalCompositeOperation = 'source-in';
-  t.fillStyle = '#fbf7ec';
-  t.fillRect(0, 0, L, A);
-  t.globalCompositeOperation = 'source-over';
-  t.drawImage(fig, 0, 0);
-  return tela;
-}
-
-/** O RECORTE de papelão: o substituto declarado dos visitantes novos (etapa 2 troca) */
-class VisitanteDeRecorte implements ModeloDeVisitante {
-  readonly deVerdade = false;
-  readonly group = new THREE.Group();
-  private readonly textura: THREE.CanvasTexture;
-  private readonly material: THREE.Material;
-  private readonly figura = new THREE.Group();
-  private missao: { x: number; z: number; vel: number; pronto: () => void } | null = null;
-  private alvo: { x: number; z: number } | null = null;
-  private fase = Math.random() * 6;
-  private andando = 0;
-
-  constructor(retrato: Retrato) {
-    this.textura = new THREE.CanvasTexture(pintarFigura(retrato));
-    this.textura.colorSpace = THREE.SRGBColorSpace;
-    const ALTO = 1.62;
-    const LARGO = ALTO / 2;
-    const mat = recortePintado(this.textura);
-    this.material = mat;
-    const placa = new THREE.Mesh(new THREE.PlaneGeometry(LARGO, ALTO), mat);
-    placa.position.y = ALTO / 2 + 0.05;
-    this.figura.add(placa);
-    // a base de madeira e o pé de papelão atrás
-    por(this.group, macia(0.36, 0.05, 0.2, 0.012), toon(P.woodDark), 0, 0.025, -0.02);
-    const pe = por(this.figura, macia(0.04, 0.9, 0.012, 0.004), toon(P.papelaoEscuro), 0, 0.5, -0.12);
-    pe.rotation.x = -0.25;
-    this.group.add(this.figura);
-  }
-
-  irPara(x: number, z: number, velocidade = 1.3): Promise<void> {
-    this.alvo = null;
-    return new Promise((pronto) => {
-      this.missao = { x, z, vel: velocidade, pronto };
-    });
-  }
-
-  encarar(x: number, z: number): void {
-    this.alvo = { x, z };
-  }
-
-  update(dt: number): void {
-    this.fase += dt;
-    const m = this.missao;
-    const g = this.group;
-    if (m) {
-      const dx = m.x - g.position.x;
-      const dz = m.z - g.position.z;
-      const d = Math.hypot(dx, dz);
-      const passo = m.vel * dt;
-      g.rotation.y = Math.atan2(dx, dz);
-      if (d <= passo) {
-        g.position.x = m.x;
-        g.position.z = m.z;
-        this.missao = null;
-        m.pronto();
-      } else {
-        g.position.x += (dx / d) * passo;
-        g.position.z += (dz / d) * passo;
-      }
-      this.andando = Math.min(1, this.andando + dt * 4);
-    } else {
-      this.andando = Math.max(0, this.andando - dt * 4);
-      if (this.alvo) {
-        const alvo = Math.atan2(this.alvo.x - g.position.x, this.alvo.z - g.position.z);
-        let d = alvo - g.rotation.y;
-        while (d > Math.PI) d -= Math.PI * 2;
-        while (d < -Math.PI) d += Math.PI * 2;
-        g.rotation.y += d * Math.min(1, dt * 4);
-      }
-    }
-    // o recorte "anda" saltitando e balançando; parado, respira
-    const k = this.andando;
-    this.figura.position.y = Math.abs(Math.sin(this.fase * 7)) * 0.06 * k + Math.sin(this.fase * 1.6) * 0.004;
-    this.figura.rotation.z = Math.sin(this.fase * 7) * 0.06 * k;
-  }
-
-  dispose(): void {
-    this.textura.dispose();
-    this.material.dispose();
-  }
-}
-
-/** o visitante em 3D de uma ficha (o rosto só serve ao recorte) */
-export function modeloDoVisitante(ficha: string, rosto: Retrato): ModeloDeVisitante {
+/**
+ * O visitante em 3D de uma ficha: quem já existe no jogo, pela classe dele; os
+ * Dogões, pela ficha de atleta do time; e os novos (`VisitanteDaPortaria`),
+ * montados pela foto do dia — o netinho vem no colo da avó quando está no grupo.
+ */
+export function modeloDoVisitante(ficha: string, rosto: Retrato, grupo: readonly string[] = []): ModeloDeVisitante {
   const classe = CLASSES[ficha];
-  return classe ? new VisitanteDeVerdade(classe(AREA)) : new VisitanteDeRecorte(rosto);
+  if (classe) return new VisitanteDeVerdade(classe(AREA));
+  if (ficha === 'dogoes') return new VisitanteDeVerdade(new Flynn(AREA, FICHA_DO_DOGAO));
+  return new VisitanteDeVerdade(new VisitanteDaPortaria(AREA, ficha, rosto, grupo.includes('netinho')));
 }
 
 /** quanto o alto da cabeça do visitante deve chegar, para o rosto cair no meio do guichê */
 export const ALTO_DO_ROSTO = 1.95;
+/** e onde o MEIO do rosto deve ficar (quem sabe a altura do rosto, como os visitantes novos) */
+export const MEIO_DO_ROSTO = 1.74;
 
 /** a altura do elevador para um modelo: o que falta para o alto da cabeça chegar ao `ALTO_DO_ROSTO` */
 export function alturaDoElevador(modelo: THREE.Object3D): number {
+  // os visitantes novos dizem onde fica o rosto (o penteado da alpaca não pode empurrar a cara para baixo do balcão)
+  const bicho = modelo.userData.bicho as { alturaDoRosto?: number } | undefined;
+  if (bicho?.alturaDoRosto !== undefined) return Math.max(0, Math.min(1.45, MEIO_DO_ROSTO - bicho.alturaDoRosto));
   let topo = 0;
   modelo.updateMatrixWorld(true);
   const caixa = new THREE.Box3();
