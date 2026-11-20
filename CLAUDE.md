@@ -390,6 +390,10 @@ do quintal em reais (`world/decoracoesDoQuintal.ts`); o pedido chega numa
 caixa no portão, e se põe no chão pelas ferramentas da garagem
 (`eventos/quintal.ts`, a cena `frente-da-casa`). Sem a chave, o computador é
 o de sempre.
+`PORTARIA-DO-CLUBE.md` é o plano do terceiro minigame grande (Papers, Please na versão fofa, na guarita da Gina),
+aberto por um "COMECE AQUI": a guarita NOVA (`world/guaritaDoClube.ts`, maior, com o teto que sai e a porta) está no
+jogo desde 2026-11-20; o desbloqueio (a primeira conversa na guarita nova) está atrás da chave `PORTARIA_NO_JOGO`
+(`eventos/portariaDoClube.ts`, `?portaria` para testar), e o minigame em si ainda não existe — as perguntas ao Renan estão lá.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
@@ -492,7 +496,7 @@ node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e
 node scripts/casaDoAri.mjs /tmp/ca # o acabamento da casa e do quarto: assoalho, veio nos moveis, sofa de tecido, granito, tapete com franja e capacho, a cama nova na altura antiga, a claridade da janela e os abajures apagando num clique
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
-node scripts/guarita.mjs /tmp/gu    # a portaria: a Gina fica no posto, apita e manda aproveitar o dia
+node scripts/guarita.mjs /tmp/gu    # a portaria: a Gina fica no posto da guarita nova (a cabeça fora do balcão, o teto e a porta com nome), apita e manda aproveitar o dia; e o desbloqueio da Portaria do Clube (sem a chave nada muda; com ?portaria a primeira conversa é a da reforma, com a flag e a memória)
 node scripts/salvavidas.mjs /tmp/sv # o Capy salva-vidas: fica na cadeira, varre a piscina e tira o oculos
 node scripts/noel.mjs    /tmp/no    # o Noel do bar de sucos: passeia, abre o leque e nao rouba o prompt do balcao
 node scripts/jardim.mjs  /tmp/ja    # o jardim organizado e a Josefina: canteiros alinhados, e ela nao pisa na horta

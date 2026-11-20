@@ -1127,6 +1127,14 @@ export const PALETTE = {
   guaritaFaixa: 0x2f7d6b,
   guaritaBalcao: 0xb07c46,
   guaritaTelhado: 0xc4553f,
+  // a guarita nova (`world/guaritaDoClube.ts`): a cumeeira e os espigões um
+  // tom abaixo da telha (é a sombra deles que desenha as quatro águas), o
+  // pilar de reboco da cor do portão, o ladrilho hidráulico de dentro, a
+  // caixa do monitor de câmeras e o arquivo de aço
+  guaritaCumeeira: 0xa4412f,
+  guaritaLadrilho: 0x8fc4ad,
+  guaritaMonitor: 0x5b646d,
+  guaritaArquivo: 0x9db0ab,
 
   // o deque de descanso da beira da piscina. A madeira é mais clara e mais
   // acinzentada que a do deque do restaurante de propósito: aqui é tábua que

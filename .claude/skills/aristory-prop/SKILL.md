@@ -1337,6 +1337,34 @@ carro com ESTUFA (vidro de lado, colunas e calhas) em cima da pele de fatias:
 - **Atalho de teste** `?doisCavalos=x,z,giro` (`&conversando`, `&raquete`,
   `&andando=7`, `&vazio`).
 
+## A guarita do clube (`world/guaritaDoClube.ts`)
+
+A casa da Gina na portaria, refeita maior para a dupla trabalhar lá dentro
+(`docs/PORTARIA-DO-CLUBE.md`). O molde de PRÉDIO PEQUENO DE BALCÃO que se
+ENTRA:
+
+- **Kit de prédio de rua em miniatura**: parede extrudada com furo (o guichê,
+  as janelas) e a PORTA como recorte no contorno, o `contorno()` no plinto, no
+  friso e na cornija, pilastras de `rebocoComFrisos` 4 cm para fora das duas
+  faces (por dentro sobram no canto: as bancadas param antes delas).
+- **Telhado de quatro águas sem conta de ângulo**: cada água é UMA função
+  (`agua(L, r)`: a beira em `z = B`, a cumeeira em `z = 0`) girada e posta —
+  a da frente e a de trás são trapézios, as dos lados triângulos (`r = 0`), e
+  todas caem a mesma distância `B`. UV em metros na encosta (a telha em canvas
+  corre na fiada). Espigões e cumeeira em tubo, testeira e lambrequim por cima
+  das emendas.
+- **O que é de dentro tem que poder ser visto**: tudo acima do topo da parede
+  (telhado, forro, placa, catavento) mora no grupo `teto`, a folha da porta na
+  `dobradica`, e as medidas que o teste lê ficam em `userData.medidas`.
+- **A regra do balcão**: a beira do telhado sai 26 cm e o guichê vai até 3,0
+  (a cabeça da Gina chega a 2,9 e 39 cm para fora); o meio do guichê e do
+  balcão fica vazio, e as folhas de vidro correm para as quinas.
+- **Antes da `fundir()`, a `juntarPorCor`**: as miudezas de cor lisa viram uma
+  malha — 39 malhas e ~25 mil triângulos a guarita inteira.
+- Coplanar em peça arredondada (a soleira no plano do piso, as réguas da porta
+  no plano da de cima, o teclado atravessando o telefone) achado com a caixa
+  envolvente de cada malha no quadro da peça, com `?semFundir`.
+
 ## O carrinho de golfe da Gina (`world/carrinhoDeGolfeDaGina.ts`)
 
 O primeiro veículo novo do CLUBE (`docs/CARRINHO-DE-GOLFE-DA-GINA.md`), e o

@@ -84,7 +84,7 @@ function placaDaPortaria(): THREE.CanvasTexture {
 
 let escudo: THREE.CanvasTexture | null = null;
 /** o escudo do clube no nariz: o círculo verde, a girafinha de quepe e "CLUBE" */
-function escudoDoClube(): THREE.CanvasTexture {
+export function escudoDoClube(): THREE.CanvasTexture {
   if (escudo) return escudo;
   escudo = canvasComLetra(160, 160, (c) => {
     c.fillStyle = css(P.gold); c.beginPath(); c.arc(80, 80, 80, 0, Math.PI * 2); c.fill();

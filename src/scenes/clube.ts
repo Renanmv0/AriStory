@@ -10,7 +10,7 @@ import {
   canteiroDeHorta, estufa, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  guarita, meioFio, muroDoClube, poolShell, poolWater, portaoDoClube, sebe,
+  meioFio, muroDoClube, poolShell, poolWater, portaoDoClube, sebe,
   showerPost, sunLounger,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
@@ -26,6 +26,8 @@ import {
   DESCIDA_NO_CLUBE, FAIXA_DO_CLUBE, montarBebitoNoClube, montarEstacionamentoDoClube, naAreaDoEstacionamentoDoClube,
 } from '../eventos/bebitoMobile/noClube';
 import { Gina } from '../entities/bichos/Gina';
+import { GUARITA_DO_CLUBE, GuaritaDoClube } from '../world/guaritaDoClube';
+import { conversaDaGuaritaNova, guaritaNovaPorVer } from '../eventos/portariaDoClube';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Josefina } from '../entities/bichos/Josefina';
@@ -372,18 +374,26 @@ export const clube: SceneDef = {
      * `+Z`, que é ao mesmo tempo o lado por onde a dupla chega e o lado de onde
      * a câmera vem — as duas coisas que uma peça de balcão precisa acertar.
      *
-     * ELA NÃO PODE ENCOSTAR NO MURO, e a primeira versão encostava. A folha
-     * aberta do portão é 3,4 m de grade a 2,3 de altura em `z = 3,5`: numa
-     * câmera de 34° ela joga uma faixa listrada por cima de tudo que estiver
-     * até 3,4 atrás dela, e a guarita apanhava a faixa inteira na cara. Aqui,
-     * quatro metros para dentro e com a frente em `z = 3,7`, a guarita fica NA
-     * FRENTE da folha em vez de atrás — quem passa a ser tapado é a grade, que
-     * é fundo de cena.
+     * ELA NÃO PODE ENCOSTAR NO MURO. A folha aberta do portão é 3,4 m de grade
+     * a 2,3 de altura em `z = 3,5`: numa câmera de 34° ela joga uma faixa
+     * listrada por cima de tudo que estiver até 3,4 atrás dela. A frente da
+     * guarita fica em `z = 3,7`, NA FRENTE da folha — quem é tapado é a grade.
+     *
+     * A GUARITA NOVA (`world/guaritaDoClube.ts`, 4,8 × 3,5) cresceu para os
+     * fundos e para o lado da piscina: a frente continua em `z = 3,7` e o lado
+     * do portão onde estava, e a Gina continua à mesma distância do balcão.
      */
-    const GUARITA = { x: -20.6, z: 2.6, largura: 2.6, profundidade: 2.2 };
-    w.add(w.place(guarita(GUARITA.largura, GUARITA.profundidade), GUARITA.x, 0, GUARITA.z));
-    // a caixa engole o balcão, que avança 0,37 além da parede da frente
-    w.blockBox(GUARITA.x, GUARITA.z + 0.2, GUARITA.largura / 2 + 0.2, GUARITA.profundidade / 2 + 0.25);
+    const GUARITA = { x: -19.35, z: 3.7 - GUARITA_DO_CLUBE.meiaZ };
+    const guarita = new GuaritaDoClube();
+    w.add(fundir(w.place(guarita.group, GUARITA.x, 0, GUARITA.z)));
+    w.onUpdate((dt) => guarita.update(dt));
+    // a caixa engole o balcão, que avança além da parede da frente
+    {
+      const { meiaX, meiaZ, balcao } = GUARITA_DO_CLUBE;
+      const z0 = GUARITA.z - meiaZ - 0.05;
+      const z1 = GUARITA.z + balcao.frente;
+      w.blockBox(GUARITA.x, (z0 + z1) / 2, meiaX + 0.05, (z1 - z0) / 2);
+    }
 
     /**
      * A GIRAFA PORTEIRA.
@@ -393,27 +403,49 @@ export const clube: SceneDef = {
      * de código nova: as doze tentativas de destino falham e ele a devolve para
      * `parado`, respirando e olhando a rua. Nada de `enabled = false`.
      *
-     * Ela nasce ADIANTADA em `z` dentro da guarita, e não no meio dela: o
+     * Ela fica 75 cm atrás da face da frente, e não no meio da guarita: o
      * pescoço se debruça 0,93 para a frente, e é essa soma que põe a cabeça em
      * cima do balcão — do lado de fora da parede E do lado de fora da sombra do
-     * telhado, que a 34° come tudo que fica mais de meio metro para dentro. Com
-     * o corpo no meio da casinha, a cabeça aparecia escura por uma fresta.
+     * telhado, que a 34° come tudo que fica mais de meio metro para dentro.
      */
+    const ginaX = GUARITA.x + GUARITA_DO_CLUBE.gina.x;
+    const ginaZ = GUARITA.z + GUARITA_DO_CLUBE.gina.z;
     const gina = new Gina({
-      minX: GUARITA.x - 0.15, maxX: GUARITA.x + 0.15,
-      minZ: GUARITA.z + 0.2, maxZ: GUARITA.z + 0.5,
+      minX: ginaX - 0.15, maxX: ginaX + 0.15,
+      minZ: ginaZ - 0.15, maxZ: ginaZ + 0.15,
     });
     w.add(gina.group);
     gina.aoSoar = () => g.som('apito');
 
     const falarComOPorteiro = w.interact({
       id: 'clube:portaria',
-      x: GUARITA.x, z: GUARITA.z + 1.9, radius: 2.2,
+      x: ginaX, z: ginaZ + 1.9, radius: 2.2,
       label: 'Falar com a Gina', icon: '🦒',
       highlight: gina.group,
       onInteract: async (api) => {
         gina.receberCarinho();
         api.som('apito');
+        /*
+         * A PRIMEIRA VEZ NA GUARITA NOVA desbloqueia a Portaria do Clube
+         * (`eventos/portariaDoClube.ts`). Quem ainda não conhecia a Gina ouve a
+         * apresentação de sempre antes; quem já conhecia vai direto para a
+         * reforma. Atrás da chave do minigame: sem ela, nada muda.
+         */
+        if (guaritaNovaPorVer(api)) {
+          if (!api.temMemoria('girafa-da-portaria')) {
+            await api.say(['Bom diaaa! Carteirinha na mão? …Brincadeira, pode entrar.'], 'Gina');
+            await api.say(['Sou a Gina, viu? Qualquer coisa é comigo.'], 'Gina');
+            api.unlock({
+              id: 'girafa-da-portaria',
+              title: 'A Gina da portaria',
+              place: 'Clube',
+              note: 'A porteira do clube: quepe, pescoço de três metros e apito no peito, mandando a gente aproveitar o dia.',
+              icon: '🦒',
+            });
+          }
+          await conversaDaGuaritaNova(api);
+          return;
+        }
         // O NOME É DO ARI, e as falas são as mesmas de antes: o Renan pediu
         // para batizá-la sem mexer nelas. O nome entra por uma linha nova, dela
         // mesma se apresentando — trocar as falas por causa de um nome seria
@@ -2089,7 +2121,7 @@ export const clube: SceneDef = {
         'clube:noel', 'clube:dar-as-sementes', 'clube:bar', 'clube:mesa-do-restaurante',
       ],
       recados: [
-        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: GUARITA.x + 2.0, z: GUARITA.z + 2.1, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: GUARITA.x + 2.7, z: GUARITA.z + 2.75, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.capy], autor: 'Capy', x: GUARDA.x + 1.7, z: GUARDA.z - 0.9, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.noel], autor: 'Noel', x: -13.9, z: 10.9, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.josefina], autor: 'Josefina', x: JARDIM.caminho - 1.4, z: -13.75, giro: Math.PI / 4 },
