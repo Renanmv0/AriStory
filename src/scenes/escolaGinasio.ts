@@ -20,6 +20,7 @@ import {
 import type { Irma } from '../minigames/aula/apostila';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import { flynnNoGinasio, montarOTreinoDoFlynn } from './escolaAtletica';
+import { montarOUmContraUm, roccoNoGinasio } from './escolaUmContraUm';
 import {
   AULA_CHAMADA, NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, moduloUmConcluido, novaIrma, podeChamarAula,
 } from './escolaAula';
@@ -206,7 +207,13 @@ export const escolaGinasio: SceneDef = {
     // linha, são da dupla; e atrás dela a tabela da direita o engolia na
     // ponta (ela tapa o que fica acima e à esquerda dela na tela). Ele para a
     // 3,3 da linha de fundo, na beira do garrafão.
-    if (!quemFoiSeArrumar(w.game)) montarOTreinoDoFlynn(w, { aros, aroY: ARO_Y, raiaZ: QUADRA.z + 1.6, pontaX: meiaL - 3.3 });
+    // E DEPOIS DE A DUPLA CONHECER O ROCCO na estrada (pedido do Renan), o treino dá lugar ao UM CONTRA UM dos dois,
+    // na mesma raia (`escolaUmContraUm.ts`); sem ele, o treino de sempre
+    if (!quemFoiSeArrumar(w.game)) {
+      const quadraDoTreino = { aros, aroY: ARO_Y, raiaZ: QUADRA.z + 1.6, pontaX: meiaL - 3.3 };
+      if (roccoNoGinasio(w.game)) montarOUmContraUm(w, quadraDoTreino);
+      else montarOTreinoDoFlynn(w, quadraDoTreino);
+    }
 
     // ======================================================== O ARREMESSO
     const bola = bolaDeBasquete(0.12);

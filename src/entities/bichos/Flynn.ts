@@ -1,3 +1,4 @@
+import { fundir } from '../../world/fundir';
 import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
@@ -66,13 +67,113 @@ export const ARREMESSO = {
 
 /** a altura do quadril, em números do corpo: é em volta dele que o tronco dobra */
 const QUADRIL = 0.29;
-/** a escala do corpo (ver o fim de `montar`) */
-const ESCALA = 1.35;
 
-const AZUL = P.gatitosAzul;
-const MARINHO = P.gatitosAzulEscuro;
-const AMARELO = P.gatitosAmarelo;
-const BRANCO = P.gatitosBranco;
+/**
+ * A FICHA DO ATLETA: tudo o que separa o Flynn (a raposa dos Gatitos) do Rocco (o lobo dos Dogões, o rival — ver
+ * `Rocco.ts`). O corpo de atleta, os gestos, a corrida e o arremesso são os mesmos; a ficha diz o pelo, a forma da
+ * cabeça e do rabo, o jeito (o sorrisão e o rabo abanando, ou o meio sorriso marrento e o rabo baixo) e o uniforme
+ * do time. Bicho parecido com outro ganha ficha, e não cópia do arquivo (a regra das coelhinhas).
+ */
+export interface FichaDeAtleta {
+  /** a etiqueta (`userData.peca`) e o nome da cabeça (`cabeca-do-…`) */
+  peca: string;
+  semente: number;
+  /** a escala do corpo montado em números de bicho de chão */
+  escala: number;
+  pelo: number;
+  peloClaro: number;
+  peloEscuro: number;
+  nariz: number;
+  olho: number;
+  pupila: number;
+  orelhaDentro: number;
+  bochecha: number;
+  lingua: number;
+  /** a orelha em cone: o raio da base, a altura, a abertura para fora e o tamanho da ponta escura */
+  orelha: { raio: number; alto: number; abre: number; ponta: number };
+  /** o focinho: o comprimento e a largura (multiplicam os do Flynn) */
+  focinho: { comprido: number; largo: number };
+  /** o RABO em gomos encadeados (comprimento, largura e a dobra de cada um) e a cor da ponta */
+  rabo: { gomos: ReadonlyArray<{ comp: number; larg: number; dobra: number }>; ponta: 'clara' | 'escura'; abana: number };
+  /** o jeito: `sorriso` é o sorrisão de boca aberta (o Flynn); `de-lado` é o meio sorriso de quem se acha (o Rocco) */
+  boca: 'sorriso' | 'de-lado';
+  /** a sobrancelha: o giro (mais deitada é mais segura de si) e a grossura */
+  sobrancelha: { giro: number; grossa: number };
+  /** a JUBA de pelo em volta do pescoço (o lobo tem; a raposa não) */
+  juba: boolean;
+  /** o que pendura no peito: o apito (o presidente) ou a plaquinha de cachorro (os Dogões) */
+  pingente: 'apito' | 'plaquinha';
+  /** o pin do peito: a estrela (os Gatitos) ou o osso (os Dogões) */
+  pin: 'estrela' | 'osso';
+  /** o TIME: as quatro cores do uniforme, o nome no peito, o nome nas costas, o número e o emblema */
+  time: {
+    principal: number;
+    escuro: number;
+    detalhe: number;
+    branco: number;
+    creme: number;
+    tenisFaixa: number;
+    cordao: number;
+    nome: string;
+    costas: string;
+    numero: string;
+    /** o passo das letras em arco (palavra mais comprida, passo menor) */
+    passoDoNome: number;
+    /** a cor do nome do time no peito (se não, a de detalhe) */
+    corDoNome?: number;
+    bandana: string;
+    emblema: (raio: number) => THREE.Object3D;
+  };
+}
+
+/** a ficha do FLYNN: a raposa presidente da atlética dos Gatitos */
+export const FICHA_DO_FLYNN: FichaDeAtleta = {
+  peca: 'flynn',
+  semente: 20261003,
+  escala: 1.35,
+  pelo: P.flynnPelo,
+  peloClaro: P.flynnPeloClaro,
+  peloEscuro: P.flynnPeloEscuro,
+  nariz: P.flynnNariz,
+  olho: P.flynnOlho,
+  pupila: P.flynnPupila,
+  orelhaDentro: P.flynnOrelhaDentro,
+  bochecha: P.flynnBochecha,
+  lingua: P.lunaNariz,
+  orelha: { raio: 0.062, alto: 0.16, abre: 0.3, ponta: 1 },
+  focinho: { comprido: 1, largo: 1 },
+  rabo: {
+    gomos: [
+      { comp: 0.055, larg: 0.038, dobra: -1.95 },
+      { comp: 0.07, larg: 0.055, dobra: 0.45 },
+      { comp: 0.075, larg: 0.068, dobra: 0.42 },
+      { comp: 0.075, larg: 0.072, dobra: 0.42 },
+      { comp: 0.07, larg: 0.064, dobra: 0.35 },
+    ],
+    ponta: 'clara',
+    abana: 1,
+  },
+  boca: 'sorriso',
+  sobrancelha: { giro: Math.PI * 0.2, grossa: 0.0042 },
+  juba: false,
+  pingente: 'apito',
+  pin: 'estrela',
+  time: {
+    principal: P.gatitosAzul,
+    escuro: P.gatitosAzulEscuro,
+    detalhe: P.gatitosAmarelo,
+    branco: P.gatitosBranco,
+    creme: P.gatitosCreme,
+    tenisFaixa: P.flynnTenisFaixa,
+    cordao: P.flynnCordao,
+    nome: 'GATITOS',
+    costas: 'FLYNN',
+    numero: '1',
+    passoDoNome: 0.17,
+    bandana: 'bandana-dos-gatitos',
+    emblema: (r) => emblemaDosGatitos(r),
+  },
+};
 
 /** a casca da regata (o elipsoide por fora do tronco), em números do corpo */
 const REGATA = { y: 0.452, rx: 0.12, ry: 0.138, rz: 0.098 };
@@ -82,6 +183,24 @@ function naRegata(x: number, y: number, folga = 0.004, costas = false): THREE.Ve
   const u = 1 - (x / REGATA.rx) ** 2 - ((y - REGATA.y) / REGATA.ry) ** 2;
   const z = REGATA.rz * Math.sqrt(Math.max(0, u)) + folga;
   return new THREE.Vector3(x, y, costas ? -z : z);
+}
+
+/** um OSSINHO de cachorro deitado no plano XY, olhando para `+Z` (o pin dos Dogões): a haste e as duas bolinhas de cada ponta */
+function ossinho(meio: number, cor: number): THREE.Group {
+  const g = new THREE.Group();
+  const mat = toon(cor);
+  const haste = new THREE.Mesh(new THREE.CapsuleGeometry(meio * 0.28, meio * 1.1, 3, 8).rotateZ(Math.PI / 2), mat);
+  haste.scale.z = 0.5;
+  g.add(haste);
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
+      const bola = new THREE.Mesh(new THREE.SphereGeometry(meio * 0.36, 8, 6), mat);
+      bola.scale.z = 0.5;
+      bola.position.set(sx * meio * 0.82, sy * meio * 0.28, 0);
+      g.add(bola);
+    }
+  }
+  return g;
 }
 
 export class Flynn extends Bicho {
@@ -124,10 +243,37 @@ export class Flynn extends Bicho {
    * solta no alto do pulo.
    */
   readonly maoDaBola = new THREE.Object3D();
+  /**
+   * A CORRIDA MATINAL (a estrada, `eventos/bebitoMobile/corridaDoFlynn.ts`):
+   * quem leva o corpo pela calçada é a cena, e isto diz a pose. `corrida` é a
+   * velocidade em "corridas" (1 = 7 m/s, a do Bebito; ele passa de 2), e a
+   * passada acelera junto; `trote` é a corrida NO LUGAR, conversando sem
+   * esfriar; `tocaAqui` (0 a 1) ergue a pata do lado `+X` (o do Bebito) aberta,
+   * e `estica` (0 a 1) a leva até a mão da janela, no tapa. Nulo fora da
+   * estrada: nada abaixo muda o Flynn do ginásio nem o do refeitório.
+   */
+  naEstrada: { corrida: number; trote: boolean; tocaAqui: number; estica: number } | null = null;
   private readonly pata = new THREE.Vector3();
   private readonly outraPata = new THREE.Vector3();
+  /**
+   * O UM CONTRA UM (o Rocco no ginásio, `scenes/escolaUmContraUm.ts`): `driblando` baixa a pata direita na frente e
+   * a faz empurrar a bola no ritmo do quique (`faseDoDrible`: a bola na mão em 0, π, 2π…; no chão em π/2, 3π/2…), e
+   * `marcando` (0 a 1, a cena mistura) é a defesa — o tronco um tico mais dobrado e os dois braços abertos e altos,
+   * fechando o caminho. Desligados (o padrão), nada abaixo muda o Flynn de sempre.
+   */
+  driblando = false;
+  marcando = 0;
+  /** a fase do quique (rad): a bola na mão a cada meia volta, e no chão no meio */
+  faseDoDrible = 0;
+  private misturaDrible = 0;
+  /** chamado a cada quique da bola no chão (a cena toca o som) */
+  aoQuicarODrible: (() => void) | null = null;
+  /** o arremesso que só PEGA (para no peito e acaba): a bola vai para o drible */
+  private soAtePeito = false;
+  /** a ficha: quem ele é (o Flynn, ou o Rocco que herda dele) */
+  protected readonly ficha: FichaDeAtleta;
 
-  constructor(area: AreaDoBicho) {
+  constructor(area: AreaDoBicho, ficha: FichaDeAtleta = FICHA_DO_FLYNN) {
     super(area, {
       // elétrico, mas educado: anda bem, e para pouco em cada canto
       velocidade: 0.85,
@@ -138,10 +284,33 @@ export class Flynn extends Bicho {
       somCadaMin: 1e6,
       somCadaMax: 1e6,
       duracaoDoCarinho: 2,
-      semente: 20261003,
+      semente: ficha.semente,
     });
+    this.ficha = ficha;
     this.montar();
-    this.prontoParaAparecer('flynn');
+    this.prontoParaAparecer(ficha.peca);
+    /*
+     * MENOS DESENHO, MESMA IMAGEM: o atleta são ~150 pedaços (cada listra, cada botão, cada gomo), e o um contra um
+     * pôs dois deles no ginásio. A `fundir` junta por material o que se mexe junto — e o que se mexe são os grupos
+     * abaixo, que ganham NOME para virar fronteira (sem nome, ela os trataria como fixos e os juntaria ao corpo).
+     */
+    this.nomearOQueSeMexe();
+    fundir(this.group);
+  }
+
+  /** os pivôs da pose (sem nome, a `fundir` juntaria os pedaços deles ao corpo, e eles parariam de mexer) */
+  private nomearOQueSeMexe(): void {
+    const p = this.ficha.peca;
+    const nomear = (o: THREE.Object3D, nome: string): void => {
+      if (!o.name) o.name = nome;
+    };
+    nomear(this.corpo, `${p}-corpo`);
+    this.pernas.forEach((o, i) => nomear(o, `${p}-perna-${i}`));
+    this.bracos.forEach((o, i) => nomear(o, `${p}-braco-${i}`));
+    this.gomosDoRabo.forEach((o, i) => nomear(o, `${p}-rabo-${i}`));
+    this.orelhas.forEach((o, i) => nomear(o, `${p}-orelha-${i}`));
+    this.olhos.forEach((o, i) => nomear(o, `${p}-olho-${i}`));
+    this.pontasDaBandana.forEach((o, i) => nomear(o, `${p}-ponta-da-faixa-${i}`));
   }
 
   // ---------------------------------------------------------------- gestos
@@ -164,6 +333,34 @@ export class Flynn extends Bicho {
   /** pega a bola do chão à frente dele e arremessa (o relógio em `tempoNoArremesso`) */
   arremessar(): void {
     this.tempoDoArremesso = 0;
+  }
+
+  /** abaixa e pega a bola do chão à frente, até o peito — e o gesto acaba ali (para driblar, e não arremessar) */
+  pegarDoChao(): void {
+    this.tempoDoArremesso = 0;
+    this.soAtePeito = true;
+  }
+
+  /**
+   * ARREMESSA COM A BOLA JÁ NA MÃO (vindo do drible): o gesto começa no meio da pegada, agachado com a bola subindo
+   * para o peito — o "junta e sobe" do arremesso de quem vinha driblando.
+   */
+  arremessarDaMao(): void {
+    this.tempoDoArremesso = ARREMESSO.PEGA + 0.12;
+    this.soAtePeito = false;
+  }
+
+  /**
+   * Onde a bola do drible está agora, no mundo: embaixo da pata direita, descendo até o chão e voltando no ritmo do
+   * quique (`raio` é o da bola). Só faz sentido com `driblando`.
+   */
+  bolaDoDrible(raio: number, alvo = new THREE.Vector3()): THREE.Vector3 {
+    const braco = this.bracos[1];
+    braco.updateWorldMatrix(true, false);
+    braco.localToWorld(alvo.set(0, -0.205, 0.02));
+    const topo = alvo.y - raio * 0.9;
+    alvo.y = raio + Math.max(0, topo - raio) * Math.abs(Math.cos(this.faseDoDrible));
+    return alvo;
   }
 
   get estaArremessando(): boolean {
@@ -193,12 +390,21 @@ export class Flynn extends Bicho {
     return Math.abs(this.bracos[1]?.rotation.z ?? 0);
   }
 
+  /** a ponta da pata do lado `+X` (a do toca aqui), no mundo: o teste mede o encontro das mãos */
+  pataDoToca(alvo: THREE.Vector3): THREE.Vector3 {
+    const braco = this.bracos[1];
+    braco.updateWorldMatrix(true, false);
+    return braco.localToWorld(alvo.set(0, -0.205, 0));
+  }
+
   // ------------------------------------------------------------------ corpo
 
   private montar(): void {
-    const pelo = toon(P.flynnPelo);
-    const claro = toon(P.flynnPeloClaro);
-    const escuro = toon(P.flynnPeloEscuro);
+    const F = this.ficha;
+    const { principal: AZUL, escuro: MARINHO, detalhe: AMARELO, branco: BRANCO } = F.time;
+    const pelo = toon(F.pelo);
+    const claro = toon(F.peloClaro);
+    const escuro = toon(F.peloEscuro);
     const azul = toon(AZUL);
     const marinho = toon(MARINHO);
     const amarelo = toon(AMARELO);
@@ -284,6 +490,7 @@ export class Flynn extends Bicho {
     peito.scale.set(0.048, 0.04, 0.03);
     peito.position.set(0, 0.578, 0.034);
     this.corpo.add(peito);
+    if (F.juba) this.corpo.add(this.fazerJuba());
     // a gola e as cavas amarelas
     const gola = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.008, 6, 24), amarelo);
     gola.rotation.x = Math.PI / 2;
@@ -301,30 +508,31 @@ export class Flynn extends Bicho {
     }
     // o NÚMERO 1 no peito: branco com a borda amarela (a letra de time)
     // um tico abaixo do meio do peito: mais alto, o apito tapava o número
+    const N = F.time.numero;
     const n1 = naRegata(0, REGATA.y - 0.04);
-    colar(letra('1', 0.088, AMARELO, true), this.corpo, n1.x, n1.y, n1.z, 0, 0, 1);
+    colar(letra(N, 0.088, AMARELO, true), this.corpo, n1.x, n1.y, n1.z, 0, 0, 1);
     const n1b = naRegata(0, REGATA.y - 0.04, 0.006);
-    colar(letra('1', 0.077, BRANCO), this.corpo, n1b.x, n1b.y, n1b.z, 0, 0, 1);
+    colar(letra(N, 0.077, BRANCO), this.corpo, n1b.x, n1b.y, n1b.z, 0, 0, 1);
     // "GATITOS" em arco no alto do peito, e "FLYNN" e o 1 nas costas
     const raioEm = (y: number): number => REGATA.rx * Math.sqrt(1 - ((y - REGATA.y) / REGATA.ry) ** 2);
     const yPeito = REGATA.y + 0.05;
-    textoEmArco(this.corpo, 'GATITOS', {
+    textoEmArco(this.corpo, F.time.nome, {
       raio: raioEm(yPeito) * 1.02, achata: REGATA.rz / REGATA.rx, y: yPeito,
-      passo: 0.17, curva: 0.0006, inclina: 0.05, alto: 0.02, cor: AMARELO,
+      passo: F.time.passoDoNome, curva: 0.0006, inclina: 0.05, alto: 0.02, cor: F.time.corDoNome ?? AMARELO,
     });
     const yNome = REGATA.y + 0.052;
-    textoEmArco(this.corpo, 'FLYNN', {
+    textoEmArco(this.corpo, F.time.costas, {
       raio: raioEm(yNome) * 1.02, achata: REGATA.rz / REGATA.rx, y: yNome, costas: true,
       passo: 0.22, curva: 0.0007, inclina: 0.05, alto: 0.027, cor: BRANCO, contorno: AMARELO,
     });
     const c1 = naRegata(0, REGATA.y - 0.025, 0.004, true);
-    colar(letra('1', 0.088, AMARELO, true), this.corpo, c1.x, c1.y, c1.z, 0, 0, -1);
+    colar(letra(N, 0.088, AMARELO, true), this.corpo, c1.x, c1.y, c1.z, 0, 0, -1);
     const c1b = naRegata(0, REGATA.y - 0.025, 0.006, true);
-    colar(letra('1', 0.077, BRANCO), this.corpo, c1b.x, c1b.y, c1b.z, 0, 0, -1);
-    // o PIN de estrela amarela, no peito esquerdo dele
+    colar(letra(N, 0.077, BRANCO), this.corpo, c1b.x, c1b.y, c1b.z, 0, 0, -1);
+    // o PIN no peito esquerdo dele: a estrela dos Gatitos, ou o osso dos Dogões
     const pin = naRegata(-0.066, REGATA.y + 0.02, 0.002);
-    const estrelinha = estrela(0.012, AMARELO);
-    colar(estrelinha, this.corpo, pin.x, pin.y, pin.z, pin.x / REGATA.rx ** 2, (pin.y - REGATA.y) / REGATA.ry ** 2, pin.z / REGATA.rz ** 2);
+    const enfeite = F.pin === 'estrela' ? estrela(0.012, AMARELO) : ossinho(0.013, BRANCO);
+    colar(enfeite, this.corpo, pin.x, pin.y, pin.z, pin.x / REGATA.rx ** 2, (pin.y - REGATA.y) / REGATA.ry ** 2, pin.z / REGATA.rz ** 2);
 
     this.corpo.add(this.fazerApito());
     this.corpo.add(this.fazerRabo());
@@ -383,7 +591,7 @@ export class Flynn extends Bicho {
      * 1,25 e o corpo das coelhinhas ele ficava do tamanho delas, e o capitão
      * sumia no refeitório).
      */
-    this.corpo.scale.setScalar(ESCALA);
+    this.corpo.scale.setScalar(F.escala);
     this.group.add(this.corpo);
   }
 
@@ -394,6 +602,7 @@ export class Flynn extends Bicho {
    * no quadril): a sola encosta no chão em `y = -0,29`.
    */
   private fazerTenis(lado: -1 | 1): THREE.Group {
+    const { principal: AZUL, detalhe: AMARELO, branco: BRANCO, creme, tenisFaixa } = this.ficha.time;
     const g = new THREE.Group();
     const Z = 0.028;
     // `Y` é o centro do corpo do tênis: a sola fica 0,022 abaixo, e o fundo dela no chão
@@ -402,11 +611,11 @@ export class Flynn extends Bicho {
     corpo.scale.set(0.048, 0.034, 0.082);
     corpo.position.set(0, Y, Z);
     g.add(corpo);
-    const sola = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), toon(P.gatitosCreme));
+    const sola = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), toon(creme));
     sola.scale.set(0.052, 0.016, 0.087);
     sola.position.set(0, Y - 0.022, Z);
     g.add(sola);
-    const faixa = toon(P.flynnTenisFaixa);
+    const faixa = toon(tenisFaixa);
     for (const s of [-1, 1] as const) {
       const risco = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.011, 0.066), faixa);
       risco.position.set(s * 0.046, Y - 0.002, Z - 0.004);
@@ -414,7 +623,7 @@ export class Flynn extends Bicho {
       g.add(risco);
     }
     // o bico, um tico mais claro, e a lingueta azul atrás do cadarço
-    const bico = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), toon(P.gatitosCreme));
+    const bico = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), toon(creme));
     bico.scale.set(0.04, 0.022, 0.028);
     bico.position.set(0, Y - 0.01, Z + 0.062);
     g.add(bico);
@@ -452,8 +661,12 @@ export class Flynn extends Bicho {
       new THREE.Vector3(0.052, 0.612, -0.01),
     ];
     const curva = new THREE.CatmullRomCurve3(pontos, true);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 48, 0.0042, 6, true), toon(P.flynnCordao)));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 48, 0.0042, 6, true), toon(this.ficha.time.cordao)));
     const prata = toon(P.flynnApito);
+    if (this.ficha.pingente === 'plaquinha') {
+      g.add(this.fazerPlaquinha(prata));
+      return g;
+    }
     const onde = naRegata(0, 0.48, 0.016);
     const apito = new THREE.Group();
     apito.name = 'apito';
@@ -468,13 +681,76 @@ export class Flynn extends Bicho {
     const bocal = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.008, 0.012), prata);
     bocal.position.x = -0.03;
     apito.add(bocal);
-    const furinho = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.004, 0.004), toon(P.flynnNariz));
+    const furinho = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.004, 0.004), toon(this.ficha.nariz));
     furinho.position.set(0.004, 0.011, 0.006);
     apito.add(furinho);
     const argola = new THREE.Mesh(new THREE.TorusGeometry(0.006, 0.0018, 5, 10), prata);
     argola.position.set(0.006, 0.017, 0);
     apito.add(argola);
     g.add(apito);
+    return g;
+  }
+
+  /**
+   * A PLAQUINHA DE CACHORRO (a "dog tag" do time dos Dogões), no lugar do apito: duas placas de metal de quina
+   * redonda, uma na frente da outra e um tico tortas, com o furinho e a argola, penduradas no ponto mais baixo do
+   * cordão (o mesmo cordão do apito, colado na regata).
+   */
+  private fazerPlaquinha(metal: THREE.Material): THREE.Group {
+    const g = new THREE.Group();
+    g.name = 'plaquinha';
+    const forma = new THREE.Shape();
+    const L = 0.017, A = 0.026, r = 0.007;
+    forma.moveTo(-L + r, -A);
+    forma.lineTo(L - r, -A);
+    forma.quadraticCurveTo(L, -A, L, -A + r);
+    forma.lineTo(L, A - r);
+    forma.quadraticCurveTo(L, A, L - r, A);
+    forma.lineTo(-L + r, A);
+    forma.quadraticCurveTo(-L, A, -L, A - r);
+    forma.lineTo(-L, -A + r);
+    forma.quadraticCurveTo(-L, -A, -L + r, -A);
+    const geo = new THREE.ExtrudeGeometry(forma, { depth: 0.003, bevelEnabled: true, bevelThickness: 0.0012, bevelSize: 0.0012, bevelSegments: 1 });
+    const onde = naRegata(0, 0.468, 0.008);
+    for (const [dx, dy, giro, dz] of [[0.006, 0.004, 0.18, 0], [-0.004, 0, -0.1, 0.005]] as const) {
+      const placa = new THREE.Mesh(geo, metal);
+      placa.position.set(onde.x + dx, onde.y + dy, onde.z + dz);
+      placa.rotation.z = giro;
+      g.add(placa);
+      // os riscos gravados (as letrinhas da plaquinha)
+      for (let i = 0; i < 3; i++) {
+        const risco = new THREE.Mesh(new THREE.BoxGeometry(0.018 - i * 0.003, 0.0022, 0.0012), toon(this.ficha.nariz));
+        risco.position.set(0, 0.006 - i * 0.008, 0.0048);
+        placa.add(risco);
+      }
+    }
+    const argola = new THREE.Mesh(new THREE.TorusGeometry(0.006, 0.0016, 5, 12), metal);
+    argola.position.set(onde.x, onde.y + 0.03, onde.z + 0.002);
+    g.add(argola);
+    return g;
+  }
+
+  /**
+   * A JUBA DE LOBO: um colar de tufos de pelo em volta do pescoço, saindo da gola da regata — os claros na frente
+   * (o peito do lobo) e os da cor do pelo dos lados e atrás, cada um apontando para fora e para baixo. É ela que
+   * engrossa o pescoço e separa a silhueta do lobo da raposa, de longe.
+   */
+  private fazerJuba(): THREE.Group {
+    const g = new THREE.Group();
+    g.name = 'juba';
+    const claro = toon(this.ficha.peloClaro);
+    const pelo = toon(this.ficha.pelo);
+    const N = 14;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      const frente = Math.cos(a);
+      const tufo = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.07, 7), frente > 0.35 ? claro : pelo);
+      // a direção para fora (o ângulo em volta do pescoço), tombando para baixo
+      const fora = new THREE.Vector3(Math.sin(a), -0.85, Math.cos(a)).normalize();
+      tufo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), fora);
+      tufo.position.set(Math.sin(a) * 0.058, 0.608 - (frente > 0 ? 0.004 : 0), Math.cos(a) * 0.05);
+      g.add(tufo);
+    }
     return g;
   }
 
@@ -488,15 +764,9 @@ export class Flynn extends Bicho {
   private fazerRabo(): THREE.Group {
     const base = new THREE.Group();
     base.position.set(0, 0.3, -0.09);
-    const pelo = toon(P.flynnPelo);
-    const claro = toon(P.flynnPeloClaro);
-    const GOMOS = [
-      { comp: 0.055, larg: 0.038, dobra: -1.95 },
-      { comp: 0.07, larg: 0.055, dobra: 0.45 },
-      { comp: 0.075, larg: 0.068, dobra: 0.42 },
-      { comp: 0.075, larg: 0.072, dobra: 0.42 },
-      { comp: 0.07, larg: 0.064, dobra: 0.35 },
-    ];
+    const pelo = toon(this.ficha.pelo);
+    const claro = toon(this.ficha.rabo.ponta === 'clara' ? this.ficha.peloClaro : this.ficha.peloEscuro);
+    const GOMOS = this.ficha.rabo.gomos;
     let pai: THREE.Object3D = base;
     GOMOS.forEach((s, i) => {
       const gomo = new THREE.Group();
@@ -522,12 +792,14 @@ export class Flynn extends Bicho {
   }
 
   private montarCabeca(): void {
-    const pelo = toon(P.flynnPelo);
-    const claro = toon(P.flynnPeloClaro);
-    const escuro = toon(P.flynnPeloEscuro);
-    const preto = toon(P.flynnNariz);
+    const F = this.ficha;
+    const pelo = toon(F.pelo);
+    const claro = toon(F.peloClaro);
+    const escuro = toon(F.peloEscuro);
+    const preto = toon(F.nariz);
+    const { comprido: FC, largo: FL } = F.focinho;
 
-    this.cabeca.name = 'cabeca-do-flynn';
+    this.cabeca.name = `cabeca-do-${F.peca}`;
     this.cabeca.position.set(0, 0.73, 0.008);
     const cranio = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), pelo);
     cranio.scale.set(0.155, 0.135, 0.14);
@@ -548,38 +820,61 @@ export class Flynn extends Bicho {
       tufo.position.set(lado * 0.148, -0.06, 0.03);
       tufo.rotation.z = -lado * (Math.PI / 2 + 0.45);
       this.cabeca.add(tufo);
-      const rosado = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), toon(P.flynnBochecha));
+      const rosado = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), toon(F.bochecha));
       rosado.scale.set(0.026, 0.017, 0.012);
       rosado.position.set(lado * 0.098, -0.03, 0.112);
       this.cabeca.add(rosado);
     }
+    // (o focinho cresce para a frente a partir da raiz, e o nariz e a boca andam junto com a ponta)
+    const avanca = (z: number): number => 0.07 + (z - 0.07) * FC;
     const focinho = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), claro);
-    focinho.scale.set(0.058, 0.045, 0.078);
-    focinho.position.set(0, -0.05, 0.108);
+    focinho.scale.set(0.058 * FL, 0.045 * FL, 0.078 * FC);
+    focinho.position.set(0, -0.05, avanca(0.108));
     this.cabeca.add(focinho);
-    // a ponte do focinho, laranja, descendo da testa até o nariz
+    // a ponte do focinho, da cor do pelo, descendo da testa até o nariz
     const ponte = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), pelo);
-    ponte.scale.set(0.034, 0.03, 0.07);
-    ponte.position.set(0, -0.02, 0.115);
+    ponte.scale.set(0.034 * FL, 0.03 * FL, 0.07 * FC);
+    ponte.position.set(0, -0.02, avanca(0.115));
     this.cabeca.add(ponte);
     const nariz = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), preto);
-    nariz.scale.set(0.022, 0.017, 0.017);
-    nariz.position.set(0, -0.034, 0.184);
+    nariz.scale.set(0.022 * FL, 0.017 * FL, 0.017);
+    nariz.position.set(0, -0.034, avanca(0.184));
     this.cabeca.add(nariz);
     const brilhoDoNariz = new THREE.Mesh(new THREE.SphereGeometry(0.005, 6, 6), claro);
-    brilhoDoNariz.position.set(-0.007, -0.027, 0.199);
+    brilhoDoNariz.position.set(-0.007, -0.027, avanca(0.199));
     this.cabeca.add(brilhoDoNariz);
-    // o SORRISÃO de boca aberta (ele está sempre feliz de ver alguém) e a língua
-    const boca = new THREE.Mesh(
-      new THREE.SphereGeometry(0.026, 12, 8, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), preto,
-    );
-    boca.scale.set(1.25, 1, 0.5);
-    boca.position.set(0, -0.07, 0.158);
-    this.cabeca.add(boca);
-    const lingua = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), toon(P.lunaNariz));
-    lingua.scale.set(1.4, 0.7, 0.6);
-    lingua.position.set(0, -0.087, 0.163);
-    this.cabeca.add(lingua);
+    if (F.boca === 'sorriso') {
+      // o SORRISÃO de boca aberta (ele está sempre feliz de ver alguém) e a língua
+      const boca = new THREE.Mesh(
+        new THREE.SphereGeometry(0.026, 12, 8, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), preto,
+      );
+      boca.scale.set(1.25, 1, 0.5);
+      boca.position.set(0, -0.07, avanca(0.158));
+      this.cabeca.add(boca);
+      const lingua = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), toon(F.lingua));
+      lingua.scale.set(1.4, 0.7, 0.6);
+      lingua.position.set(0, -0.087, avanca(0.163));
+      this.cabeca.add(lingua);
+    } else {
+      /*
+       * O MEIO SORRISO de quem se acha: a boca fechada, um risco na frente de baixo do focinho que sobe só de um lado
+       * (o canto do lado `+X` dele), e o caninho aparecendo ali. Num focinho comprido a boca vai NA SUPERFÍCIE dele:
+       * na altura do focinho ela entrava para dentro e sumia — o ponto sai do elipsoide do focinho.
+       */
+      const naBoca = (x: number, y: number, fora = 0.002): THREE.Vector3 => {
+        const r = { x: 0.058 * FL, y: 0.045 * FL, z: 0.078 * FC }, c = { y: -0.05, z: avanca(0.108) };
+        const u = 1 - (x / r.x) ** 2 - ((y - c.y) / r.y) ** 2;
+        return new THREE.Vector3(x, y, c.z + r.z * Math.sqrt(Math.max(0, u)) + fora);
+      };
+      const pontos = [[-0.03, -0.071], [-0.012, -0.075], [0.008, -0.074], [0.026, -0.068], [0.038, -0.058]]
+        .map(([x, y]) => naBoca(x, y));
+      const risco = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 16, 0.0042, 5), preto);
+      this.cabeca.add(risco);
+      const caninho = new THREE.Mesh(new THREE.ConeGeometry(0.0058, 0.014, 6), toon(P.gatitosBranco));
+      caninho.rotation.x = Math.PI;
+      caninho.position.copy(naBoca(0.022, -0.076, 0.001));
+      this.cabeca.add(caninho);
+    }
 
     // ------------------------------------------------------------- os olhos
     /**
@@ -602,10 +897,10 @@ export class Flynn extends Bicho {
       const olho = new THREE.Group();
       olho.position.set(x, y, z).addScaledVector(normal, 0.001);
       olho.lookAt(olho.position.clone().add(normal));
-      const escuroDoOlho = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), toon(P.flynnPupila));
+      const escuroDoOlho = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), toon(F.pupila));
       escuroDoOlho.scale.set(0.023, 0.028, 0.006);
       olho.add(escuroDoOlho);
-      const ambar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), toon(P.flynnOlho));
+      const ambar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), toon(F.olho));
       ambar.scale.set(0.017, 0.013, 0.004);
       ambar.position.set(0, -0.011, 0.0035);
       olho.add(ambar);
@@ -619,8 +914,8 @@ export class Flynn extends Bicho {
       olho.add(brilhinho);
       this.cabeca.add(olho);
       this.olhos.push(olho);
-      const sobrancelha = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.0042, 5, 12, Math.PI * 0.6), escuro);
-      sobrancelha.rotation.z = Math.PI * 0.2;
+      const sobrancelha = new THREE.Mesh(new THREE.TorusGeometry(0.018, F.sobrancelha.grossa, 5, 12, Math.PI * 0.6), escuro);
+      sobrancelha.rotation.z = F.sobrancelha.giro;
       sobrancelha.position.set(lado * 0.062, 0.034, 0.124);
       this.cabeca.add(sobrancelha);
     }
@@ -634,19 +929,22 @@ export class Flynn extends Bicho {
      */
     for (const lado of [-1, 1] as const) {
       const orelha = new THREE.Group();
+      const O = F.orelha;
+      // (a ficha do Flynn é o desenho de antes: a raposa de orelha alta, 0,062 × 0,16)
+      const k = O.alto / 0.16, kr = O.raio / 0.062;
       orelha.position.set(lado * 0.082, 0.1, -0.012);
-      orelha.rotation.z = -lado * 0.3;
-      const fora = new THREE.Mesh(new THREE.ConeGeometry(0.062, 0.16, 14), pelo);
+      orelha.rotation.z = -lado * O.abre;
+      const fora = new THREE.Mesh(new THREE.ConeGeometry(O.raio, O.alto, 14), pelo);
       fora.scale.z = 0.5;
-      fora.position.y = 0.07;
+      fora.position.y = 0.07 * k;
       orelha.add(fora);
-      const dentro = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.11, 12), toon(P.flynnOrelhaDentro));
+      const dentro = new THREE.Mesh(new THREE.ConeGeometry(0.04 * kr, 0.11 * k, 12), toon(F.orelhaDentro));
       dentro.scale.z = 0.35;
-      dentro.position.set(0, 0.055, 0.017);
+      dentro.position.set(0, 0.055 * k, 0.017);
       orelha.add(dentro);
-      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.031, 0.058, 12), escuro);
+      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.031 * kr * O.ponta, 0.058 * k * O.ponta, 12), escuro);
       ponta.scale.z = 0.55;
-      ponta.position.y = 0.126;
+      ponta.position.y = 0.07 * k + O.alto / 2 - 0.024 * k * O.ponta;
       orelha.add(ponta);
       this.cabeca.add(orelha);
       this.orelhas.push(orelha);
@@ -663,8 +961,9 @@ export class Flynn extends Bicho {
    * orelhinhas de gato) e o NÓ atrás, com as duas pontas caindo para trás.
    */
   private fazerBandana(): THREE.Group {
+    const { principal: AZUL, detalhe: AMARELO, bandana, emblema: fazerEmblema } = this.ficha.time;
     const g = new THREE.Group();
-    g.name = 'bandana-dos-gatitos';
+    g.name = bandana;
     const Y = 0.078;
     const ALTO = 0.034;
     const R = { x: 0.155, z: 0.14, y: 0.135 };
@@ -686,7 +985,7 @@ export class Flynn extends Bicho {
       g.add(listra);
     }
     // o emblema na frente da testa
-    const emblema = emblemaDosGatitos(0.024);
+    const emblema = fazerEmblema(0.024);
     emblema.position.set(0, Y - 0.002, R.z * raioEm(Y) * 1.05 - 0.001);
     g.add(emblema);
     // o nó atrás: duas bolotas, e as duas pontas caindo para trás e para fora
@@ -715,7 +1014,12 @@ export class Flynn extends Bicho {
 
   // ------------------------------------------------------------------- pose
 
-  protected animar(dt: number, { andando, carinho }: PoseDoBicho): void {
+  protected animar(dt: number, pose: PoseDoBicho): void {
+    const { carinho } = pose;
+    const estrada = this.naEstrada;
+    // na estrada quem anda é a cena: correndo de verdade ou trotando no lugar, as pernas vão
+    const andando = estrada ? estrada.corrida > 0.05 || estrada.trote : pose.andando;
+    const correndoAgora = estrada ? andando : this.correndo && andando;
     this.relogio += dt;
     const t = this.relogio;
     this.acenando = Math.max(0, this.acenando - dt);
@@ -723,12 +1027,24 @@ export class Flynn extends Bicho {
     const suave = Math.min(1, dt * 7);
     this.misturaAceno += ((this.acenando > 0 ? 1 : 0) - this.misturaAceno) * suave;
     this.misturaFesta += ((this.comemorando > 0 ? 1 : 0) - this.misturaFesta) * suave;
-    this.misturaCorrida += ((this.correndo && andando ? 1 : 0) - this.misturaCorrida) * suave;
+    this.misturaCorrida += ((correndoAgora ? 1 : 0) - this.misturaCorrida) * suave;
     const aceno = this.misturaAceno;
     const festa = this.misturaFesta;
     const corre = this.misturaCorrida;
+    // o drible e a marcação (o um contra um): misturados, para a pose não estalar
+    this.misturaDrible += ((this.driblando ? 1 : 0) - this.misturaDrible) * suave;
+    const drible = this.misturaDrible;
+    if (this.driblando) {
+      // um quique a cada ~0,4 s (correndo, um tico mais rápido); o chão é a meia volta ímpar
+      const antes = Math.floor(this.faseDoDrible / Math.PI + 0.5);
+      this.faseDoDrible += (dt * Math.PI) / (andando ? 0.36 : 0.42);
+      if (Math.floor(this.faseDoDrible / Math.PI + 0.5) !== antes) this.aoQuicarODrible?.();
+    }
+    const marca = Math.max(0, Math.min(1, this.marcando));
     // correndo, a cadência sobe de 10 para 17: num relógio próprio, para a fase não pular
-    if (andando) this.passada += dt * (10 + corre * 7);
+    // (na estrada, a passada ainda acelera com a velocidade: a 2 corridas, uma vez e meia; trotando, um tico mais lenta)
+    const ritmo = estrada ? (estrada.corrida > 0.05 ? Math.min(1.8, 0.6 + 0.45 * estrada.corrida) : 0.8) : 1;
+    if (andando) this.passada += dt * (10 + corre * 7) * ritmo;
 
     // ------------------------------------------------------------ o arremesso
     /**
@@ -738,7 +1054,8 @@ export class Flynn extends Bicho {
      * braços descem até o chão. Os ângulos dos braços abaixo são do MUNDO
      * (`… - dobra`), e por isso a pata vai ao chão com o tronco dobrado.
      */
-    let dobra = corre * 0.24;
+    // (trotando no lugar ele fica mais em pé; na disparada, mais deitado)
+    let dobra = corre * (estrada ? (estrada.corrida > 0.05 ? Math.min(0.36, 0.2 + 0.06 * estrada.corrida) : 0.08) : 0.24) + marca * 0.22;
     let pulo = 0;
     /** os pesos dos três jeitos de braço do arremesso: no chão, no peito, no alto */
     let noChao = 0;
@@ -769,11 +1086,16 @@ export class Flynn extends Bicho {
       const meio = SOLTA - NO_PEITO - 0.04;
       if (Math.abs(a - SOLTA) < meio) pulo = Math.cos(((a - SOLTA) / meio) * (Math.PI / 2)) * 0.26;
       if (a >= FIM) this.tempoDoArremesso = -1;
+      // (só pegando: acaba com a bola no peito, e quem segue é o drible)
+      if (this.soAtePeito && a >= NO_PEITO) {
+        this.tempoDoArremesso = -1;
+        this.soAtePeito = false;
+      }
     }
 
     // ------------------------------------------------ as pernas e o pulinho
     const passo = andando ? Math.sin(this.passada) : 0;
-    const amplitude = 0.6 + corre * 0.45;
+    const amplitude = estrada && estrada.corrida <= 0.05 ? 0.45 : 0.6 + corre * 0.45;
     for (const [i, perna] of this.pernas.entries()) {
       const lado = i === 0 ? -1 : 1;
       // o balanço guardado à parte: a dobra entra EXATA, senão o pé sai do chão
@@ -784,7 +1106,7 @@ export class Flynn extends Bicho {
     this.puloAgora = festa * Math.abs(Math.sin(t * 8)) * 0.07 + pulo;
     const respiro = Math.sin(t * 1.8) * 0.006;
     const doPasso = andando ? Math.abs(Math.sin(this.passada)) * (0.018 + corre * 0.03) : 0;
-    const h = ESCALA * QUADRIL;
+    const h = this.ficha.escala * QUADRIL;
     this.corpo.rotation.x = dobra;
     this.corpo.position.z = -h * Math.sin(dobra);
     this.corpo.position.y = respiro + doPasso + this.puloAgora + h * (1 - Math.cos(dobra));
@@ -818,6 +1140,37 @@ export class Flynn extends Bicho {
         const [zAlto, xAlto] = lado > 0 ? [2.5, 0.4] : [-lado * 0.15, -1.7];
         z += (zAlto - z) * noAlto;
         x += (xAlto - dobra - x) * noAlto;
+      }
+      /*
+       * O TOCA AQUI: a pata do lado do Bebito (a `+X`) sobe aberta ao lado da
+       * cabeça, um tico para a frente, a palma virada para a janela; e no
+       * tapa ela ABRE até a mão de quem vai de carona (a mão da janela fica
+       * mais alta que ele: descendo muito, a pata passava por baixo dela).
+       */
+      const toca = estrada && lado > 0 ? estrada.tocaAqui : 0;
+      if (toca > 0) {
+        const estica = estrada!.estica;
+        z += (2.35 - 0.4 * estica - z) * toca;
+        x += (-0.25 - 0.15 * estica - x) * toca;
+      }
+      /*
+       * O DRIBLE: a direita baixa na frente, um tico aberta, e EMPURRA a bola — desce com ela e volta a tempo de
+       * recebê-la (a bola é da cena, que a põe embaixo desta pata: `bolaDoDrible`); a esquerda protege, aberta na
+       * frente do corpo. A MARCAÇÃO: os dois braços abertos e altos, fechando o caminho.
+       */
+      if (drible > 0) {
+        if (lado > 0) {
+          const empurra = 1 - Math.abs(Math.cos(this.faseDoDrible));
+          z += (0.34 - z) * drible;
+          x += (-0.62 + 0.3 * empurra - dobra - x) * drible;
+        } else {
+          z += (-0.5 - z) * drible;
+          x += (-0.75 - dobra - x) * drible;
+        }
+      }
+      if (marca > 0) {
+        z += (lado * 1.2 - z) * marca;
+        x += (-0.45 - dobra - x) * marca;
       }
       if (lado > 0 && aceno > 0) {
         const alto = lado * (Math.PI - 0.45) + Math.sin(t * 13) * 0.3;
@@ -855,8 +1208,9 @@ export class Flynn extends Bicho {
     // ---------------------------------------------------------------- o rabo
     // abana sempre (é uma raposa feliz), mais rápido andando, no carinho e na festa
     const animo = Math.min(1, (andando ? 0.5 : 0) + corre + carinho + festa + aceno * 0.6);
-    const vel = 3.2 + animo * 6;
-    const amp = 0.14 + animo * 0.2;
+    // (o rabo de quem se acha abana menos: a ficha diz quanto)
+    const vel = (3.2 + animo * 6) * (0.55 + 0.45 * this.ficha.rabo.abana);
+    const amp = (0.14 + animo * 0.2) * this.ficha.rabo.abana;
     for (const [i, gomo] of this.gomosDoRabo.entries()) {
       gomo.rotation.z = Math.sin(t * vel - i * 0.7) * amp * (0.5 + i * 0.25);
     }
@@ -883,7 +1237,7 @@ export class Flynn extends Bicho {
     for (const [i, orelha] of this.orelhas.entries()) {
       const lado = i === 0 ? -1 : 1;
       // no carinho e na festa, elas abrem um tico; a mexidinha é só na direita
-      orelha.rotation.z = -lado * (0.3 + (carinho + festa) * 0.12) - (lado > 0 ? mexe : 0);
+      orelha.rotation.z = -lado * (this.ficha.orelha.abre + (carinho + festa) * 0.12) - (lado > 0 ? mexe : 0);
     }
 
     // ------------------------------------------------------------- a piscada

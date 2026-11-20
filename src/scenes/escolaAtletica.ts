@@ -258,9 +258,9 @@ export interface QuadraDoTreino {
 }
 
 /** bem rápido: a dupla anda a 4,4 */
-const VELOCIDADE_DA_CORRIDA = 6.2;
+export const VELOCIDADE_DA_CORRIDA = 6.2;
 /** o raio da bola, e o quanto à frente dos pés dele ela espera no chão (o alcance da pata dobrado) */
-const RAIO_DA_BOLA = 0.12;
+export const RAIO_DA_BOLA = 0.12;
 const BOLA_A_FRENTE = 0.4;
 
 type FaseDaBola =

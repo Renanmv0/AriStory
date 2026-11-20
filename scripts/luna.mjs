@@ -345,7 +345,14 @@ await page.keyboard.press('KeyE');
 const opcoesParque = await escolher('Escola do Gatito');
 conferir(opcoesParque.includes('Clube') && opcoesParque.includes('Escola do Gatito'), 'no parque: clube ou escola', opcoesParque.join(' / '));
 const naEscola = await cenaAgora();
-conferir(naEscola === 'escola', 'o ônibus deixa na escola', naEscola ?? '');
+conferir(naEscola === 'escola-patio', 'o ônibus deixa na portaria da escola (o pátio da frente)', naEscola ?? '');
+// do ponto, pela porta da frente, para o saguão (onde a Luna espera)
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.current.world.interactables.find((i) => i.label === 'Entrar na escola').trigger(j);
+});
+const noSaguao0 = await cenaAgora();
+conferir(noSaguao0 === 'escola', 'e a porta da frente leva ao saguão', noSaguao0 ?? '');
 
 // ------------------------------------------------- a Luna mostra a escola
 /** tem que bater com `scenes/escola.ts` */
@@ -374,6 +381,14 @@ conferir(!depoisDoTour.travado, 'e a dupla fica livre');
 await page.screenshot({ path: `${OUT}-chegando-na-escola.png` });
 
 // ------------------------------------------- da escola ao clube, e de volta
+// (a porta da rua do saguão sai no pátio, e o ponto do ônibus é lá fora)
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.current.world.interactables.find((i) => i.label === 'Sair para o pátio').trigger(j);
+});
+const noPatio = await cenaAgora();
+conferir(noPatio === 'escola-patio', 'a porta da rua do saguão sai no pátio', noPatio ?? '');
+await page.waitForTimeout(1000);
 const porta = await page.evaluate(() => {
   const i = window.jogo.current.world.interactables.find((p) => p.id === 'door:villa-lobos:clube');
   return { x: i.x, z: i.z };

@@ -261,6 +261,14 @@ export class TiaLiz extends Bicho {
    * IK de dois ossos fechada (ver `resolverBraco`) — e larga a pose de gesto
    * enquanto houver alvo. `null` devolve a pata ao corpo, sem estalo.
    */
+  /**
+   * SENTADA AO VOLANTE do conversível (`world/conversivelDaTiaLiz.ts`): as
+   * duas pernas vão para a frente, no assoalho. Nasce desligado, e fora do
+   * carro nada disto toca na Tia Liz da cantina; as patas no volante são o
+   * `maoPara` de sempre, com o alvo no referencial dela.
+   */
+  sentadaNoCarro = false;
+
   maoPara(lado: 0 | 1, alvo: THREE.Vector3 | null, local = false): void {
     this.alvoDaMao[lado] = alvo ? { p: alvo.clone(), local } : null;
   }
@@ -1074,6 +1082,8 @@ export class TiaLiz extends Bicho {
     for (const [i, perna] of this.pernas.entries()) {
       const lado = i === 0 ? -1 : 1;
       perna.rotation.x += (passo * 0.45 * lado - perna.rotation.x) * Math.min(1, dt * 12);
+      // (só no carro: a perna gira para a frente — `rotation.x` negativo leva o pé para o `+Z` — e abre um tico)
+      if (this.sentadaNoCarro) { perna.rotation.x = -Math.PI / 2 + 0.08; perna.rotation.z = lado * 0.08; }
     }
     const respiro = Math.sin(t * 1.6) * 0.006;
     this.corpo.position.y = respiro + (andando ? Math.abs(Math.sin(this.passada)) * 0.015 : 0);

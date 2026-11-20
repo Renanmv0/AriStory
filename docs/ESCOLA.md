@@ -969,6 +969,12 @@ coelhinhas, de cores e jeitos diferentes, as três de origem venezuelana (e,
 como a Luna, nenhuma fala disso: é contexto) e as três **cheerleaders dos
 Gatitos**, treinando juntas no ginásio.
 
+**A história delas com a Tia Liz** (Renan, 2026-11-17): a Tia Liz trabalhava
+numa escola na Venezuela quando elas eram pequenas; o sonho das quatro era se
+mudar do país; vieram para o Brasil, e a Tia Liz cuida delas aqui. Ela é DITA
+uma vez, na estrada, no conversível da Tia Liz (`docs/CARROS-DA-ESCOLA.md` §2);
+na escola, continua contexto.
+
 | | a LUNA | a SOL | a ESTRELLA |
 |---|---|---|---|
 | jeito | super fã dos Gatitos, fala demais e fica tímida | **animada, fala alto, sempre muito feliz** (os gritos saem em maiúscula) | **calma, na dela, sempre preocupada com as duas** |

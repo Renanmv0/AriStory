@@ -28,6 +28,8 @@ export const ESCOLA = {
   descanso: 'escola-descanso',
   professores: 'escola-professores',
   ginasio: 'escola-ginasio',
+  /** o pátio da frente, por fora (`scenes/escolaPatio.ts`) */
+  patio: 'escola-patio',
 } as const;
 
 /** a luz de dentro da escola: clara, de tarde, com o fundo creme */

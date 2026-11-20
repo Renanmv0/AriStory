@@ -45,6 +45,30 @@ export function fundir<T extends THREE.Object3D>(peca: T): T {
   return peca;
 }
 
+/**
+ * FUNDIR O QUE É SÓ FUNDO: casas vizinhas, canteiros, sebes e moitas que
+ * ninguém procura pelo nome, ninguém mexe e ninguém toca. Aqui as fronteiras
+ * de dentro (o nome de cada grupo, o `userData.peca` de cada peça) só
+ * atrapalham: cada canteiro e cada casa seriam juntados por conta própria, e
+ * dez canteiros de mesmas cores continuariam sendo dez vezes os mesmos
+ * desenhos. Esta versão APAGA os nomes e o `userData` de dentro e junta o
+ * grupo inteiro por material — a frente da casa do Ari caiu de 933 desenhos
+ * por quadro para um terço disso com a mesma imagem.
+ *
+ * NÃO use em nada que a cena acha pelo nome, que se mexe por um pivô com nome
+ * ou que alguém mede pelo `userData`: isso é o `fundir()` de sempre.
+ */
+export function fundirComoFundo<T extends THREE.Object3D>(peca: T): T {
+  if (DESLIGADO) return peca;
+  peca.traverse((o) => {
+    if (o === peca) return;
+    o.name = '';
+    // (o que não faz sombra continua sem fazer: luz pintada, planta de vento)
+    o.userData = o.userData.semSombra ? { semSombra: true } : {};
+  });
+  return fundir(peca);
+}
+
 /** junta os pedaços de `raiz` que não estão atrás de outra fronteira */
 function fundirDentro(raiz: THREE.Object3D): void {
   const inversa = new THREE.Matrix4().copy(raiz.matrixWorld).invert();

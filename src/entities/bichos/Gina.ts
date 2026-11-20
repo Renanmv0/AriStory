@@ -29,6 +29,20 @@ import type { VozDaFala } from '../../core/types';
  * parede da guarita e ficar do lado de fora da sombra do telhado, que a 34° de
  * câmera come tudo que fica para dentro.
  */
+/**
+ * A POSE DELA NO CARRINHO DE GOLFE da portaria (`world/carrinhoDeGolfeDaGina.ts`):
+ * o veículo preenche, o `animar` desenha. Nasce desligada (`noCarrinho = null`),
+ * e fora do carrinho nada disto toca na Gina da guarita.
+ */
+export interface PoseDaGinaNoCarrinho {
+  /** 0 parado, 1 correndo: as orelhas batem no vento */
+  vento: number;
+  /** para onde a cabeça vira (radianos; negativo olha para a esquerda dela, o lado do Bebito) */
+  olhar: number;
+  /** o pescoço inclinando para a esquerda e descendo até a janela de quem parou do lado (0 a 1) */
+  esticar: number;
+}
+
 export class Gina extends Bicho {
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Gina', cor: P.falaGina };
@@ -41,6 +55,16 @@ export class Gina extends Bicho {
   private readonly olhos: THREE.Mesh[] = [];
   private readonly patas: THREE.Mesh[] = [];
   private readonly gomosDoRabo: THREE.Group[] = [];
+  /** as pernas inteiras (a perna, o joelho e o casco, de três em três): no carrinho elas dobram embaixo do corpo */
+  private readonly pernasInteiras: THREE.Mesh[] = [];
+
+  /** a pose no carrinho de golfe; `null` (o de sempre) é a Gina da guarita */
+  noCarrinho: PoseDaGinaNoCarrinho | null = null;
+
+  /** a cabeça (o carrinho pendura nela o carimbo, que ela segura na boca) */
+  get cabecaDaGina(): THREE.Group {
+    return this.cabeca;
+  }
 
   /**
    * A inclinação de repouso de cada gomo do pescoço, para os senos oscilarem em
@@ -179,6 +203,7 @@ export class Gina extends Bicho {
       const cascoM = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.088, 0.11, 10), casco);
       cascoM.position.set(lado * 0.19, 0.055, frente * 0.3);
       this.corpo.add(cascoM);
+      this.pernasInteiras.push(perna, joelho, cascoM);
     }
 
     // ------------------------------------------------------------- pescoço
@@ -431,5 +456,54 @@ export class Gina extends Bicho {
     // no carinho ela aperta os olhos de contente
     const abertura = 1 - carinho * 0.8;
     for (const olho of this.olhos) olho.scale.y = Math.max(0.14, abertura);
+
+    /**
+     * NO CARRINHO (só com a pose ligada; a Gina da guarita nunca entra aqui):
+     * deitada no banco comprido, as pernas DOBRADAS embaixo do corpo, e o pescoço
+     * sai pelo furo do toldo. Para carimbar, ele INCLINA PARA A ESQUERDA (o lado
+     * do Bebito) e desce — `rotation.z` positivo leva o `+Y` do gomo para o `−X`
+     * —, mais nos gomos de cima, que já estão acima do toldo; a cabeça vira para
+     * a janela e desfaz parte da inclinação, para chegar de nariz, e não de
+     * orelha.
+     */
+    const carro = this.noCarrinho;
+    if (carro) {
+      // as pernas DOBRADAS embaixo do corpo, como girafa deitada: cada uma deita no comprimento, encurtada,
+      // rente à beira da barriga, com o joelho na frente e o casco atrás aparecendo na beirada do banco
+      for (let i = 0; i < 4; i++) {
+        const [perna, joelho, cascoM] = this.pernasInteiras.slice(i * 3, i * 3 + 3);
+        const lado = i % 2 === 0 ? -1 : 1, frente = i < 2 ? 1 : -1;
+        const x = lado * 0.22, y = 1.1, z = frente * 0.26;
+        perna.position.set(x, y, z);
+        perna.rotation.set(Math.PI / 2, 0, 0);
+        perna.scale.set(1, 0.38, 1);
+        joelho.position.set(x, y + 0.01, z + 0.26);
+        cascoM.position.set(lado * 0.25, y - 0.01, z - 0.27);
+        cascoM.rotation.set(Math.PI / 2, 0, lado * 0.25);
+      }
+      this.corpo.position.y = Math.sin(fase * 1.1) * 0.01;
+      const k = carro.esticar;
+      for (let i = 0; i < this.gomos.length; i++) {
+        const g = this.gomos[i];
+        const amp = (0.012 + i * 0.008) * (1 + carro.vento);
+        g.rotation.x = Gina.CURVA[i] * (1 - k) + Math.sin(fase * (0.8 + i * 0.45)) * amp;
+        g.rotation.z = k * Gina.DE_LADO[i] + Math.sin(fase * (0.5 + i * 0.3) + i) * amp * 0.6;
+      }
+      // a cabeça: primeiro levanta o nariz (x), depois vira para a janela (y) e por fim desfaz o tombo do
+      // pescoço (z) — por isso a ordem ZYX, só aqui no carrinho
+      this.cabeca.rotation.order = 'ZYX';
+      const tombo = Gina.DE_LADO.reduce((a, b) => a + b, 0);
+      this.cabeca.rotation.set(-0.8 * (1 - k) + k * 0.2, carro.olhar, -k * tombo);
+      for (let i = 0; i < this.orelhas.length; i++) {
+        const lado = i === 0 ? -1 : 1;
+        this.orelhas[i].rotation.z = lado * (0.5 + 0.25 * carro.vento) + Math.sin(fase * 9 + i) * 0.12 * carro.vento * lado;
+      }
+    }
   }
+
+  /**
+   * o quanto cada gomo inclina para o lado no carrinho, esticada: o de baixo DEITA o pescoço (por baixo do
+   * toldo, pelo recorte) e os outros vão descendo de leve, até a cabeça sair pela lateral, na altura da janela
+   */
+  private static readonly DE_LADO = [1.18, 0.22, 0.22, 0.2];
 }

@@ -115,6 +115,14 @@ Cuidados ao juntar, para não quebrar nada:
 - Depois de juntar: foto de antes e depois lado a lado, os testes da peça, e
   o `scripts/zfighting.mjs` (malha juntada não pode criar face coplanar nova).
 
+**O que é só FUNDO** (casas vizinhas, canteiros, sebes, moitas e flores que
+ninguém procura pelo nome, ninguém mexe e ninguém toca) usa
+`fundirComoFundo(grupo)`: ela apaga os nomes de dentro e junta o grupo
+INTEIRO por material — dez canteiros de mesmas cores viram os desenhos de
+um. A frente da casa do Ari caiu de 933 para 339 desenhos por quadro assim.
+Agrupe por vizinhança (um grupo por pedaço do mapa), para o que está fora da
+tela não ser desenhado.
+
 **Efeitos pesados** (filtros de tela do `threejs-postprocessing`, shader
 animado, sombra extra, luz de verdade): entram quando melhoram o que se vê, e
 sempre medidos no celular — o laboratório, que usa todos ao mesmo tempo, é o
@@ -191,7 +199,26 @@ para a cena — ver "O ônibus da cidade" na skill de peça. Para BICHO QUE
 NÃO É GENTE, a Valentina (`entities/bichos/Valentina.ts`): flamingo de
 verdade, com o pescoço vivo (um tubo refeito a cada quadro) e a ROUPA POR
 FICHA num kit à parte (`world/looksDaValentina.ts`) — look novo é uma
-ficha nova; ver "Bicho com guarda-roupa" na skill de bicho.
+ficha nova; ver "Bicho com guarda-roupa" na skill de bicho. Para CARRO (veículo
+OCO, com cabine de verdade e montado por FICHA DE DADOS), o Bebito Mobile
+(`world/bebitoMobile/`): a lataria é uma pele de fatias (planta de
+superelipse, perfil de lado, a grade alinhada às janelas), os vidros são
+transparentes com a borracha em filete (`friso`, e não tubo), o teto sai, os
+encostos da frente deitam e viram cama com o banco de trás, e a pintura, a
+placa e o que vai em cada vaga
+(painel, retrovisor, chave, teto, porta-malas, banco de trás, vidro,
+para-choque, rodas) saem da ficha do save — ver "O Bebito Mobile" na skill
+de peça. Para PLANTA DE JARDIM, o kit das plantas do quintal do Ari
+(`world/plantasDeJardim.ts`; hoje é o Papita Delivery que as vende, uma a
+uma, para o quintal decorado): cada espécie é um lote para o jardim inteiro
+(hortênsia, lavanda, capim de pluma, agave, margarida, costela-de-adão, hera
+no muro), a folha é uma fita dobrada na nervura, a haste e a flor dividem a
+geometria pela cor do vértice, e o que é fino balança no `Vento` — ver "As
+plantas do jardim" na skill de peça. Para CENA QUE SE DIRIGE, a estrada do Bebito Mobile
+(`scenes/viagemDeCarro.ts`, peças em `world/estrada.ts`): o mundo posto por
+uma conta (`naPista(s, l)`) numa pista curva sorteada por semente, a câmera
+de perseguição, o freio que nunca deixa atropelar e o piloto automático do
+teste — ver "Uma cena que se DIRIGE" na skill de cenário.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -232,6 +259,141 @@ e as memórias no quadro. O plano e as falas estão em `docs/HALLOWEEN.md`. Os
 testes: `?halloween` liga o evento num save à parte; `?semHalloween` mostra o
 jogo sem ele. O `SO=aberto` do `scripts/halloween.mjs` pressupõe a chave
 ligada (`true`); os demais usam `?halloween` e continuam valendo.
+`BEBITO-MOBILE.md` é o plano do carro do casal e das viagens de carro (o
+presente do Renan para o Ari, a ficha e as vagas do carro, e as etapas: o
+modelo, a quest, a primeira viagem e as demais rotas), também aberto por um
+"COMECE AQUI" e com as perguntas ao Renan da próxima etapa.
+**O Bebito Mobile está NO JOGO desde 2026-11-12** (o Renan mandou ligar, para o
+Ari já ver no link principal: "coloque o que já temos no jogo mesmo"):
+`BEBITO_MOBILE_NO_JOGO = true` em `src/eventos/BebitoMobile.ts`. Antes ele
+ficou escondido atrás dessa chave desde 2026-11-11, e as etapas novas continuam
+entrando atrás dela, por `bebitoMobileNestaPagina()`. Toda etapa
+nova do carro (cena, quest, viagem) fica atrás de `bebitoMobileNestaPagina()`;
+`?bebito` usa um save à parte para os testes (e `?bebito&licoes=10` já com as
+lições 1 a 10 concluídas, só nesse save), e `?semBebito` força o jogo de antes
+do carro (é o que os testes do "escondido" usam). A frente da casa do Ari (`frente-da-casa`: o
+jardim, a garagem e a rua de casinhas) e a quest do presente já existem,
+no jogo desde 2026-11-12 (a frente da casa já está na segunda versão: casa funda, muro
+com hera, portão de correr na garagem e plantas novas), e a VIAGEM DE CARRO
+também (`viagem-de-carro`: a estrada até o Villa Lobos, dirigida por quem
+joga, com bichos na faixa de pedestres, obra, semáforo, buracos, lombada,
+poça, ônibus e corações), com o ESTACIONAMENTO do Villa Lobos do outro
+lado da rua do ônibus, onde o carro para (a área de andar do parque só
+passa da rua com a chave ligada).
+`BEBITO-MOBILE-DENTRO.md` é o plano (e o mapa do que foi feito) da etapa D, parte 1:
+o carro POR DENTRO — entrar na garagem pela porta que gira, descansar com os bancos
+deitados e a visão do passageiro na viagem com o piloto automático. Está FEITO e NO JOGO
+(chave PRÓPRIA `CARRO_POR_DENTRO_NO_JOGO = true`, ligada em 2026-11-12 a pedido do Renan):
+`?semCarroPorDentro` desliga para comparar; `?carroPorDentro` liga na marra.
+A atualização de câmeras e chegada foi implementada e validada em preview: carinho com os dois
+vistos de frente, descanso visto de cima (sob o pergolado, com corte visual do teto)
+e a entrada animada pela cancela até a vaga do coração. O documento do interior
+abre com os resultados da validação. O site oficial e seu save são
+`https://renanmv0.github.io/AriStory/`: testes e fotos só em preview de outra
+origem, antes de publicar em `main`.
+`ESTACIONAMENTO.md` continua guardando o plano do futuro fiscal e das recompensas.
+Só a chegada animada foi autorizada nesta etapa. O piloto automático também
+conta para a nota e para os futuros desbloqueios por boa direção (decisão do Renan).
+Depois da validação do interior, a prioridade é criar as rotas parque ↔ clube
+e clube ↔ escola, antes do fiscal. Não implementar essas próximas etapas junto.
+`ESCOLA-PATIO.md` é o plano do PÁTIO DA FRENTE da escola (o prédio de tijolinho por fora, da
+foto do Renan, e o pátio), o primeiro passo da rota de carro até a escola: a etapa 1 (o pátio, a portaria e o
+estacionamento) e a 2 (o ônibus para na rua da portaria, e a porta da rua do saguão sai no pátio)
+estão no jogo desde 2026-11-14. `VIAGEM-ESCOLA.md` é a VIAGEM DE CARRO até a escola (de casa, do parque e do
+clube, e de volta), NO JOGO desde 2026-11-14: a zona escolar, a turma da escola na
+estrada (o radar, a torcida com o Gatito de guarda, o ensaio da Valentina e a bola do Flynn, peças em
+`eventos/bebitoMobile/escolaNaEstrada.ts`) e a chegada animada até a vaga do coração do estacionamento
+(`eventos/bebitoMobile/naEscola.ts`). O próximo passo, pedido pelo Renan, são os carros dos personagens
+da escola (não fazer junto).
+`LAMBRETA-DA-ESTELLA.md` é o primeiro veículo dos personagens do PARQUE: a Estella de lambreta, com o
+sidecar levando uma pilha de roupas de quase 4 m, de capacete e óculos de aviador (`world/lambretaDaEstella.ts`),
+no jogo desde 2026-11-15 — e, depois do primeiro encontro, ESTACIONADA no Villa Lobos ao lado da vaga do Bebito; e quando
+ela arranca, o lenço da pilha voa e gruda no para-brisa do Bebito, escorrega pelo teto e vai embora
+(`eventos/bebitoMobile/panoNoParaBrisa.ts`). `KOMBI-DO-MANO.md` é o segundo: o Mano de Kombi de
+sorvete creme e chocolate com granulado, a casquinha de três bolas girando no teto e a neve escorrendo
+(`world/kombiDoMano.ts`), no jogo desde 2026-11-15 — chega tocando a musiquinha de sorveteiro, o ar do
+freezer EMBAÇA o para-brisa do Bebito uns segundos (`eventos/bebitoMobile/geadaNoParaBrisa.ts`), e
+parados lado a lado ele passa uma casquinha para cada um pela janela de venda, direto para a mochila; e,
+depois do primeiro encontro, ela fica ESTACIONADA no Villa Lobos, de ré na vaga depois da da lambreta.
+`CARRINHO-DO-COOKIE.md` é o terceiro: o Cookie ESPREMIDO num microcarro de bolha rosa-bebê
+(`world/carrinhoDoCookie.ts`), no jogo desde 2026-11-16 — as orelhas para fora por cima das portas, a
+tromba saindo por um furo com borracha no para-brisa e apertando a corneta, a traseira rebaixada com o
+peso dele; parado do lado, ele estende uma caixinha e joga um brigadeirinho para cada um (vão para a
+mochila); e, depois do primeiro encontro, o carrinho fica ESTACIONADO (vazio e nivelado) do outro lado da
+passagem de pedestres. Na viagem em que ele vem de carrinho, não tem Cookie soprando bolhas na calçada.
+`DOIS-CAVALOS-DO-JEAN-LUC.md` é o quarto: o Jean-Luc num Citroën 2CV azul (`world/doisCavalosDoJeanLuc.ts`),
+no jogo desde 2026-11-16 — os para-lamas soltos, os faróis de sapo, a faixa tricolor no capô, a capota de lona
+enrolada e a mesa de ping pong dobrada no bagageiro; ele dirige EM PÉ NO CAIXOTE, com a cabeça por cima do
+para-brisa, de boina e ÓCULOS ESCUROS (pedido do Renan); parado do lado, ele saca um ponto de ping pong pela
+janela e quem joga rebate na hora certa; e, depois do primeiro encontro, o 2CV fica ESTACIONADO na vaga vizinha
+à do carrinho do Cookie, com o caixote encostado na porta.
+`CARRINHO-DE-GOLFE-DA-GINA.md` é o primeiro novo do CLUBE: a Gina, a girafa porteira, no carrinho de golfe do
+clube (`world/carrinhoDeGolfeDaGina.ts`), no jogo desde 2026-11-17 — creme e verde da guarita, toldo listrado com
+um RECORTE por onde o pescoço sai, giroflex, faróis de cílios, a prancheta de sócios e os cones; parada do lado,
+ela pede a carteirinha, passa o pescoço por baixo do toldo até o para-brisa e CARIMBA: o selo "SÓCIO DO CLUBE"
+fica colado de vez no Bebito (a vaga nova `paraBrisa` da ficha, gravada no save); e, depois do primeiro encontro,
+o carrinho fica ESTACIONADO no lote do clube.
+`CARROS-DA-ESCOLA.md` é o plano dos carros da turma da ESCOLA (o Gatito, o Flynn, a Valentina, e a Tia Liz
+levando as três irmãs — ideia do Renan), com um "COMECE AQUI". O primeiro CARRO está feito: o conversível dos
+anos 50 da Tia Liz e das irmãs (`world/conversivelDaTiaLiz.ts`), no azul e amarelo dos Gatitos com os detalhes
+da Venezuela (o arco das oito estrelas, os filetes vermelhos, a bandeirinha, a mala de viagem, o cuatro), no jogo
+desde 2026-11-17 — as quatro moram na ESCOLA (casa ↔ escola passou a ter encontro, só elas, depois de a Tia Liz
+ser conhecida na cantina); na estrada a Tia Liz conta a história das quatro (só na primeira vez), as irmãs
+puxam as palmas na hora certa com o confete, e ela passa uma arepita para cada um; na viagem em que elas vêm de
+carro, a torcida não atravessa a faixa; e, depois do primeiro encontro, o conversível fica ESTACIONADO no lote
+da escola.
+E o FLYNN, sem carro (a escolha do Renan, 2026-11-18): ele vem A PÉ, na corrida matinal, pela calçada e mais rápido
+que o Bebito (`eventos/bebitoMobile/corridaDoFlynn.ts`); para do lado trotando, diz que não pode ficar atrás dos
+rivais (um lobo rival vem depois), e pede um TOCA AQUI: o vidro do passageiro desce, o braço de quem vai de carona
+sai pela janela e a mão encontra a pata dele na hora certa; mora na escola, só depois de conhecido no refeitório,
+e na viagem dele a bola não escapa na calçada.
+E o RIVAL do Flynn, o ROCCO (decisões do Renan, 2026-11-19): um lobo inventado, capitão dos DOGÕES (a escola rival, de
+cachorro, em vermelho e cinza), marrento mas gente boa. O Flynn virou uma FICHA DE ATLETA (`FichaDeAtleta`, em
+`entities/bichos/Flynn.ts`) e o Rocco é outra ficha da mesma classe (`entities/bichos/Rocco.ts`, escudo em
+`world/uniformeDosDogoes.ts`, atalho `?rocco=x,z,giro`). Na estrada da escola ele corre NO LUGAR do Flynn, sem entrar
+no sorteio (`oRoccoCorreNoLugar`): depois de a dupla cruzar o Flynn, a primeira corrida é a dele — chega uivando, passa
+o Bebito pela calçada, para e se apresenta (a dupla não sabe quem é), conta que treina para o jogo contra o rival e
+solta as farpas. E depois disso ele aparece no GINÁSIO dos Gatitos jogando UM CONTRA UM com o Flynn
+(`scenes/escolaUmContraUm.ts`, no lugar do treino solitário, só com o Flynn já no ginásio): uma bola, drible,
+marcação, arremesso, rebote e a posse trocando, e a conversa com os dois. As ideias do que vem depois (o jogo de
+verdade Gatitos × Dogões, jogar junto com eles, ajustar o Rocco) estão GUARDADAS em `docs/CARROS-DA-ESCOLA.md`, no fim
+do §5 — o Renan pediu para voltar nelas mais tarde (nada feito).
+E a LIMUSINE CONVERSÍVEL ROSA da Valentina (pedido do Renan, 2026-11-18), com um personagem novo ao volante: o
+PIETRO, o pavão motorista (`entities/bichos/Pavao.ts`, nome provisório: quepe, gravata-borboleta, luvas brancas e a
+cauda dobrada em serviço, que abre em leque) — o CARRO está feito (`world/limusineDaValentina.ts`, 6,3 m, a Valentina
+no sofá capitonê virada para o Bebito, de óculos gatinho, `LOOK_DE_LIMUSINE`), testado pelo `scripts/limusine.mjs`
+e pelo atalho `?limusine=x,z,giro`. Desde 2026-11-18 ela está NA ESTRADA (mora na escola, só depois de conhecida no
+marketing): a SESSÃO DE FOTOS — o Pietro ergue a câmera antiga, quem joga escolhe a pose, o flash, e a POLAROID
+pintada na pose fica de vez no PAINEL do Bebito (`colocarPeca`, gravada na ficha); na viagem dela, sem o ensaio na
+calçada. E a primeira chegada de carro à escola depois da foto termina com o DESFILE DO TAPETE VERMELHO
+(`eventos/bebitoMobile/desfileDaValentina.ts`: a limusine no portão, o Pietro desenrolando o tapete, o leque aberto,
+ela descendo e desfilando); depois, a limusine mora estacionada de lado no lote da escola.
+E o GATITO mora na escola (decisão do Renan, 2026-11-18): não sai na estrada; no lugar do carro, o ÔNIBUS ESCOLAR DOS
+GATITOS (`world/onibusEscolarDosGatitos.ts`: amarelo americano de nariz comprido, os frisos pretos, "ESCOLA DO
+GATITO", o braço de PARE, a linha 67 e as orelhinhas de gato no teto; na segunda versão, a chapa com rebites em
+canvas, os vidros pintados com os bancos, faróis, espelhos, escotilhas e rodas detalhadas, tudo impresso num atlas só)
+fica sempre estacionado de lado no lote da escola — e DE VEZ EM QUANDO o Gatito está do lado dele, em cima de dois
+caixotes, dando banho no ônibus com a esponja (`eventos/gatitoLavaOOnibus.ts`, pedido do Renan); e dá para AJUDAR: o
+MUTIRÃO (`eventos/mutiraoDaLavagem.ts`, peças em `world/lavagemDoOnibus.ts`), um na esponja e o outro na mangueira, a
+pegadinha do jato no Gatito, a sacudida de gato molhado, o arco-íris no fim e a recompensa: R$ 200 na carteira, toda vez.
+E a REGRA DE QUEM APARECE na estrada (`candidatosAoEncontro`, em `rota.ts`): cada
+um só aparece nas rotas do lugar onde mora (o destino; se o destino não tem ninguém, a origem; nas duas
+pontas com gente, todos); casa ↔ escola tem a Tia Liz e as irmãs, o Flynn ou a Valentina.
+`QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
+estufa ensinado a pôr enfeite no chão, no piso, na parede, em cima, pendurado
+e de ponta a ponta —, aberto por um "COMECE AQUI" com as decisões do Renan.
+A etapa 1 está no jogo, atrás da mesma chave do Bebito Mobile (ligada em
+2026-11-12): com a chave, o computador do
+quarto abre uma ÁREA DE TRABALHO (`ui/painelDoQuintal.ts`) com a pasta do
+laboratório e o **Papita Delivery**, o app que vende as plantas e os móveis
+do quintal em reais (`world/decoracoesDoQuintal.ts`); o pedido chega numa
+caixa no portão, e se põe no chão pelas ferramentas da garagem
+(`eventos/quintal.ts`, a cena `frente-da-casa`). Sem a chave, o computador é
+o de sempre.
+`PORTARIA-DO-CLUBE.md` é o plano do terceiro minigame grande (Papers, Please na versão fofa, na guarita da Gina),
+aberto por um "COMECE AQUI": a guarita NOVA (`world/guaritaDoClube.ts`, maior, com o teto que sai e a porta) está no
+jogo desde 2026-11-20, mas SÓ APARECE depois da última noite do Mania jogada (antes, a guarita de sempre; `?guaritaNova` mostra); o desbloqueio (a primeira conversa na guarita nova) está atrás da chave `PORTARIA_NO_JOGO`
+(`eventos/portariaDoClube.ts`, `?portaria` para testar, num save à parte), as REGRAS do minigame (etapa 1, sem three) estão em `src/minigames/portaria/`, testadas pelo `scripts/portaria.mjs`; e a CENA, parte 1 (`scenes/portaria.ts`: a primeira pessoa na mesa do meio da guarita, `world/mesaDaPortaria.ts`; a mesa em tela, `ui/mesaDaPortaria.ts`; o pintor dos papéis e retratos, `world/papeisDaPortaria.ts`; os visitantes e o elevador do balcão, `world/visitantesDaPortaria.ts`), testada pelo `scripts/portariaCena.mjs`; e a parte 2a: os visitantes NOVOS de verdade (`entities/bichos/VisitanteDaPortaria.ts`, uma classe montada pela foto do dia, cada um com o seu traço e o seu tique; os Dogões pela `FICHA_DO_DOGAO`) e as carteirinhas refeitas a partir dos modelos (`world/retratosDaPortaria.ts`), testados pelo `scripts/visitantes.mjs`.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
@@ -334,7 +496,10 @@ node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e
 node scripts/casaDoAri.mjs /tmp/ca # o acabamento da casa e do quarto: assoalho, veio nos moveis, sofa de tecido, granito, tapete com franja e capacho, a cama nova na altura antiga, a claridade da janela e os abajures apagando num clique
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
-node scripts/guarita.mjs /tmp/gu    # a portaria: a Gina fica no posto, apita e manda aproveitar o dia
+node scripts/guarita.mjs /tmp/gu    # a portaria: a guarita de antes até a última noite do Mania, e a nova depois; a Gina fica no posto da guarita nova (a cabeça fora do balcão, o teto e a porta com nome), apita e manda aproveitar o dia; e o desbloqueio da Portaria do Clube (sem a chave nada muda; com ?portaria a primeira conversa é a da reforma, com a flag e a memória)
+node scripts/portariaCena.mjs /tmp/pc # a Portaria do Clube, a CENA (?portaria): escondida sem a chave; a tomada de abertura com os três na guarita; e um dia inteiro jogado PELA TELA por um robô guiado pela conferência (pergunta, aponta cada diferença clicando os alvos da folha — cada um o elemento de cima no próprio centro —, tira o proibido da sacola, recusa o agrado, carimba o certo), o envelope igual ao do Expediente sem cena, a carteira, o save e a volta ao clube. SO=escondida|dia, DIA=n, CEL=1
+node scripts/visitantes.mjs /tmp/vi # os visitantes novos da Portaria (entities/bichos/VisitanteDaPortaria.ts): os pés no chão, a altura do rosto que o elevador usa, as peças com nome, e fotos de perto, de frente e de costas de cada um. QUEM=hipolito,bento escolhe
+node scripts/portaria.mjs            # a Portaria do Clube, as REGRAS (sem navegador, docs/PORTARIA-DO-CLUBE.md): as fichas dos personagens (bordão, falas, jeito e as cinco animações), os seis dias em 150 sementes e nos três caminhos da semana (o roteiro bate com os papéis, todo errado é pegável), perguntar e apontar (o Hipólito, o capacete do Capy, o número do Beto, a Luna escondida, o bigode do Jean-Luc), o envelope, as estrelas e o Boletim, e a semana no save com as consequências e os chamados da fila
 node scripts/salvavidas.mjs /tmp/sv # o Capy salva-vidas: fica na cadeira, varre a piscina e tira o oculos
 node scripts/noel.mjs    /tmp/no    # o Noel do bar de sucos: passeia, abre o leque e nao rouba o prompt do balcao
 node scripts/jardim.mjs  /tmp/ja    # o jardim organizado e a Josefina: canteiros alinhados, e ela nao pisa na horta
@@ -380,6 +545,24 @@ node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: reais e girassois de
 node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o painel por ferramenta (meta e cartas de cada uma), destrancar com 15 ondas somadas, a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as cartas dela) e a de pistola (pistola na mao, tiro de bolinhas, coice, Rajada e Balao d'agua), cada uma com o seu som (jorro e piu), e as cartas so do regador agindo (a espuma na alca, as petalas do Crivo de flor, a Chuveirada, o Transbordou e o Regador gigante crescendo na mao)
 node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o frasco pelo gargalo, o gatilho, o "psst", a nevoa molhando o bando inteiro, e as 14 cartas so dele agindo
 node scripts/fantasias.mjs /tmp/fa  # as cinco fantasias da caça do Halloween (abóbora, pirata, gato preto, espantalho, bruxinho) nos dois: cada peça no pai certo, o pé sumindo no calçado, nada abaixo do chão, de frente, costas, lado, andando, sentados e de perto, o rabo, o papagaio e o corvinho mexendo, e o boneco e o filtro 🎃 do guarda-roupa. FANTASIA=pirata roda uma
+node scripts/bebitoMobile.mjs /tmp/bm # o Bebito Mobile (docs/BEBITO-MOBILE.md), estacionado pelo atalho ?carro=x,z: o modelo medido (a base, o tamanho, as malhas e os triângulos), a ficha e as vagas (cada encaixe com nome, cada detalhe da ficha no carro, todo id do catálogo com modelo, outra ficha dando outro carro), o save (ficha torta consertada, save antigo com a de fábrica, gravar e recarregar), os comandos (rodas, volante, teto, faróis, freio, pisca, solavanco, penduricalhos), as faces coplanares das caixas de quina redonda, os lugares (a dupla sentada na frente — cabe sob o teto e entre as portas —, sentada no banco de trás, e deitada na cama com os encostos da frente deitados) e as fotos de todos os lados, das janelas de perto, por dentro e sem teto. SO=modelo|ficha|comandos|peso|fotos|coplanar|lugares roda uma parte; SEM_FUNDIR=1 mede antes da junção
+node scripts/presente.mjs /tmp/pr  # a quest do presente do Bebito Mobile e a frente da casa do Ari (docs/BEBITO-MOBILE.md), com ?bebito (save de teste): ESCONDIDO (com ?semBebito a porta da casa sai no parque, a cama é a de sempre e o save não ganha flag), o JARDIM (a porta sai no jardim, a garagem vazia, da porta ao portão sem esbarrar, o parque voltando pela calçada, fotos) e a QUEST (dormir depois da lição 10, a pergunta da surpresa, o Renan saindo pela porta da sala, o Ari atrás, a buzina, o carro vindo pela rua com o Renan dirigindo e o laço no teto, a ré para dentro da garagem, a conversa, a memória, o save de verdade intacto, e depois o carro morando na garagem). SO=escondido|jardim|quest roda uma parte; CEL=1 roda no celular em pé
+node scripts/viagem.mjs  /tmp/vg    # a viagem de carro do Bebito Mobile (docs/BEBITO-MOBILE.md §6), só com ?bebito: a ROTA (300 rotas sorteadas obedecem as regras: oito eventos, as duas travessias nunca seguidas, os vãos, os corações na faixa livre, a curva mansa, a semente), a PARTIDA (o "Sair de carro" na garagem, "Quem dirige dessa vez?" e quem foi escolhido ao volante nos dois casos), a viagem INTEIRA com o piloto de teste (parar para os bichos e no sinal, desviar da obra e dos buracos, a lombada devagar, ultrapassar o ônibus, três estrelas, a memória, e o carro estacionado na rua do ônibus do parque), o DISTRAÍDO (sem frear, o carro para sozinho antes da faixa e ninguém é atropelado), o MANCHE de verdade (virar, frear, acelerar, buzinar), a VOLTA (o portão vira lembrete, o carro leva para casa e volta à garagem), o ESTACIONAMENTO (escondido sem a chave; com ela o lote do outro lado da rua, o carro na vaga do coração, o caminho a pé da vaga ao portão do parque sem nada no meio, a cerca viva fechando o lote, a cancela subindo, fotos e o peso) e as fotos de PERTO dos bichos e das peças. SO=rota|partida|bom|distraido|manche|volta|estacionamento|perto roda uma parte; CEL=1 no celular em pé; SEMENTE=7 escolhe a rota
+node scripts/quintal.mjs /tmp/qt    # o quintal decorado, etapa 1 (docs/QUINTAL.md), com ?bebito (save de teste): ESCONDIDO (com ?semBebito, o computador de sempre), o COMPUTADOR (a área de trabalho, o Papita Delivery com as duas prateleiras e o retrato de cada peça, pedir paga da carteira e vai para o correio, sem dinheiro não compra, a pasta do laboratório levando ao laboratório), a ENCOMENDA (a caixa no portão, abrir põe no baú), COLOCAR (as ferramentas da garagem, as regras do quintal, as 14 peças e o fundo da garagem, a pegada e a altura medidas, o peso, a mesma imagem com e sem ?semFundir), ARRUMAR (recarregar, o modo de edição, guardar, a estufa sem nada do quintal) e o CHÃO da etapa 2 (num save limpo: a prateleira Chão, o caminho que se pede uma vez, a árvore virando peça, os cinco caminhos com foto, tirar e pôr a hera, a árvore em outro canto, os pisos com a mesinha e a hortênsia em cima e o último por cima, recarregar) e o SAVE (sem cena é estufa, o a caminho sobrevive). SO=escondido|computador|encomenda|colocar|arrumar|chao|alto|moveis|brincar|save roda uma parte (brincar: a piscininha e o fogo de chão — postos, as duas peças fundidas mesmo mexendo, o fogo tremendo e o patinho passeando, apagar e acender o fogo, sentados em volta, o pé na água com as marolinhas, e levantar; moveis: a etapa 4 — o balanço, a rede, a mesinha, a espreguiçadeira e a casinha no quintal, sentar à mesinha e deitar na rede com a pergunta de ficar e o levantar, o balanço embalando, o Pelusa na casinha com o carinho, e o regador regando a hortênsia; alto: a etapa 3 — a prateleira No alto, a parede com a porta recusada e o ▲ subindo, a treliça alta demais para o muro, as 11 de parede, em cima e pendurado, as três de ponta a ponta com o X desfazendo a primeira ponta, fotos, o peso, recarregar, o sino balançando e o Mexer no chão) (computador→encomenda→colocar→arrumar em fila); CEL=1 no celular em pé
+node scripts/carroPorDentro.mjs /tmp/cd # o carro por dentro (docs/BEBITO-MOBILE-DENTRO.md), com ?bebito&carroPorDentro: ESCONDIDO (sem a chave a porta da garagem e "Sair de carro"), ENTRAR (a porta gira, quem joga senta e a camera chega aos olhos dele, a cabeca some, o menu), DESCANSAR (os encostos deitam, os dois deitados olhando o teto fechado, a conversa, a memoria, o cochilo com ronco) e DESCER (tudo desfeito: pose, cabeca, porta, encostos, camera, fora dos colisores), PASSAGEIRO (o 👀, o piloto automatico, a troca de banco, o menu de cada um, encostar no ombro, o celular) e PILOTO (a viagem inteira sozinho, sem tropeco nem susto, e a chegada). SO=escondido|entrar|descansar|descer|passageiro|piloto roda uma parte; CEL=1 no celular em pe
+node scripts/nuvens.mjs /tmp/nv      # as nuvens da frente da casa do Ari nunca entram no quadro da isometrica (8 giros, zoom fechado e aberto, varios pontos do jardim e da rua) e as fotos dos 8 giros; CEL=1 no celular em pe
+node scripts/patio.mjs  /tmp/pt      # o patio da frente da Escola do Gatito (docs/ESCOLA-PATIO.md, ?cena=escola-patio): o ponto do onibus e quem desce fora dos colisores, a porta da rua do saguao saindo no patio, o onibus do ponto indo ao clube, o caminho livre da rua ate a porta e do portao, pela faixa, ate o estacionamento, o predio, o portao, a grade e a guarita na altura do corpo dentro dos colisores, a cancela abrindo, a porta levando ao saguao, as tres bandeiras balancando, os 8 giros, o cartao-postal, o portal e o alto, e o peso; CEL=1 no celular em pe
+node scripts/viagemEscola.mjs /tmp/ve # a viagem de carro ate a escola (docs/VIAGEM-ESCOLA.md), com ?bebito: as 1800 rotas da escola (sem navegador: a zona escolar, o encontro livre, nenhum coracao em cima de faixa de parar), a escola no menu do carro so depois de aberta, a IDA do parque com o piloto de teste (o radar, a torcida com o Gatito na faixa da direita, o ensaio da Valentina, a bola do Flynn, fotos de longe e de perto, sem tropeco nem susto, as memorias), a CHEGADA animada fase por fase ate a vaga do coracao, RECARREGAR sem repetir a chegada (e o carro em nenhum outro lugar) e a VOLTA para a garagem. SO=rotas|menu|ida|recarga|volta roda uma parte
+node scripts/lambreta.mjs /tmp/lb  # a lambreta da Estella (docs/LAMBRETA-DA-ESTELLA.md): o MODELO parado no Villa Lobos pelo atalho ?lambreta=x,z,giro, com ela montada (nada abaixo do chao, a pilha de cinco blocos, a largura cabendo na faixa, fotos de perto de todos os lados, o rosto com o capacete e os oculos de aviador); ESTACIONADA no estacionamento do parque so depois da memoria do encontro, na vaga vizinha da do Bebito; e o PANO no para-brisa (voando, grudado, escorregando, saindo e foi, com foto de cada momento). SO=modelo|parque|pano roda uma parte
+node scripts/kombi.mjs /tmp/km     # a Kombi de sorvete do Mano (docs/KOMBI-DO-MANO.md): o MODELO parado no Villa Lobos pelo atalho ?kombi=x,z,giro[&conversando] (nada abaixo do chao, a largura na faixa, fotos de todos os lados, o Mano ao volante de quepe, a janela de venda aberta com as duas casquinhas), ESTACIONADA no Villa Lobos so depois da memoria do encontro (a ultima vaga da fila A, de re, e a passagem de pedestres livre) e a ESTRADA (a rota com o Mano: a musiquinha na chegada e na saida, o sopro de flocos, a geada no para-brisa soprando, embacado, desembacando e foi, a conversa, as duas casquinhas na mochila, a dancinha, a memoria e o save de verdade intacto). SO=modelo|parque|estrada roda uma parte
+node scripts/carrinho.mjs /tmp/cc  # o carrinho do Cookie (docs/CARRINHO-DO-COOKIE.md): o MODELO parado no Villa Lobos pelo atalho ?carrinho=x,z,giro[&conversando][&oferecendo][&andando=7][&vazio] (nada abaixo do chao, pequenininho, as orelhas para fora medidas, as patas escondidas, fotos de todos os lados, da camera do encontro, andando, oferecendo a caixinha e vazio), ESTACIONADO no Villa Lobos so depois da memoria do encontro (do outro lado da passagem, que continua livre) e a ESTRADA (uma rota com o Cookie: a corneta na chegada e na saida, a conversa, a caixinha estendida, os dois brigadeirinhos voando e indo para a mochila, a memoria, o save de verdade intacto, e nenhum Cookie soprando bolhas na mesma viagem — conferido em 2400 rotas, sem navegador). SO=modelo|parque|estrada roda uma parte
+node scripts/doisCavalos.mjs /tmp/dc # o 2CV do Jean-Luc (docs/DOIS-CAVALOS-DO-JEAN-LUC.md): o MODELO parado no Villa Lobos pelo atalho ?doisCavalos=x,z,giro[&conversando][&raquete][&andando=7][&vazio] (nada abaixo do chao, menor que o Bebito, a cabeca dele por cima do para-brisa, os oculos escuros na frente das pupilas e entre o bico e a boina, a raquete guardada dirigindo e na janela no ponto, fotos de todos os lados, do rosto, dos oculos de perto, da camera do encontro e de perseguicao, e vazio com o caixote), ESTACIONADO no Villa Lobos so depois da memoria do encontro (na vaga vizinha a do carrinho do Cookie, a passagem livre) e a ESTRADA (uma rota com o Jean-Luc: o pin-pon na chegada e na saida, a conversa, a raquete na janela, a bolinha no ar, a hora certa de rebater, a memoria e o save de verdade intacto). SO=modelo|parque|estrada roda uma parte; CEL=1 a conversa no celular em pe
+node scripts/carrinhoDeGolfe.mjs /tmp/gf # o carrinho de golfe da Gina (docs/CARRINHO-DE-GOLFE-DA-GINA.md): o MODELO pelo atalho ?golfe=x,z,giro[&conversando][&esticando][&andando=7][&vazio] (nada abaixo do chao, as pernas dobradas no banco, o pescoco saindo pelo toldo dirigindo, e esticada a cabeca por baixo do toldo e para fora da lateral, na altura de uma janela, com o carimbo; fotos de todos os lados, de cima, do rosto, do painel e vazio), ESTACIONADO no lote do clube so depois da memoria (a faixa de pedestres do lote livre) e a ESTRADA (uma rota do clube com a Gina: o apito, a conversa, o carrinho encostando, o carimbo perto do selo, o selo colado no para-brisa do Bebito da cena e gravado na ficha, a memoria, o save de verdade intacto; e uma segunda viagem ja socios, sem carimbo novo). SO=modelo|parque|estrada roda uma parte; CEL=1 a estrada no celular em pe
+node scripts/conversivel.mjs /tmp/cv # o conversivel da Tia Liz e das irmas (docs/CARROS-DA-ESCOLA.md §2), pelo atalho ?conversivel=x,z,giro[&conversando][&andando=7][&vazio]: nada abaixo do chao, a largura na faixa, as quatro dentro da cabine (a Tia Liz ao volante do lado do Bebito, a Luna de oculos do outro, a Sol e a Estrella em pe atras) sem nada atravessando o assoalho, a bandeirinha, fotos de todos os lados e de cada uma, andando e vazio; a ESTRADA (casa → escola: antes de conhecer a Tia Liz nada de conversivel e a torcida atravessa; depois, a buzina, a historia so na primeira vez, as palmas na hora certa e o confete, as duas arepitas na mochila, a memoria, nenhuma torcida na mesma viagem, o save de verdade intacto; e a segunda viagem com o oi), a ESCOLA (estacionado no lote so depois da memoria) e a AREPITA (na mao e comida). SO=modelo|estrada|escola|arepita roda uma parte; CEL=1 a estrada no celular em pe
+node scripts/corridaDoFlynn.mjs /tmp/fy # a corrida matinal do Flynn (docs/CARROS-DA-ESCOLA.md §3), a pé: as ROTAS (sem navegador: ele mora na escola) e a ESTRADA (casa → escola: sem conhecer o Flynn nada de corrida; conhecido, o apito, ele passando o Bebito pela calçada mais rápido que o carro, sem a bola na mesma viagem, a conversa trotando no lugar, o vidro da carona descendo e o braço pela janela, o toca aqui na hora certa com as duas mãos se encontrando, medido, o som, a memória e o save de verdade intacto; e uma viagem errando, com a mão passando no vento). SO=rotas|estrada roda uma parte; CEL=1 no celular em pé
+node scripts/rocco.mjs /tmp/rc       # o Rocco, o lobo capitão dos Dogões e rival do Flynn (docs/CARROS-DA-ESCOLA.md §5): o MODELO pelo atalho ?rocco=x,z,giro&comFlynn (os pés no chão, mais alto que o Flynn, as peças pelo nome, fotos de perto e lado a lado com o Flynn), as ROTAS (sem navegador: fora do sorteio, corre no lugar do Flynn — nunca antes de cruzar o Flynn na estrada, sempre na primeira depois, meio a meio dali em diante) e a ESTRADA (casa → escola: sem a memória do Flynn vem o Flynn; com ela o Rocco — o uivo, passando o Bebito pela calçada, a conversa trotando com a câmera de frente, a apresentação com os Dogões e o rival, sem toca aqui, a memória "O rival", o save de verdade intacto — e a segunda vez com a fala curta) e o GINASIO (o um contra um: sem a memória, o treino do Flynn de sempre; antes do Módulo 2, ninguém; com os dois, a posse trocando, cesta dos dois, o rebote, a bola quicando no drible, nunca um em cima do outro, fotos de cada momento, a conversa com o jogo parado, a memória "Um contra um" e o jogo voltando). SO=modelo|rotas|estrada|ginasio roda uma parte; CEL=1 a estrada no celular em pé
+node scripts/limusine.mjs /tmp/lm  # a limusine conversível da Valentina e o Pietro, o pavão motorista (docs/CARROS-DA-ESCOLA.md §4), pelo atalho ?limusine=x,z,giro[&conversando][&andando=7][&vazio]: nada abaixo do chão, a largura na faixa e o comprimento, o Pietro ao volante do lado do Bebito (a cabeça por cima do para-brisa, as luvas no aro, a cauda pendurada por cima da porta), a Valentina no sofá virada para o Bebito, dentro da cabine, de óculos gatinho na frente dos olhos, o peso, fotos de todos os lados, de perto, da câmera do encontro (deitada e no celular), andando e vazia; e o PIETRO sozinho (?pavao=x,z,giro[&leque][&volante]: os pés no chão, o quepe e o leque abrindo). e a ESTRADA (casa → escola: a sessão de fotos com a pose, o flash, a polaroid voando até o painel do Bebito e gravada na ficha, a memória, sem ensaio na calçada; a viagem seguindo até a escola e o DESFILE fase por fase — a limusine no portão, o Pietro com o rolo, o tapete desenrolando, o leque, ela descendo e desfilando, o tapete enrolado de volta —, a flag e a memória; o pátio recarregado com a limusine estacionada de lado no lote; e a segunda viagem, já com a polaroid, sem foto nova). SO=modelo|pietro|estrada roda uma parte; CEL=1 a estrada no celular em pé
+node scripts/gatitoLavando.mjs /tmp/gl # o Gatito lavando o ônibus no pátio da escola: só depois de conhecido (e ?semGatitoLavando tira), em pé nos dois caixotes, a esponja encostada na lataria na altura da espuma e andando em roda, o "fsh-fsh", a conversa (larga a esponja e vira para a dupla, a memória "O ônibus brilhando", o convite recusado, volta a esfregar) e o MUTIRÃO (o Renan na mangueira e o Ari na esponja: as fases na ordem, a esponja encostada na lataria, a espuma crescendo e o jato enxaguando, o jato pegando o Gatito, a sacudida, o arco-íris inteiro, a memória "Banho de mangueira", os R$ 200 da recompensa na carteira, as mãos vazias no fim e o Gatito de volta), com foto de cada fase
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso

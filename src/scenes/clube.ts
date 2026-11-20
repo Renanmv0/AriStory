@@ -22,7 +22,12 @@ import {
 } from '../world/restauranteDoClube';
 import { fundir } from '../world/fundir';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
+import {
+  DESCIDA_NO_CLUBE, FAIXA_DO_CLUBE, montarBebitoNoClube, montarEstacionamentoDoClube, naAreaDoEstacionamentoDoClube,
+} from '../eventos/bebitoMobile/noClube';
 import { Gina } from '../entities/bichos/Gina';
+import { GUARITA_DO_CLUBE, GuaritaDoClube } from '../world/guaritaDoClube';
+import { conversaDaGuaritaNova, convidarParaAPortaria, guaritaNovaNoClube, guaritaNovaPorVer, portariaLiberada } from '../eventos/portariaDoClube';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Josefina } from '../entities/bichos/Josefina';
@@ -182,7 +187,10 @@ export const clube: SceneDef = {
   spawn: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
   entries: {
     portaria: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
+    // quem volta de um dia de trabalho na guarita nova sai na frente do balcão, olhando para ela
+    'da-guarita': { x: -19.35, z: 5.1, facing: Math.PI },
     beira: { x: 0, z: 3.5, facing: Math.PI },
+    'do-estacionamento': DESCIDA_NO_CLUBE,
     // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
     // prédio: um passo para fora dela, já de costas para a parede
     'dos-fundos-do-restaurante': { x: -14.6, z: -18.9, facing: Math.PI },
@@ -214,7 +222,7 @@ export const clube: SceneDef = {
     // tom nem custar uma malha a mais. Antes o clube era duas cores chapadas,
     // e de longe parecia papel colorido.
     w.groundWithHoles({
-      width: 160, depth: 160, color: P.grass, holes: [buraco],
+      width: 240, depth: 200, color: P.grass, holes: [buraco],
       textura: tapeteDeGrama(9),
     });
     // O furo do `groundWithHoles` é LOCAL à malha: ele acaba em
@@ -252,9 +260,13 @@ export const clube: SceneDef = {
     w.patch(RUA.calcada, RUA.z, RUA.larguraCalcada, RUA.comprimento, P.concrete, 0, 0.02, calcadaDePedrinha());
     w.patch(RUA.asfalto, RUA.z, RUA.larguraAsfalto, RUA.comprimento, P.asphalt, 0, 0.024, asfalto());
     for (let z = RUA.z - RUA.comprimento / 2 + 2; z <= RUA.z + RUA.comprimento / 2 - 2; z += 5) {
+      if (Math.abs(z - FAIXA_DO_CLUBE.z) < FAIXA_DO_CLUBE.largura / 2 + 1) continue;
       w.patch(RUA.asfalto, z, 0.22, 2, P.metalWhite, 0, 0.028);
     }
-    w.add(w.place(meioFio(RUA.comprimento), RUA.guia, 0, RUA.z));
+    for (const [a, b] of [[-RUA.comprimento / 2, FAIXA_DO_CLUBE.z - FAIXA_DO_CLUBE.largura / 2],
+      [FAIXA_DO_CLUBE.z + FAIXA_DO_CLUBE.largura / 2, RUA.comprimento / 2]]) {
+      w.add(w.place(meioFio(b - a), RUA.guia, 0, (a + b) / 2));
+    }
 
     // A GUIA NÃO TEM COLISÃO. Ela já foi parede com um vão na frente da parada,
     // e na prática só atrapalhava: um degrau de 14 cm parando a dupla no meio
@@ -296,10 +308,13 @@ export const clube: SceneDef = {
      * lados. Agora ele para na sebe, e a área jogável passa de 52×35 para
      * 62×45.
      *
-     * Na esquerda ele continua indo até a beira do asfalto (`-30`), senão
-     * ninguém alcança a porta do ônibus, que para do lado de fora do clube.
+     * A montagem do estacionamento amplia o lado oeste até o muro do lote.
+     * Assim se atravessa a rua a pé, sem parar no antigo limite do ônibus.
      */
     w.setBounds(-30, BORDA.fundo + 0.9, BORDA.leste - 0.9, BORDA.frente - 0.9);
+    const entradaDoEstacionamento = montarEstacionamentoDoClube(w, {
+      beira: RUA.asfalto - RUA.larguraAsfalto / 2, comprimento: RUA.comprimento,
+    });
 
     // --------------------------------------------------- o muro e o portão
     /**
@@ -361,18 +376,49 @@ export const clube: SceneDef = {
      * `+Z`, que é ao mesmo tempo o lado por onde a dupla chega e o lado de onde
      * a câmera vem — as duas coisas que uma peça de balcão precisa acertar.
      *
-     * ELA NÃO PODE ENCOSTAR NO MURO, e a primeira versão encostava. A folha
-     * aberta do portão é 3,4 m de grade a 2,3 de altura em `z = 3,5`: numa
-     * câmera de 34° ela joga uma faixa listrada por cima de tudo que estiver
-     * até 3,4 atrás dela, e a guarita apanhava a faixa inteira na cara. Aqui,
-     * quatro metros para dentro e com a frente em `z = 3,7`, a guarita fica NA
-     * FRENTE da folha em vez de atrás — quem passa a ser tapado é a grade, que
-     * é fundo de cena.
+     * ELA NÃO PODE ENCOSTAR NO MURO. A folha aberta do portão é 3,4 m de grade
+     * a 2,3 de altura em `z = 3,5`: numa câmera de 34° ela joga uma faixa
+     * listrada por cima de tudo que estiver até 3,4 atrás dela. A frente da
+     * guarita fica em `z = 3,7`, NA FRENTE da folha — quem é tapado é a grade.
+     *
+     * A GUARITA NOVA (`world/guaritaDoClube.ts`, 4,8 × 3,5) cresceu para os
+     * fundos e para o lado da piscina: a frente continua em `z = 3,7` e o lado
+     * do portão onde estava, e a Gina continua à mesma distância do balcão.
+     *
+     * A GUARITA NOVA SÓ VEM DEPOIS DO MANIA (pedido do Renan): até a dupla
+     * terminar a última noite da escala do Walter, fica a de antes
+     * (`guarita()`, 2,6 × 2,2, a Gina em `x = −20,6`); depois, a nova
+     * (`eventos/portariaDoClube.ts`, `guaritaNovaNoClube`).
      */
-    const GUARITA = { x: -20.6, z: 2.6, largura: 2.6, profundidade: 2.2 };
-    w.add(w.place(guarita(GUARITA.largura, GUARITA.profundidade), GUARITA.x, 0, GUARITA.z));
-    // a caixa engole o balcão, que avança 0,37 além da parede da frente
-    w.blockBox(GUARITA.x, GUARITA.z + 0.2, GUARITA.largura / 2 + 0.2, GUARITA.profundidade / 2 + 0.25);
+    const guaritaNova = guaritaNovaNoClube(g);
+    const GUARITA = guaritaNova
+      ? { x: -19.35, z: 3.7 - GUARITA_DO_CLUBE.meiaZ }
+      : { x: -20.6, z: 2.6 };
+    /** onde a Gina fica: 75 cm atrás da face da frente, nas duas */
+    let ginaX: number;
+    let ginaZ: number;
+    if (guaritaNova) {
+      const guarita = new GuaritaDoClube();
+      w.add(fundir(w.place(guarita.group, GUARITA.x, 0, GUARITA.z)));
+      w.onUpdate((dt) => guarita.update(dt));
+      // a caixa engole o balcão, que avança além da parede da frente
+      const { meiaX, meiaZ, balcao } = GUARITA_DO_CLUBE;
+      const z0 = GUARITA.z - meiaZ - 0.05;
+      const z1 = GUARITA.z + balcao.frente;
+      w.blockBox(GUARITA.x, (z0 + z1) / 2, meiaX + 0.05, (z1 - z0) / 2);
+      // a floreira da janela do lado da piscina sai 30 cm da parede, na altura do corpo
+      const { janelaDoLado: j } = GUARITA_DO_CLUBE;
+      w.blockBox(GUARITA.x + meiaX + j.sai / 2, GUARITA.z + j.z, j.sai / 2 + 0.02, j.meia);
+      ginaX = GUARITA.x + GUARITA_DO_CLUBE.gina.x;
+      ginaZ = GUARITA.z + GUARITA_DO_CLUBE.gina.z;
+    } else {
+      const ANTIGA = { largura: 2.6, profundidade: 2.2 };
+      w.add(w.place(guarita(ANTIGA.largura, ANTIGA.profundidade), GUARITA.x, 0, GUARITA.z));
+      // a caixa engole o balcão, que avança 0,37 além da parede da frente
+      w.blockBox(GUARITA.x, GUARITA.z + 0.2, ANTIGA.largura / 2 + 0.2, ANTIGA.profundidade / 2 + 0.25);
+      ginaX = GUARITA.x;
+      ginaZ = GUARITA.z + 0.35;
+    }
 
     /**
      * A GIRAFA PORTEIRA.
@@ -382,27 +428,52 @@ export const clube: SceneDef = {
      * de código nova: as doze tentativas de destino falham e ele a devolve para
      * `parado`, respirando e olhando a rua. Nada de `enabled = false`.
      *
-     * Ela nasce ADIANTADA em `z` dentro da guarita, e não no meio dela: o
+     * Ela fica 75 cm atrás da face da frente, e não no meio da guarita: o
      * pescoço se debruça 0,93 para a frente, e é essa soma que põe a cabeça em
      * cima do balcão — do lado de fora da parede E do lado de fora da sombra do
-     * telhado, que a 34° come tudo que fica mais de meio metro para dentro. Com
-     * o corpo no meio da casinha, a cabeça aparecia escura por uma fresta.
+     * telhado, que a 34° come tudo que fica mais de meio metro para dentro.
      */
     const gina = new Gina({
-      minX: GUARITA.x - 0.15, maxX: GUARITA.x + 0.15,
-      minZ: GUARITA.z + 0.2, maxZ: GUARITA.z + 0.5,
+      minX: ginaX - 0.15, maxX: ginaX + 0.15,
+      minZ: ginaZ - 0.15, maxZ: ginaZ + 0.15,
     });
     w.add(gina.group);
     gina.aoSoar = () => g.som('apito');
 
     const falarComOPorteiro = w.interact({
       id: 'clube:portaria',
-      x: GUARITA.x, z: GUARITA.z + 1.9, radius: 2.2,
+      x: ginaX, z: ginaZ + 1.9, radius: 2.2,
       label: 'Falar com a Gina', icon: '🦒',
       highlight: gina.group,
       onInteract: async (api) => {
         gina.receberCarinho();
         api.som('apito');
+        /*
+         * A PRIMEIRA VEZ NA GUARITA NOVA desbloqueia a Portaria do Clube
+         * (`eventos/portariaDoClube.ts`). Quem ainda não conhecia a Gina ouve a
+         * apresentação de sempre antes; quem já conhecia vai direto para a
+         * reforma. Atrás da chave do minigame: sem ela, nada muda.
+         */
+        if (guaritaNovaPorVer(api)) {
+          if (!api.temMemoria('girafa-da-portaria')) {
+            await api.say(['Bom diaaa! Carteirinha na mão? …Brincadeira, pode entrar.'], 'Gina');
+            await api.say(['Sou a Gina, viu? Qualquer coisa é comigo.'], 'Gina');
+            api.unlock({
+              id: 'girafa-da-portaria',
+              title: 'A Gina da portaria',
+              place: 'Clube',
+              note: 'A porteira do clube: quepe, pescoço de três metros e apito no peito, mandando a gente aproveitar o dia.',
+              icon: '🦒',
+            });
+          }
+          await conversaDaGuaritaNova(api);
+          return;
+        }
+        // DEPOIS DO DESBLOQUEIO, a Gina convida para trabalhar (e quem só quer conversar ouve a conversa de sempre)
+        if (guaritaNova && portariaLiberada(api)) {
+          const r = await convidarParaAPortaria(api);
+          if (r !== 'conversar') return;
+        }
         // O NOME É DO ARI, e as falas são as mesmas de antes: o Renan pediu
         // para batizá-la sem mexer nelas. O nome entra por uma linha nova, dela
         // mesma se apresentando — trocar as falas por causa de um nome seria
@@ -1614,9 +1685,9 @@ export const clube: SceneDef = {
     const bordaX = DECK.x + DECK.largura / 2 + 1.5;
     const bordaZ = DECK.profundidade / 2 + 1.5;
     for (const [x, z] of [
-      // as duas da esquerda atravessaram a rua: em `-25,5` elas nasciam dentro
-      // da calçada, e do outro lado do asfalto viram o fundo verde da parada
-      [-41, -8], [-41, 4],
+      // As duas da rua agora enquadram o fundo do estacionamento, sem nascer
+      // nas vagas nem tapar a passagem de pedestres do lado da câmera.
+      [-76.5, -8], [-76.5, 4],
       [bordaX, 4], [bordaX, -8], [bordaX, -20],
       [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [26, -bordaZ + DECK.z],
       [-4, bordaZ + DECK.z], [18, bordaZ + DECK.z],
@@ -1633,6 +1704,7 @@ export const clube: SceneDef = {
       // nem na rua: ela atravessa o cenário inteiro, do outro lado do asfalto
       // até a faixa de grama que separa a calçada do piso do clube
       if (x > -38 && x < -23.5) continue;
+      if (naAreaDoEstacionamentoDoClube(x, z)) continue;
       w.add(w.place(i % 2 ? bush(w.range(0.7, 1.1)) : flowers(6, 1.1), x, 0, z));
     }
     for (let i = 0; i < 6; i++) {
@@ -1670,12 +1742,13 @@ export const clube: SceneDef = {
         }
         const destino = await api.ask('Pra onde a gente vai?', ['Parque', 'Escola do Gatito', 'Ficar no clube']);
         if (destino === 0) api.goTo('villa-lobos', 'clube');
-        else if (destino === 1) api.goTo('escola', 'da-rua');
+        else if (destino === 1) api.goTo('escola-patio', 'do-onibus'); // o ônibus para na rua da portaria
       },
     });
     w.onUpdate(() => {
       pegarOOnibus.label = g.flag('escola-aberta') ? 'Pegar o ônibus' : 'Pegar o ônibus pro parque';
     });
+    montarBebitoNoClube(w, entradaDoEstacionamento, pegarOOnibus);
 
     // -------------------------------------------------------------- respingos
     interface Respingo {
@@ -2076,7 +2149,7 @@ export const clube: SceneDef = {
         'clube:noel', 'clube:dar-as-sementes', 'clube:bar', 'clube:mesa-do-restaurante',
       ],
       recados: [
-        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: GUARITA.x + 2.0, z: GUARITA.z + 2.1, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: guaritaNova ? GUARITA.x + 2.7 : GUARITA.x + 2.0, z: guaritaNova ? GUARITA.z + 2.75 : GUARITA.z + 2.1, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.capy], autor: 'Capy', x: GUARDA.x + 1.7, z: GUARDA.z - 0.9, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.noel], autor: 'Noel', x: -13.9, z: 10.9, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.josefina], autor: 'Josefina', x: JARDIM.caminho - 1.4, z: -13.75, giro: Math.PI / 4 },

@@ -900,6 +900,41 @@ algodão-doce saiu.
   subiram de 315 mil para 396 mil (a treliça e as gôndolas). A bilheteria de
   perto: 530 → 311 desenhos (ela passa pela `fundir()`).
 
+## O ônibus escolar dos Gatitos (`world/onibusEscolarDosGatitos.ts`)
+
+O molde de VEÍCULO PARADO caprichado sem pesar (o ônibus da cidade é o de veículo que anda):
+
+- **A chapa é textura com UV por triângulo** (`uvDaChapa`): pela normal de cada face, a lateral e o teto correm em
+  `z` (as emendas a cada 0,75 m caem entre as janelas e atravessam o teto na mesma linha) e a frente e a traseira só
+  levam o degradê. O canvas é quase branco (o material amarelo multiplica): emenda, rebite e poeira são preto fraco,
+  e o amarelo escurece sem mudar de tom.
+- **Tudo o que é impresso num ATLAS só** (`materialDoAtlas`, `noAtlas` leva o UV 0–1 para a região): letreiro, placas,
+  PARE, listras, pata e os VIDROS pintados (o céu refletido em cima, o encosto do banco embaixo, o risco de brilho). O
+  letreiro e os números têm o fundo VAZADO (`alphaTest`), para a letra ficar direto na chapa; o resto do canvas nasce
+  opaco, senão o mipmap come a beira das regiões de longe.
+- **O que se pendura na curva assenta por ela** (`naCapa`): as curvas da frente e da traseira são as mesmas que
+  desenham o perfil, e o para-brisa e as caixas das luzes de alerta são quadros com o `+Z` na normal (`lookAt`).
+- **Caixa de roda na linha do chão**: o arco começa onde o círculo cruza o chão da forma; começando na altura do
+  eixo, sobrava um dente de lataria em cada ponta.
+- Rodas e o braço de travessia pintados nos vértices, o resto de cor lisa pela `juntarPorCor`: vista do lote 280 →
+  268 desenhos com o ônibus novo. As faces coplanares (o `zfighting.mjs` não mede `quina()`) foram caçadas com a
+  caixa de cada malha alinhada no quadro da peça, com `?semFundir`: o fundo do capô no plano do da carroceria, as
+  quinas do contorno da porta de trás, e decalque a 1 mm da face (vai a 3–4 mm).
+
+## A lavagem do ônibus (`world/lavagemDoOnibus.ts`)
+
+O kit de ÁGUA que se mexe sem shader novo:
+
+- **O jato**: uma curva (`QuadraticBezierCurve3`) da ponta da pistola até onde bate, o fio translúcido refeito a cada
+  quadro por um `TubeGeometry` (só enquanto aparece), as gotas correndo por ela num lote (mais soltas longe do bico) e
+  o RESPINGO onde bate, num lote de gotas com gravidade que esticam na direção em que caem (pingo, e não bolinha). A
+  pressão abre e fecha devagar: ligando, a água despenca perto do bico e vai alcançando o alvo.
+- **O arco-íris**: uma fita em arco com as seis cores da paleta (os vértices duplicados na emenda de cada faixa, para
+  a borda ser viva), translúcida e de dois lados; ela ENTRA DESENHANDO pelo `drawRange` (os índices em ordem de arco).
+- **A mangueira solta**: um tubo pelos pontos (a saída do carrinho, deitado no chão, subindo até o engate da pistola),
+  refeito a cada quadro.
+- **De mão, em escala chibi** (a esponja e a pistola, 1,4×), com os pontos que a cena lê pelo NOME (`ponta`, `engate`).
+
 ## O ônibus da cidade (`world/onibusDaCidade.ts`)
 
 O ônibus urbano detalhado (pedido do Renan: as mesmas cores do `bus()` de
@@ -948,6 +983,569 @@ letreiro (`trocarDestino`). O molde de VEÍCULO:
 - **O peso**: no ponto, 711 → 689 desenhos por quadro com o novo no lugar do
   velho, e 469 mil → 502 mil triângulos (~34 mil o ônibus); as cenas do
   parque e do clube têm 33 malhas a menos (66 soltas do velho, 33 do novo).
+
+## O Bebito Mobile (`world/bebitoMobile/`)
+
+O carro do casal (`docs/BEBITO-MOBILE.md`). É o molde de **veículo OCO** (com
+cabine de verdade, que se vê pelos vidros) e de **peça montada por FICHA DE
+DADOS**. O ônibus da cidade é caixa extrudada com bisel; caixa não fica oca
+nem redonda em planta, então a lataria do carro é uma superfície própria:
+
+- **A pele de fatias** (`pele.ts`): a PLANTA é uma superelipse
+  (`meiaLargura(z)`: a largura vai a zero nas pontas, e a frente e a traseira
+  fecham sozinhas); o PERFIL de cima é o desenho de lado (`topoEm(z)`); e cada
+  FATIA (`secao(z)`) é um arco de 25 pontos com NOME (o pé, a cintura, o pé e
+  o alto do vidro, a quina, o teto). Onde tem roda, a soleira sobe pelo arco
+  da caixa de roda: a boca é a própria borda da lataria.
+- **A grade cai nas bordas** (`estacoesFixas`): janela, coluna, porta e
+  para-brisa são linhas da grade, então lataria, capota e vidro são só uma
+  escolha de quadradinho (`regiaoDaCelula`) com a borda reta. A borracha do
+  vidro é um tubo pelo contorno do mesmo retângulo de índices; o friso de
+  cromo, o corte da porta e o aro da caixa de roda, idem.
+- **Estação "grudada" é perto em `z` E em largura.** Na ponta o carro fecha
+  em milímetros de `z`; tirando por `z` só, a cara do carro ficava sem
+  colunas (as estações da ponta são amostradas pela LARGURA).
+- **A normal vem da vizinhança da grade** (alargando a janela onde os nós
+  coincidem), e as três malhas a dividem: a luz não quebra na emenda entre a
+  lataria, a capota e o vidro.
+- **Pregar coisa na lataria**: `naPonta(x, y, frente)`, `noLado(z, y, lado)`
+  e `porCima(x, z)` devolvem o ponto e a normal (já com a deitada da
+  traseira, `deformar`), e `pregar()` assenta a peça com o `+Z` na normal.
+  Farol, lanterna, placa, adesivo, maçaneta: tudo passa por aí. O `naPonta`
+  vale só na parte EM PÉ da cara (abaixo da quina): acima, a lataria já
+  curvou para dentro e a peça boia.
+- **O teto sai** (`mostrarTeto(false)`): tudo da cintura para cima mora no
+  grupo `teto`, e o corte cai na cintura, que já é uma emenda (o friso). O
+  que dá grossura à porta com o teto fora é o FORRO (a mesma pele, 4,5 cm
+  para dentro e do avesso) e a pestana entre os dois.
+- **O carro cresce 10% no fim, e quem senta não.** Perto do corpo chibi (a
+  cabeça tem 60 cm, 75 com os cachos) o carro do tamanho de verdade era de
+  brinquedo, e os dois sentados encostavam a cabeça um no outro. A
+  carroceria e o lote das rodas ganham a escala; as âncoras de sentar levam
+  a escala inversa. `scripts/bebitoMobile.mjs` (`SO=lugares`) senta a dupla
+  e mede a folga.
+- **O vidro de trás não acompanha a queda do teto**: acompanhando, o alto
+  dele ficava caído no meio, como uma rede. Na tampa ele é uma linha reta.
+- **Banco e caixa de roda não ocupam o mesmo lugar**: o banco de trás da
+  largura da cabine, em cima das caixas de roda, entrava nelas e aparecia
+  pela boca do para-lama. O carro ganhou 40 cm no MEIO (as estações da pele
+  são todas relativas às constantes: esticar foi mudar `A` e meia dúzia de
+  números), e o banco inteiriço fica À FRENTE das caixas de trás.
+- **A caixa de roda acompanha a planta**: um meio cano reto, da largura do
+  carro no eixo, saía pela lataria nas pontas do arco (onde o carro já
+  estreitou) e aparecia como uma aba escura embaixo do para-choque. A beira
+  de fora dele segue `meiaLargura(z)`.
+- **Linha em cima de superfície curva é FILETE, não tubo** (`friso()`): o
+  `TubeGeometry` gira o próprio corte ao longo da curva (o quadro de Frenet)
+  e, com poucos lados, o traço engrossa e afina; a curva que passa pelos
+  pontos estufa nas quinas, cada uma de um jeito, e a amostragem por
+  comprimento não cai nelas. O Renan viu: "as janelas parecem desalinhadas,
+  o traço meio wobbly". O filete recebe o ponto E A NORMAL da lataria, monta
+  o corte (meia-cana) no quadro tangente × normal, e arredonda as quinas
+  ANDANDO pela linha, todas com o mesmo raio (medir pelo ponto vizinho dava
+  um raio em cada quina, porque perto das caixas de roda os pontos são
+  miúdos). Raio de quina ≤ 2,5 × a meia largura do filete: a ponta viva do
+  vidro fica debaixo dele. E a janela acaba onde o vidro ainda tem um palmo
+  de altura — terminando numa lasca, a borracha se embolava na ponta. Tubo
+  continua valendo para o que está NO AR (para-choque, bagageiro, antena).
+- **Encosto que deita**: a origem do grupo é o PÉ do encosto (a dobradiça,
+  na beira de trás do assento, meia grossura abaixo do topo). Em pé ele sobe
+  inclinado; deitado (`rotation.x = −π/2`) a face da frente vira colchão,
+  rente ao assento — e o comprimento dele é o vão até o banco de trás. Com
+  os dois bancos inteiriços, deitar os encostos da frente dá uma cama da
+  largura da cabine (`deitarEncostos`), e a âncora de deitar (`carro.cama`)
+  segue o padrão da cama do quarto: `−π/2` em X, os pés no `+Z`, a altura do
+  colchão mais meio corpo.
+- **A ficha** (`ficha.ts`, sem three: o save a importa): a pintura, a placa
+  e as VAGAS — cada vaga com os seus lugares, cada lugar um encaixe com nome
+  no modelo (`vaga:painel:0`). O catálogo dá o id, a vaga e a ORIGEM de cada
+  detalhe; `normalizarFicha` conserta o que vem do save. Detalhe novo é uma
+  entrada no catálogo e um modelo (`acessorios.ts`) ou um desenho
+  (`impressos.ts`) — o teste cobra que todo id monte.
+- **Os impressos são UM atlas** (`impressos.ts`): a placa, os adesivos, o
+  rádio e os relógios pintados num canvas só, e cada um é uma plaquinha com
+  o UV no pedaço dele. O adesivo entra como IRMÃO do encaixe (sem nome), e
+  a `fundir()` junta todos numa malha; o encaixe continua lá, com nome.
+- **O que balança diz que balança**: grupo com nome e
+  `userData.balanca = { x: [amplitude, velocidade], z: […] }` (a cabeça de
+  mola do Jean-Luc, o girassol, a estrela, o pompom, o chaveiro). O carro os
+  acha sozinho e balança mais andando e no solavanco.
+- **Miniatura de personagem copia as PEÇAS dele**: o primeiro Jean-Luc de
+  painel (pato branco, camisa azul, chapéu azul) parecia outro pato famoso.
+  O do jogo tem a boina larga tombada, a camisa creme de gola vermelha, a
+  bandeirinha e a raquete — com elas, é ele.
+- **A PORTA que gira** (`carro.abrirPorta(sim)`, `portaAberta`): a porta do
+  motorista (a da frente, do lado `+X`) NÃO é uma peça colada: ela sai da PRÓPRIA
+  pele. As células da grade (os nós 0 a 5 da soleira à testeira, entre as beiras da
+  porta) viram um grupo à parte (`porta-do-motorista`) com o pivô na dobradiça da
+  frente — a lataria, o forro, a maçaneta e o friso da cintura na `folha`, e a janela
+  com a borracha e a testeira num subgrupo com nome (`porta-cima`) que some com o
+  teto. Fechada é a MESMA pele (as normais vêm da mesma grade; o que se parte, como a
+  moldura da janela da frente no quebra-vento, usa as mesmas linhas). Aberta, a borda
+  do buraco é uma fita de borracha da lataria até 4,5 cm para dentro (a pele é uma
+  superfície só), 4 mm DENTRO da pele — rente, a ponta brigava com a lataria e
+  pontilhava a quina — e **da cintura para cima o batente é do `teto`**: sem teto,
+  sobrava um poste no ar. Abre pelo `rotation.y` NEGATIVO (≈ −1,15 rad); o teste mede
+  que a beira de trás vai para fora, e não a foto.
+- **O peso**: a borracha dos vidros em tubo eram 5 mil triângulos; em
+  filete, menos da metade, e mais bonita. O carro inteiro: 274 malhas → 43
+  depois da `fundir()` e da `juntarPorCor`, ~35,5 mil triângulos.
+- **Face coplanar em caixa de quina redonda**: o `SO=coplanar` do teste mede
+  a caixa envolvente de cada `quina()` não girada, com `?semFundir` (achou a
+  borda da mantinha no plano da dobra de cima).
+
+## A frente da casa do Ari (`world/frenteDaCasa.ts`)
+
+A casa por fora, o muro, os portões e a garagem — nasceram com o Bebito
+Mobile e só aparecem com a chave dele (`eventos/BebitoMobile.ts`). A segunda
+versão veio de um pedido do Renan depois da primeira foto: a casa mais funda
+("parece minúscula"), muro com planta verde no lugar da cerquinha branca,
+portão moderno na garagem.
+
+- **`fachadaDaCasa(cores?)`** — a casa térrea de telhado de duas águas, com
+  8,2 m de fundo. Cada parede é um QUADRO (a face de fora em `z = 0` dele): a
+  da frente tem o RECORTE da porta (ela toca o chão) e os furos das janelas;
+  as duas laterais são quadros girados com dois furos cada. A janela é uma
+  função (`janelaEm`) que serve aos três: caixilho branco dentro do vão,
+  cruz, vidro, cortina, peitoril, venezianas e, na frente, a floreira. A
+  porta é a MESMA `portaDaRua` de dentro; telha em fiadas em canvas, testeira
+  no beiral, oitões com o óculo redondo do sótão, chaminé. Medidas em
+  `FACHADA`.
+- **Casa funda pede telhado mais deitado**: com a inclinação da casa rasa, a
+  cumeeira dobrava a altura da casa. E a lateral, que na casa funda é a
+  maior parede à vista da câmera, lisa parecia um muro — por isso as janelas.
+- **Caixilho: o montante é inteiro, mais alto e mais grosso; a travessa fica
+  ENTRE os dois.** Com a mesma medida, as faces da frente e de cima
+  coincidiam nas quatro quinas (o `zfighting.mjs` só viu quando a vizinha
+  passou a usar caixa reta — a `quina()` ele não mede).
+- **As cores são parâmetro** (`CoresDaFachada`), e `vizinha: true` dá a
+  VERSÃO LEVE do mesmo molde para casa de fundo: porta lisa, sem lampião,
+  caixilho e palheta em caixa reta, lateral sem veneziana — ~7 mil
+  triângulos contra 25 mil.
+- **`pergoladoDaGaragem()`** — garagem de câmera isométrica NÃO tem telhado
+  fechado (esconderia o carro): duas vigas de aço grafite, três pilaretes e o
+  ripado de madeira por cima, a cada 46 cm (a 36 ele já tapava o carro). O
+  `alto` deixa passar o carro com o laço no teto.
+- **`muroDoJardim(comprimento, alto)`** e **`pilarDoMuro(alto, luz)`** — o
+  pano de reboco, a faixa de pedra no pé e o capeamento de grafite, cada um
+  de uma largura (nenhuma face no plano da outra). A arandela do pilar é
+  luz pintada: a face de baixo acesa e um leque fraco na parede (forte, o
+  pilar virava um borrão branco).
+- **`portaoSocial()`** — quadro de aço e ripado deitado (`ripado()`), a folha
+  no grupo `folha-do-portao` com a dobradiça na ponta; a cena gira.
+- **`portaoDeCorrer()`** e **`trilhoDoPortao()`** — o portão da garagem. A
+  folha (`folha-do-portao-da-garagem`) é centrada e a cena anda o
+  `position.x` dela; o trilho, o motor e o guia de cima são a peça parada.
+  **Portão de correr não tem verga**: o Bebito Mobile é mais alto que o
+  portão (o carro é grande perto do corpo chibi), e com basculante o laço
+  batia. Ele corre por DENTRO do muro vizinho, então esse muro precisa ter o
+  comprimento do portão, e nada pode morar na faixa do trilho.
+- **`painelDoPortao()`** — o interfone e a boca de cartas, chumbados no pilar.
+
+## As plantas do jardim (`world/plantasDeJardim.ts`)
+
+(Desde 2026-11-12 elas não estão mais plantadas no jardim da casa — o chão
+ficou limpo para o Ari decorar, `docs/QUINTAL.md`. O kit continua: é dele
+que sai o catálogo de plantas do quintal. Para ver as peças, o histórico do
+`scenes/frenteDaCasa.ts` no commit `149cecd` tem o jardim montado.)
+
+O Renan achou os canteiros redondos de tijolo "sem graça" e pediu plantas
+novas e bem feitas. Este é o molde de PLANTA DE JARDIM, e serve a qualquer
+cenário:
+
+- **Cada espécie é UM LOTE para o jardim inteiro.** A função recebe a lista
+  dos pés (`{ x, z, escala, semente, cor }`, no mundo) e devolve um grupo com
+  um a três `InstancedMesh`: `hortensias`, `lavandas`, `capins`, `agaves`,
+  `margaridas`, `costelasDeAdao`, `heraNosMuros`. Seis hortênsias são três
+  desenhos. O `buxinhoNoVaso()` é peça única (vai na `fundir`).
+- **A folha é a `fita()`**: nasce em pé, de altura 1, arqueando para o `+Z`,
+  DOBRADA EM V na nervura — dobrada ela pega luz de um lado e sombra do
+  outro. A lâmina do capim, a agulha da lavanda, a haste da flor, a folha
+  larga da hortênsia e o talo da costela-de-adão são a mesma função com
+  outra largura e outro arco. Quem aponta cada cópia é `apontar(p, frente,
+  cima, escala)` (o `+Z` da peça em `frente`, o `+Y` o mais perto de `cima`).
+- **Duas matérias na mesma geometria, pela cor do vértice**: a haste verde e
+  a espiga roxa da lavanda, o talo e a pluma do capim (`trianguloDoFuso`: uma
+  fila de anéis ao longo do mesmo arco da haste), a borda clara e o espinho
+  escuro do agave. A cor por cópia multiplica por cima.
+- **Vento** (`core/shaders.ts`): o que é fino e alto balança — capim,
+  lavanda, margarida. A geometria tem altura 1 e a cópia escala (o peso do
+  vento é a altura LOCAL); a flor nasce já na ponta da haste e divide a
+  matriz com ela (o truque da taboa). Planta de vento é `semSombra`.
+- **Hortênsia**: um domo de folhas largas pela espiral de Fibonacci (cada
+  uma apontando para fora, caindo mais quanto mais embaixo) e as bolas de
+  flor: um miolo escuro coberto de florzinhas de quatro pétalas, cada bola
+  puxando um tanto para o lilás.
+- **Costela-de-adão**: a folha é um leque do talo até a borda amostrado nas
+  alturas dos RASGOS (o começo, o meio e o fim de cada um) — é o rasgo que
+  diz o nome da planta.
+- **Hera no muro** (`heraNosMuros(muros)`): maciços por cima do capeamento,
+  caindo pelos dois lados, mais fundo no meio de cada maciço, com fios que
+  descem mais que o resto; as folhas da camada de baixo são mais escuras. O
+  lado de FORA (o que ganha mais folha) é o da esquerda de quem vai de `a`
+  para `b`.
+- **O que a foto de perto corrigiu**: a pluma do capim gorda e em gomos
+  fortes lia como CRISTAL (ficou fina, comprida, com a cintura ondulando de
+  leve); a folhinha do buxinho em pé virava OURIÇO (topiaria é aparada: a
+  folha deita na bola); a florzinha de ponta muito funda deixava a bola de
+  hortênsia espinhuda.
+- **Chão de canteiro** é conta de distância (`world/caminhos.ts`:
+  `caixaRedonda`, `capsula`, `uniaoSuave`, `beiraTorta`, `mancha` com passo
+  de 12 cm) pintada com `cascaDePinus()` ou `pedrisco()` — canteiro não tem
+  beira de régua.
+
+## A lambreta da Estella (`world/lambretaDaEstella.ts`)
+
+O primeiro veículo de personagem do PARQUE (`docs/LAMBRETA-DA-ESTELLA.md`), e o
+molde de veículo que CARREGA alguma coisa de cômico:
+
+- **Quem pilota é o bicho, quem senta é o veículo**: a Estella ganhou a pose
+  `pilotando` (o contrato da moto do Capy: corpo inclinado para trás, patas da
+  frente nas manoplas, a cabeça descontando a inclinação) e `apoioDoCapacete`
+  (a cabeça). O capacete e os óculos de aviador são do veículo, pendurados
+  nela; os óculos de costura e o laço saem enquanto ela pilota.
+- **Carga que balança é uma CADEIA de blocos** (cada um filho do de baixo,
+  como os gomos de um rabo), cada bloco um lote com a cor por cópia: a torre
+  ginga e o topo chega depois. A inércia é uma mola que o tranco da
+  aceleração empurra (`update` calcula a velocidade pela distância).
+- **Roupa dobrada não é caixa**: a primeira pilha, de lâminas retas e cores
+  escuras, lia como estante de livros. O que leu como roupa foi a almofadinha
+  (contorno de quina redonda extrudado com bisel GORDO), a base larga
+  transbordando, pontas de pano caindo pelas beiradas (uma malha de cor por
+  vértice por bloco) e as cores claras do catálogo.
+- **O lado da carga decide a foto**: o sidecar vai do lado de FORA da pista.
+  A câmera da conversa vem do lado do Bebito, e a dona fica na frente da
+  pilha; do outro lado, a torre a tapava.
+- **Atalho de teste** `?lambreta=x,z,giro` (como o `?carro=`): parada numa
+  cena, para `scripts/lambreta.mjs` fotografar de perto. Na estrada, a câmera
+  da conversa manda e a do teste é ignorada.
+
+## A Kombi de sorvete do Mano (`world/kombiDoMano.ts`)
+
+O segundo veículo do PARQUE (`docs/KOMBI-DO-MANO.md`), e o molde de veículo
+de CAIXA com um personagem ao volante e uma janela que abre:
+
+- **Kombi é um PERFIL extrudado com bisel**, não caixa: o de lado (com a
+  frente redonda e o recorte da cabine) em duas cores, a saia de baixo e a
+  parte de cima, e o V do nariz como uma geometria própria por cima. A saia
+  é chocolate COM GRANULADO numa textura de canvas — é o granulado que diz
+  "sorvete" de longe.
+- **Faróis são olhos**: farol redondo, blush embaixo, emblema no meio. Num
+  carro de bicho, a cara do carro lê antes do motorista.
+- **O que se abre é um grupo com pivô na dobradiça** (o toldo, a franja e a
+  bancada), e uma `abertura` de 0 a 1 que o `update` persegue — fechada na
+  estrada, aberta na conversa. O que está em cima da bancada só aparece com
+  ela quase aberta.
+- **Neve que escorre é um lote**: a tampa fofa e as gotas como cápsulas de
+  comprimento sorteado (com semente), curtas em cima da janela onde o toldo
+  abre.
+- **Motorista alto numa cabine baixa**: o chapéu de casquinha do Mano passava
+  45 cm do teto. A saída não foi encolher o Mano até sumir: ele ganhou
+  `mostrarChapeu(false)` e, ao volante, vai de quepe de papel de sorveteiro
+  (baixinho) pendurado no `apoioDoChapeu`. Confira a cabeça NO MEIO do
+  para-brisa, com foto de frente e de perto.
+- **Efeito que vai de um veículo ao outro** (o ar gelado): a geada é filha do
+  BEBITO (anda com ele) e os flocos são do MUNDO (saem da Kombi, que anda
+  separada), com o ponto de saída passado como função (`pontoDoArGelado`),
+  porque ele anda. A geada cobre o vidro de coluna a coluna: a largura por
+  linha sai da própria pele (o arco do nó 12 ao 7), e não de uma constante —
+  com uma meia largura fixa ela era um retângulo colado no meio do vidro.
+- **Atalho de teste** `?kombi=x,z,giro` (e `&conversando`, a janela aberta).
+- **Estacionada, o lado que importa vira para a câmera**: no estacionamento do
+  Villa Lobos ela entra de RÉ (`KOMBI_NO_PARQUE`, giro `+π/2`), e não de nariz
+  para a rua como os vizinhos — a câmera vem do `+X/+Z`, e é assim que se veem
+  a cara e a janela de venda. Veículo parado é fundo: `KombiDoMano(true)`
+  junta tudo e não monta o Mano.
+
+## O carrinho do Cookie (`world/carrinhoDoCookie.ts`)
+
+O terceiro veículo do PARQUE (`docs/CARRINHO-DO-COOKIE.md`), e o molde de
+veículo MIÚDO de pele própria com um bicho GRANDE dentro:
+
+- **A graça é a escala, então não se encolhe o bicho.** O Cookie vai do
+  tamanho de sempre e o carro é medido EM VOLTA dele: a barriga no piso, as
+  patas escondidas (`visible = false` na pose), o lombo e o quepe por cima. O
+  carro é conversível justamente porque nada caberia embaixo de um teto.
+- **A pose de veículo mora no `animar` do bicho**, num campo que nasce
+  desligado (`noCarrinho: PoseNoCarrinho | null`): o `animar` reescreve a
+  orelha e a tromba a cada quadro, e o que o veículo mexesse por fora seria
+  desfeito. O veículo só preenche a pose (o vento, a tromba, o olhar).
+- **Orelha para fora é conta**: o leque do Cookie alcança 0,78 do meio,
+  aberto; o corpo dele tem 0,6 de meia largura. Para a orelha PASSAR da
+  lataria ela estica no comprimento (1,7×) e a ponta cai por cima da porta
+  (a rotação em ordem `'ZYX'`: primeiro abre, depois cai). O teste mede
+  quanto ela passa da lataria.
+- **A pele de fatias, em miniatura**: planta de superelipse (`meiaLargura`),
+  perfil de lado (`altoDaTampa`), a fatia em três nós de baixo, cinco de
+  ombro e três de tampa, até a beira do buraco da cabine (`meiaCabine`).
+  Onde não tem buraco as duas beiras são o mesmo ponto: a normal delas é a
+  média (sem isso o capô ganha uma costura no meio). A pele saiu DO AVESSO
+  na primeira foto (via-se o forro creme no lugar do rosa): confira o
+  sentido dos triângulos pela cor.
+- **Caixa de roda acompanha a planta**: o meio cano reto, da largura do
+  carro no eixo, saía pela lataria nas pontas do arco (duas barbatanas
+  pretas). Ela é uma fita da boca do para-lama para dentro, ponto a ponto
+  pela pele. E o forro da cabine recua onde tem roda.
+- **Adesivo em lata curva é malha assentada** (`adesivoNaLateral`): um disco
+  em anéis com cada vértice posto na pele, 8 mm para fora. Plano reto em
+  cima de bolha fica com a beira boiando.
+- **Furo num vidro não precisa ser furo**: o vidro é transparente, e o anel
+  de borracha em volta de onde a tromba atravessa é o que diz "furo".
+- **A mola conta a história**: com ele dentro a traseira afunda, as rodas
+  abrem e o carro tomba para o lado de quem conversa; vazio, no
+  estacionamento, o mesmo carro fica nivelado.
+- **O que se entrega voa**: a tromba não alcança o Bebito (são 2,5 m). Ele
+  estende a caixinha, e os docinhos voam num arco no referencial do carro
+  (que está parado na conversa) até um alvo dado no mundo.
+- **Atalho de teste** `?carrinho=x,z,giro` (`&conversando`, `&oferecendo`,
+  `&andando=7`, `&vazio`).
+
+## O 2CV do Jean-Luc (`world/doisCavalosDoJeanLuc.ts`)
+
+O quarto veículo do PARQUE (`docs/DOIS-CAVALOS-DO-JEAN-LUC.md`), e o molde de
+carro com ESTUFA (vidro de lado, colunas e calhas) em cima da pele de fatias:
+
+- **A pele de baixo para na cintura** (o buraco da cabine é do tamanho dela,
+  com um peitoril estreito), e a estufa são malhas à parte que acompanham a
+  lata: cada vidro é um `PlaneGeometry` dobrado por uma função `(u, v)`
+  (`noParaBrisa`, `noVidroDeLado`, `noVidroDeTras`), e as colunas e calhas são
+  tubos pelas MESMAS funções nas beiras (`u = ±1`, `v = 1`) — o vidro e a
+  moldura não se desencontram.
+- **Nariz chato é o expoente da superelipse**: a planta usa 4,2 na frente e 2,7
+  atrás; com o nariz redondo, a grade boiava na frente das quinas.
+- **Para-lama solto é meio cano em arco** (`geoDoParalama`): a beira de dentro
+  entra 3 cm na lata, a de fora passa da roda, as pontas afinam para o cano
+  sumir na lata em vez de acabar em degrau; o de trás tem a SAIA (um nó a mais
+  por estação, descendo em pé). A face se acerta sozinha (o alto do arco aponta
+  para cima).
+- **O que vai no teto tapa quem dirige**: a mesa de ping pong nasceu no teto,
+  e de cima ela escondia o Jean-Luc e os óculos — foi para o bagageiro de trás.
+- **Bicho pequeno ao volante vai EM PÉ e um tico maior** (1,35×), em cima de um
+  caixote, com a cabeça passando da testeira do para-brisa: o que importa nele
+  (os óculos escuros) fica no ar, e não atrás de vidro tingido. O teste mede a
+  altura da cabeça contra a testeira.
+- **Acessório no rosto de bicho mora na cabeça dele, e o vão é medido**: os
+  óculos (`oculosEscuros()`) têm as lentes na frente das pupilas, acima do bico
+  e abaixo da aba da boina — o `scripts/doisCavalos.mjs` mede as três.
+- **A pose de veículo mora no `animar` do bicho**, como no Cookie e no Mano
+  (`aoVolante`, nascendo `null`, e toda escrita dentro do `if`). O objeto que
+  muda de mão (a raquete) é reapontado UMA vez (`raqueteNaJanela`), só no
+  bicho do carro.
+- **Bolinha que voa entre dois veículos** anda no referencial do carro (parado
+  na conversa) até um alvo dado no mundo, e PARA NO AR enquanto a hora certa
+  corre (câmera lenta), em vez de tentar casar o voo com o dedo de quem joga.
+- **Atalho de teste** `?doisCavalos=x,z,giro` (`&conversando`, `&raquete`,
+  `&andando=7`, `&vazio`).
+
+## A guarita do clube (`world/guaritaDoClube.ts`)
+
+A casa da Gina na portaria, refeita maior para a dupla trabalhar lá dentro
+(`docs/PORTARIA-DO-CLUBE.md`). O molde de PRÉDIO PEQUENO DE BALCÃO que se
+ENTRA:
+
+- **Kit de prédio de rua em miniatura**: parede extrudada com furo (o guichê,
+  as janelas) e a PORTA como recorte no contorno, o `contorno()` no plinto, no
+  friso e na cornija, pilastras de `rebocoComFrisos` 4 cm para fora das duas
+  faces (por dentro sobram no canto: as bancadas param antes delas).
+- **Telhado de quatro águas sem conta de ângulo**: cada água é UMA função
+  (`agua(L, r)`: a beira em `z = B`, a cumeeira em `z = 0`) girada e posta —
+  a da frente e a de trás são trapézios, as dos lados triângulos (`r = 0`), e
+  todas caem a mesma distância `B`. UV em metros na encosta (a telha em canvas
+  corre na fiada). Espigões e cumeeira em tubo, testeira e lambrequim por cima
+  das emendas.
+- **O que é de dentro tem que poder ser visto**: tudo acima do topo da parede
+  (telhado, forro, placa, catavento) mora no grupo `teto`, a folha da porta na
+  `dobradica`, e as medidas que o teste lê ficam em `userData.medidas`. Tirar
+  o teto NÃO basta para a isométrica: parede de 3,4 do lado da câmera esconde
+  ~3 m de piso — a sala sem teto se vê por uma câmera de cena por cima.
+- **A regra do balcão**: a beira do telhado sai 26 cm e o guichê vai até 3,0
+  (a cabeça da Gina chega a 2,9 e 39 cm para fora); o meio do guichê e do
+  balcão fica vazio, e as folhas de vidro correm para as quinas.
+- **Antes da `fundir()`, a `juntarPorCor`**: as miudezas de cor lisa viram uma
+  malha — 39 malhas e ~25 mil triângulos a guarita inteira.
+- Coplanar em peça arredondada (a soleira no plano do piso, as réguas da porta
+  no plano da de cima, o teclado atravessando o telefone) achado com a caixa
+  envolvente de cada malha no quadro da peça, com `?semFundir`.
+
+## A mesa da portaria e o elevador do balcão (`world/mesaDaPortaria.ts`, `world/visitantesDaPortaria.ts`)
+
+As peças da cena do minigame da Portaria (`scenes/portaria.ts`), vistas de
+PERTO, em primeira pessoa, por quem está sentado no meio da guarita:
+
+- **Mesa que se lê de perto**: papel de verdade em cima da mesa é
+  `pinturaAcesa` (sem luz) — o miolo da guarita fica na sombra do telhado, e
+  papel de ler não pode escurecer. UM `PapelPintado` POR TIPO de papel, a cena
+  inteira, redesenhado a cada visitante (`toon({mapa})` e `pinturaAcesa`
+  cacheiam pela textura e nunca soltam: textura nova por visitante vazaria um
+  material por vez).
+- **Deitado e de frente para quem senta**: quem olha o guichê (`+Z`) tem a
+  direita da tela no `−X`. O plano do papel deita com `rotation.set(−π/2, 0,
+  π)`: o alto da folha para o guichê, a esquerda da folha na esquerda da tela.
+- **O que mora embaixo do balcão de fora**: o tampo de madeira do balcão entra
+  30 cm pela parede (z de 1,45 a 1,75, a 1,18–1,25 de altura) — peça alta da
+  mesa (o carimbo, o calendário, a luminária) fica antes de `z = 1,4`.
+- **O carimbo que bate de verdade**: as etapas são pontos (casa, almofada,
+  papel, de volta) e a tinta entra no papel no quadro do contato
+  (`redesenhar` com o carimbo).
+- **Mesa 3D de VER, mesa em tela de TOCAR**: o `Apontador` não atira com o
+  jogador travado (`lockPlayer`), e a primeira pessoa trava o jogador na
+  cadeira — `w.clicavel` numa peça dessa cena nunca dispara. As ferramentas
+  são da mesa em tela (`ui/mesaDaPortaria.ts`); a mesa 3D só anima o que ela
+  manda.
+- **O ELEVADOR DO BALCÃO**: a guarita é de girafa (balcão a 1,25, a altura da
+  cabeça da dupla) e quase todo visitante é menor; o disco num pistão de três
+  gomos sobe cada um até o alto da cabeça chegar a 1,95
+  (`alturaDoElevador(modelo)` mede pela caixa das malhas). O `Bicho` não
+  escreve o próprio `y`, então a cena só copia a altura do disco nele.
+- **O elevador sobe pelo ROSTO, não pelo alto**: quem declara
+  `alturaDoRosto` (os visitantes novos) põe o meio da cara a 1,74; os outros,
+  o alto da caixa a 1,95 — com a caixa, o black power da Alpacina empurrava a
+  cara para baixo do balcão.
+
+## O carrinho de golfe da Gina (`world/carrinhoDeGolfeDaGina.ts`)
+
+O primeiro veículo novo do CLUBE (`docs/CARRINHO-DE-GOLFE-DA-GINA.md`), e o
+molde de veículo ABERTO dos lados com um bicho de PESCOÇO que não cabe em teto:
+
+- **O que passa pelo teto precisa de saída para o lado**: o toldo nasceu com um
+  furo oval no meio, e para o pescoço descer até a janela do Bebito ele teria
+  de atravessar a lona. Virou um RECORTE em meia-elipse aberto na beira (a
+  forma do toldo com o recorte no contorno, e não `hole`), com a gola de lona
+  em tubo dando a volta nele, e o lambrequim em dois pedaços, um de cada lado.
+- **Esticar até o vizinho é deitar o pescoço por baixo do teto**, e não por
+  cima: por cima, o pescoço ficava deitado na lona e a cabeça parava na beira.
+  O gomo de baixo deita, os outros descem de leve, e a cabeça sai pela lateral
+  aberta na altura da janela. O veículo ENCOSTA no Bebito na parada (a
+  conversa muda a faixa dele, devagar) e para um tico à frente: o alcance é
+  conta, e o teste mede a distância do carimbo até o selo.
+- **Cabeça em cadeia girada**: com o pescoço tombado 1,8 rad para o lado, girar
+  a cabeça em `XYZ` misturava tudo. No carrinho ela usa a ordem `ZYX` (levanta
+  o nariz, vira para a janela, desfaz o tombo), só dentro do `if` da pose.
+- **Bicho grande deitado num banco dobra as pernas**, em vez de sumir com elas
+  (o Renan perguntou: "e as perninhas dela?"): cada perna deita no comprimento,
+  encurtada, com o joelho na frente e o casco atrás à vista. E a pose mexe em
+  TODAS as malhas da perna (a perna, o joelho, o casco): a lista `patas` do
+  bicho só tinha a perna.
+- **Painel que conta o ofício**: rádio comunicador, garrafa térmica e a
+  prancheta de sócios em canvas — é o que diz "portaria" de perto.
+- **O presente que muda o Bebito**: a ficha ganhou uma vaga nova
+  (`paraBrisa`) e o carro ganhou `colarAdesivo` (cola a plaquinha do atlas no
+  encaixe na hora, sem remontar o carro). Ponto em vidro inclinado sai do
+  `porCima` da pele, e não do `naPonta` (que acha a cara em pé e caía no capô).
+- **Atalho de teste** `?golfe=x,z,giro` (`&conversando`, `&esticando`,
+  `&andando=7`, `&vazio`).
+
+## O conversível da Tia Liz e das irmãs (`world/conversivelDaTiaLiz.ts`)
+
+O primeiro carro da turma da ESCOLA (`docs/CARROS-DA-ESCOLA.md` §2), e o molde
+de carro ANTIGO com QUATRO bichos dentro:
+
+- **Carrão de rabo de peixe na pele de fatias**: a planta comprida
+  (superelipse 3,4 na frente, 3,0 atrás), o capô reto e longo, a cintura baixa
+  e a cabine aberta; os rabos de peixe são um perfil extrudado com bisel por
+  cima do para-lama, com a lanterna de foguete na ponta. Faixa pintada na
+  lateral (a lança amarela, a faixa de pano) é uma FITA ASSENTADA na pele
+  (`geoNaLateral`), e não plano reto.
+- **Bandeira em peça, e não em adesivo**: o arco das oito estrelas é de
+  estrelas extrudadas deitadas no capô, abrindo para o nariz (o arco certo é o
+  que se lê DE FRENTE para o carro); o vermelho entra como filete, e o azul e o
+  amarelo já são as cores do carro.
+- **Quatro bichos, quatro poses**: cada um pela ferramenta que ele já tinha —
+  a coelha sentada pelo `sentarEm` do `Bicho` (numa almofadinha, para enxergar
+  por cima da porta), as de trás em pé com o `torcer` delas, e a Tia Liz com
+  um campo novo que nasce desligado (`sentadaNoCarro`, as pernas para a frente)
+  e as patas no volante pelo `maoPara` dela (o alvo no referencial dela).
+- **Acessório na cabeça de outro bicho** (os óculos da Luna) vai pelo getter da
+  cabeça (`cabecaDaCoelha`), sem mexer no `animar` dela.
+- **O peso** é dos bichos (371 malhas com as quatro, 19 o carro vazio): os
+  articulados não se juntam.
+
+## A limusine conversível da Valentina (`world/limusineDaValentina.ts`)
+
+O carro da flamingo do marketing (`docs/CARROS-DA-ESCOLA.md` §4), e o molde de carro COMPRIDO, sem teto, com um
+motorista e uma passageira que não se olham:
+
+- **A pele do conversível esticada**: as mesmas funções de fatia, com mais estações (110) e a cabine aberta de ponta a
+  ponta (`se(t, 8)` na planta do buraco: quase retangular). Comprida de propósito (6,3 m): ela ocupa duas vagas.
+- **Duas cores dos anos 50 é FITA na lateral**: a lança perolada (larga atrás, afinando para a frente, como uma pena)
+  e o rosa mais fundo de baixo dela, as duas pela `geoNaLateral` com a altura em FUNÇÃO de `z`. Nas pontas
+  extremas do carro a conta da normal da pele dá `NaN` (a lataria já fechou): a fita para antes. Uma caixa envolvente
+  `null` no teste é vértice `NaN` — ache a malha procurando `!Number.isFinite` nas posições.
+- **Rosa de bicho rosa**: o carro é um rosa mais FUNDO e mais frio que as penas dela, e o lugar dela é de couro
+  branco-pérola; o blazer azul do look termina de separar. Pele parecida contra pele parecida some.
+- **Flamingo sentado precisa de onde pôr as pernas**: a pose de sentar dela estica a coxa para a frente na altura
+  do assento (a da carteira da Sala 1), e num sofá de carro os joelhos ficavam 30 cm no ar. Um PUFE capitonê na frente
+  dela, na altura do assento, resolveu (foto de lado, ao longo do sofá, na altura do assento — de frente, a coxa
+  em escorço parece perna pendurada).
+- **Quem conversa vira para o Bebito**: a cabine é aberta, então a passageira vai no sofá do lado de LÁ, virada para
+  o `−X` (`sentarEm(x, z, −π/2, assento)`) — de frente para a câmera do encontro, sem nada no meio.
+- **Bicho que não cabe sentado**: o pavão vai num BANCO ALTO (pé de cromo e almofada, o volante alto junto) e a
+  cauda, que atravessaria o encosto e a divisória, pende PELA PORTA do lado do Bebito, por cima dela. O teste amostra
+  cada pena da cauda (lote: `getMatrixAt` e a ponta em `(0, 0, t)`) e mede a altura dela sobre a porta, quanto passa
+  da lataria e que não encosta no chão.
+- **Faces no mesmo plano em quina arredondada** (o `zfighting.mjs` não mede `quina()`): encosto com o mesmo
+  comprimento ou largura do assento põe as pontas no mesmo plano; tapete de 1 mm sobre o piso; friso centrado na
+  beira do tapete (e não com a face na beira). Diferença de 4 cm resolve.
+- **Atalho de teste** `?limusine=x,z,giro` (`&conversando`, `&andando=7`, `&vazio`) e `?pavao=x,z,giro` (`&leque`,
+  `&volante`).
+
+## A estrada (`world/estrada.ts`)
+
+As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena
+entrega `naPista(s, l, y)` e as peças longas são costuradas por ela:
+
+- **`trechoDeEstrada(naPista, s0, s1)`**: o asfalto de guia a guia, as duas
+  calçadas um degrau acima (`ALTO_DA_CALCADA`), o espelho da guia e a pintura
+  (as linhas de bordo e o tracejado, juntados numa malha de decalque) — três
+  malhas por trecho, o UV em metros (`l`, `s`), então o asfalto e a pedrinha
+  ficam do tamanho de sempre. O espelho da guia olha para a pista: da guia da
+  direita para a esquerda e vice-versa (com a ordem dos triângulos trocada).
+- **`faixaDePedestres(naPista, s)`**: as barras e a linha de retenção
+  (`LINHA_DE_PARADA` antes do meio), uma malha de decalque.
+- **`placaDeTransito(desenho)`**: o losango amarelo de advertência num poste,
+  com o desenho em canvas (patos, tartaruga, lombada, obra, semáforo,
+  buracos) — o quadrado é pendurado de ponta e o desenho é feito girado 45°
+  no canvas para ficar em pé. **`placaDeDestino(texto, distância)`**: a verde.
+- **`Cones`**: os cones de uma viagem inteira num lote, a cor nos vértices
+  (laranja, a faixa branca, a base grafite). O que o carro derruba voa num
+  arco, rodando, quica e fica deitado.
+- **`cavaleteDeObra()`**: as tábuas listradas (canvas com o UV em metros) e a
+  luz âmbar em DUAS malhas (`luz-acesa`, `luz-apagada`) que a cena alterna.
+- **`lombada()`** (o perfil extrudado com as listras), **`buraco()`** e
+  **`poca()`** (contornos tortos em decalque, a beira por baixo e o fundo por
+  cima), **`Respingos`** (o lote de gotas da poça e da poeira do buraco).
+- **`Semaforo`**: poste, braço e a caixa com três lentes, cada uma com a
+  malha acesa e a apagada (`acender(cor)` troca qual aparece); a pala por
+  cima de cada lente.
+- **`Coracoes`**: o coração de pegar, gordinho (forma extrudada com bisel),
+  num lote; giram e flutuam só os que estão perto do carro, e o pego cresce
+  e some.
+- **`rodaAoLonge()`**: a silhueta leve da roda gigante do Villa Lobos para o
+  fim da estrada (o aro duplo, os raios, as gôndolas brancas, os cavaletes),
+  com o `aro` girando — a de verdade tem centenas de milhares de triângulos.
+
+## O estacionamento (`world/estacionamento.ts`)
+
+O estacionamento do Villa Lobos, onde o Bebito Mobile para (montado pela
+camada `eventos/bebitoMobile/noParque.ts`):
+
+- **`carroEstacionado(cor)`**: o carro dos OUTROS — um hatch pequeno de quina
+  macia (a caixa de baixo, o capô, a cabine de vidro com as colunas, o teto,
+  rodas de calota, faróis redondos, lanternas e para-choques). É a "versão
+  leve" de carro para FUNDO: o Bebito Mobile tem ~35 mil triângulos e uma
+  cabine de verdade; este tem poucos pedaços e entra no `fundirComoFundo` do
+  lote. Menor que o Bebito (que é uma vanzinha), em cores de carrinho de
+  brinquedo (`P.carro*`) que não brigam com o azul-céu dele.
+- **`Cancela`**: a caixa com a faixa amarela e o braço listrado (canvas com o
+  UV em metros), no grupo `braco-da-cancela`, que sobe sozinho com
+  `update(dt, perto)`.
+- **`totemDePagamento()`**, **`placaDeEstacionamento()`** (o "P" azul) e
+  **`plaquinhaDaVaga()`** (a rosa, "BEBITO MOBILE", com o coração), e o
+  **`geoCoracaoNoChao()`** pintado na vaga.
+- A pintura do lote (divisas, setas, zebra) é da camada: decalques com a
+  geometria juntada (`mergeGeometries`) — retângulos deitados no quadro do
+  `w.patch` (o `y` dele é o `−z` do mundo). Forma espelhada para virar uma
+  seta precisa do índice refeito ao contrário, senão a face olha para baixo.
 
 ## O kit do Halloween (`world/halloween/`)
 
@@ -1283,6 +1881,148 @@ patas (a coreografia mora em `scenes/cozinhaDaLiz.ts`):
 - A tábua e o refratário passam pela `fundir()` na cena (o legume, o pedaço
   e os riscos têm nome e ficam soltos): a vista da cantina caiu de 395 para
   333 desenhos por quadro, a mesma imagem.
+
+## O quintal decorado (`world/quintal.ts`, `world/decoracoesDoQuintal.ts`)
+
+A etapa 1 do `docs/QUINTAL.md`. Peças fixas da cena, no kit `world/quintal.ts`:
+
+- `caixaDeEncomenda(tamanho)` — a caixa do Papita Delivery: papelão de
+  quina macia, a junta das abas, a fita adesiva descendo pelas pontas e a
+  ETIQUETA em canvas (a batatinha sorrindo e o nome), na frente e no lado
+  `+X`. Mora AO LADO DO CAMINHO de lajes, a 2 m do muro: ao pé do pilar o
+  muro a escondia (a régua da câmera: 1,35 m de muro escondem 40 cm de caixa
+  até um metro e meio atrás dele).
+- `painelDeFerramentas()` — a placa de furinhos (eucatex) em canvas com
+  moldura de madeira com veio, a pá e a pazinha de lâmina extrudada, o
+  ancinho de dentes inclinados, a tesoura de poda abertinha, os ganchos, e a
+  prateleira de mão-francesa com o regador de lata torneado, os vasinhos de
+  barro empilhados e o barbante. Costas em `z = 0`. (A mão-francesa já
+  serrilhou: o braço é mais estreito que o montante, senão as duas faces de
+  lado coincidem — o `zfighting.mjs` mede a peça.)
+
+E os móveis do Papita (enfeites, pelo decorador — contrato da skill de
+enfeite), em `world/decoracoesDoQuintal.ts`:
+
+- `mesinhaBistro()` — o tampo e a coluna são TORNO (`LatheGeometry`: aba,
+  bojo, lábio, os anéis da coluna), os três pés em S e o arco do encosto são
+  TUBO por curva (`ferro()`), e o encosto tem duas volutas espirais; a
+  almofadinha é uma esfera achatada de trama;
+- `espreguicadeira()` — ripas de quina com veio (`uvEmMetrosPorTriangulo`),
+  o encosto inclinado num grupo próprio, as rodinhas na cabeceira, e o
+  colchonete com a listra (uma quina um fio maior por cima, sem face comum);
+- `guardaSol()` — a lona é um torno de perfil curvo, em gomos de cor
+  alternada POR VÉRTICE (`toNonIndexed` e a cor pelo ângulo do triângulo),
+  numa malha só; o babado é uma meia-lua por gomo; as varetas são tubos.
+
+### Os móveis de usar (etapa 4, `world/moveisDeUsar.ts`)
+
+- **A piscininha** (`piscininhaDePlastico`): o anel inflável é um
+  `TorusGeometry` deitado, `toNonIndexed` e pintado em gomos pela cor do
+  vértice (o ângulo do centro de cada triângulo; 48 segmentos / 12 gomos casa
+  com a emenda); dois anéis empilhados (o de cima desce `topo − tubo`, e os dois
+  se cruzam: nenhuma face coplanar). A água é um disco translúcido (não entra na
+  `fundir()`), com a textura em canvas correndo pelo `offset`. As marolinhas são
+  um `InstancedMesh` de oito anéis (`RingGeometry` deitado) a 1,8 cm acima da
+  água, escala zero até alguém chutar. Quem senta fica com o quadril 0,47
+  abaixo do topo do tubo (`setSitting(true, 'beirada')`).
+- **O fogo de chão** (`fogueiraDeChao`): pedras em dois andares num lote com cor
+  por cópia; toras como cilindros apoiados (a ponta de cima no meio),
+  orientados por `setFromUnitVectors`; o fogo é `flat(0xffffff)` com
+  `instanceColor` (material sem luz multiplica a cor por cópia: um desenho para
+  três cores — o `toon` com `glow` NÃO serve, o emissivo é uma cor só);
+  faíscas num lote que nasce e some pelo tempo; halo e poça pintados (a poça
+  laranja em cima do verde da grama sai LIMÃO: força baixa, 0,3).
+
+- O que BALANÇA é um grupo com NOME dentro da peça (`balanco` no pivô da
+  viga, `rede` na linha dos ganchos): a `fundir()` junta o que está dentro e
+  o deixa existir, e o uso embala o grupo e leva a âncora dos dois junto.
+- A lona da rede é um `PlaneGeometry` dobrado nos vértices: pende no meio
+  (seno no comprimento), fecha nas bordas (a rede abraça), junta nos punhos,
+  e as listras vão pela COR DO VÉRTICE.
+- Deitados numa peça que não está alinhada com o mundo: uma âncora girada no
+  `y` (a cabeça para onde a peça quer) e, dentro dela, a de deitar com
+  `rotation.x = -PI/2` — a mesma conta da cama do quarto.
+- A casinha do Pelusa: a parede da frente é uma `Shape` com a porta em arco
+  como FURO (`holes`), extrudada.
+
+### As peças do alto (etapa 3, `world/decoracoesDeParede.ts`)
+
+- `samambaia(n, comprido, semente, pendente)`: o lote de folhas — uma fita de
+  contorno em dentinhos, ARQUEADA nos vértices (sobe e cai), girada em roda;
+  serve ao vaso de parede e ao macramê.
+- `catenaria(a, b)`: os pontos entre duas pontas com a barriga proporcional
+  ao vão; o varal, as bandeirinhas e o cordão de lanternas andam por ela
+  (lâmpada e bandeirinha em lote, um halo a cada três lâmpadas).
+- A treliça recorta cada ripa diagonal pelo quadro (a conta da reta contra o
+  retângulo), e não por escala — a ripa escalada passava da moldura.
+- Meio vaso de parede: `LatheGeometry` de meia volta (`phiLength = PI`) com as
+  costas num plano.
+
+### Os caminhos e os pisos do quintal (etapa 2)
+
+- `caminhoDoQuintal(jeito, trechos)` (`world/caminhosDoQuintal.ts`): o
+  caminho por TRECHOS retos em `x` ou em `z`, já no lugar; a cena junta como
+  fundo e troca inteiro. As lajes reproduzem o caminho de nascença (82 cm de
+  1,03 em 1,03); as pedras são `ExtrudeGeometry` de um círculo torto com
+  bisel; o tijolinho e a pedra portuguesa são DECALQUE com a textura em
+  canvas e a guia em pé (`uvDeParede`); os dormentes, quina com veio no
+  pedrisco. `amostraDeCaminho(jeito)` é o retrato do cartão.
+- **Tijolinho em canvas**: a primeira versão era espinha de peixe e de perto
+  virou xadrez torto. O que lê é FIADA desencontrada com a junta marcada
+  (`tijolosEmFiada`).
+- Os pisos (`world/pisosDoQuintal.ts`): `decalque(pontos, mat)` faz o chão de
+  qualquer contorno (UV em metros, `renderOrder` 4), `contornoTorto` a beira
+  mole de canteiro, `retanguloRedondo` a de deck e tapete, e `borda` espalha
+  seixo ou tijolo pelo contorno (a serrilha do canteiro de terra é o tijolo
+  de quina deitado em 0,6 rad).
+
+## A escola por fora (`world/escolaPorFora.ts`, `world/patioDaEscola.ts`)
+
+O prédio de tijolinho da foto do Renan ("escola chique dos Estados Unidos,
+de filme") e as peças do pátio (`docs/ESCOLA-PATIO.md`). O molde de PRÉDIO
+GRANDE de vários corpos:
+
+- **Rotunda octogonal**: oito quadros (o meio de cada face em `APOTEMA`,
+  girado `k·π/4`), e as molduras com o `contornoPoligonal()`
+  (`world/molduras.ts`, o `contorno()` para qualquer polígono, com a quina em
+  meia-esquadria). A cúpula e a lanterninha são `LatheGeometry` de 8 gomos com
+  `phiStart = π/8`, para a quina do torno cair na quina da rotunda, e sem
+  índice, para sair facetada. As costuras do metal são um lote de caixas em
+  pé na chapa (base destra: `x = dir × normal`, senão o quatérnio sai torto).
+- **Ala que encosta na rotunda vai até o MEIO**: começando na face da
+  rotunda, sobrava um buraco atrás dela, visto de cima.
+- **A janela é uma função** que devolve o furo e põe no lote as barras do
+  caixilho (1 cm dentro do tijolo), o peitoril (1 cm abaixo do chão do vão) e
+  o lintel com a chave (1 cm acima do teto): rentes, eles brigam com o vão. O
+  vidro de todas é uma malha opaca, com o reflexo pintado nos vértices.
+- **Lote de caixa de 1 m sem índice**: com três lotes usando a mesma
+  `BoxGeometry` na origem, o `zfighting.mjs` acusa 18 pares que não existem
+  (ele mede a geometria, e não as cópias).
+- **Colisor de octógono é uma caixa por face**: o círculo deixava as quinas
+  do plinto de fora, e o `scripts/patio.mjs` mede vértice por vértice.
+- **A placa por trás do emoldurado**: o letreiro do portal nasceu 5 mm
+  dentro da pedra que o emoldura e sumiu. Plano de texto vai na frente da
+  face da caixa dele.
+- **A bandeira** (`MastroComBandeira`): um plano 16 × 8 refeito a cada quadro,
+  com a onda crescendo do mastro para a ponta e a normal recalculada.
+- **O banco do pátio** é o de praça com o ferro bordô: `w.banco(…, cor,
+  'praca', corFerro)`.
+- **A portaria** (`world/portariaDaEscola.ts`): portão de ferro batido (o
+  arco em dois tubos, as volutas em espiral `voluta()`, a placa e o
+  medalhão, as folhas com nome e a dobradiça no pilar, abertas por
+  `rotation.y = −s · abertura`), a GRADE (mureta, pilares e as lanças em
+  LOTE: centenas de barras em dois desenhos) e a guarita octogonal (o mesmo
+  molde da rotunda em miniatura, com vidro transparente para se ver a mesa).
+  A mureta afunda 2 cm e as travessas do caixilho são um tico mais rasas que
+  os montantes: o `zfighting.mjs` pegou os dois.
+- **O estacionamento** (`world/estacionamentoDaEscola.ts`): o poste alto com
+  as bandeirolas (o pano já recortado em V por `ShapeGeometry`, com o UV
+  refeito), a ilha elevada com guia, os batentes em lote, a seta pintada (a
+  forma espelhada precisa do índice invertido) e o símbolo da vaga
+  acessível. A pintura das vagas é UM decalque de riscos juntados.
+- **A junção pedra-grama** é a conta do pavimento (`uniaoSuave` + `mancha`)
+  pintada duas vezes — a guia 16 cm maior por baixo, o concreto por cima — e
+  a `BeiraDoCaminho` na linha de fora da guia.
 
 ## Depois de criar
 

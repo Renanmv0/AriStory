@@ -33,6 +33,7 @@ export type SomNome =
   | 'sentar'
   | 'miado'
   | 'latido'
+  | 'uivo'
   | 'apito'
   | 'gluglu'
   | 'cantarolar'
@@ -125,9 +126,24 @@ export type SomNome =
   | 'motorDoOnibus'
   | 'freioDoOnibus'
   | 'portaDoOnibus'
+  | 'buzinaDoBebito'
+  | 'motorDoBebito'
+  | 'portaDoBebito'
+  | 'roncoNoCarro'
+  | 'cantarolarKuduro'
+  | 'portaoEletrico'
+  | 'freadaDoBebito'
   | 'luzesAcendendo'
   | 'surpresa'
   | 'fotoFlash'
+  | 'musiquinhaDoSorvete'
+  | 'cornetaDoCookie'
+  | 'buzinaDoJeanLuc'
+  | 'carimbo'
+  | 'buzinaDaTiaLiz'
+  | 'tocaAqui'
+  | 'esfrega'
+  | 'buzinaDaLimusine'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -468,6 +484,60 @@ export const EFEITOS: Record<SomNome, Receita> = {
   // do miado: lá a curva é longa e escorregada, aqui cada uma tem 0,1 s e cai
   // rápido. Latido comprido vira uivo. O `n` alterna o grau da pentatônica,
   // senão o cachorro late a mesma nota a vida inteira.
+  /**
+   * O UIVO DO ROCCO, o lobo capitão dos Dogões — um "auuuu" curto e simpático, não de filme de terror.
+   *
+   * Uivo não cabe no `tom()`: ele SUSTENTA (o `tom` decai sozinho, que é a cara de marimba). Então é montado à mão:
+   * uma serra abafada (a garganta) e um seno uma oitava abaixo (o peito), com a nota subindo do "a" até o "uuu",
+   * segurando um tico e caindo no fim; um vibrato lento (um LFO na frequência) é o que faz soar bicho e não sirene.
+   * O "a" do começo é um sopro curtinho. O ganho nasce em quase zero, como todo nó montado à mão (ver a skill de som).
+   */
+  uivo: ({ ctx, destino, t, n }) => {
+    const base = nota(DO - 12 + PENTA[n % 2 === 0 ? 3 : 4]);
+    const DUR = 1.05;
+    chiado(ctx, destino, { quando: t, dur: 0.09, vol: 0.03, freq: 1300, glide: 800, q: 1 });
+    const ganho = ctx.createGain();
+    ganho.gain.value = 0.0001;
+    ganho.gain.setValueAtTime(0.0001, t);
+    ganho.gain.exponentialRampToValueAtTime(0.045, t + 0.14);
+    ganho.gain.setValueAtTime(0.045, t + 0.5);
+    // (o "uuu" caindo tem que se OUVIR: desce em reta até quase o fim, e só ali apaga de vez)
+    ganho.gain.linearRampToValueAtTime(0.012, t + 0.9);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, t + DUR);
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = 'lowpass';
+    filtro.frequency.setValueAtTime(900, t);
+    filtro.frequency.linearRampToValueAtTime(1500, t + 0.3);
+    filtro.frequency.linearRampToValueAtTime(800, t + DUR);
+    ganho.connect(filtro);
+    filtro.connect(destino);
+    // o vibrato: ~5,5 Hz, mais fundo no meio do uivo
+    const lfo = ctx.createOscillator();
+    lfo.frequency.setValueAtTime(5.5, t);
+    const fundura = ctx.createGain();
+    fundura.gain.setValueAtTime(0, t);
+    fundura.gain.linearRampToValueAtTime(base * 0.035, t + 0.4);
+    lfo.connect(fundura);
+    for (const [tipo, mult, vol] of [['sawtooth', 1, 1], ['sine', 0.5, 1.4]] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = tipo;
+      const f = osc.frequency;
+      f.setValueAtTime(base * 0.62 * mult, t);
+      f.exponentialRampToValueAtTime(base * mult, t + 0.24);
+      f.linearRampToValueAtTime(base * 1.04 * mult, t + 0.55);
+      f.exponentialRampToValueAtTime(base * 0.66 * mult, t + DUR);
+      fundura.connect(f);
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      osc.connect(g);
+      g.connect(ganho);
+      osc.start(t);
+      osc.stop(t + DUR + 0.05);
+    }
+    lfo.start(t);
+    lfo.stop(t + DUR + 0.05);
+  },
+
   latido: ({ ctx, destino, t, n }) => {
     const base = nota(DO + PENTA[n % 2 === 0 ? 0 : 1] - 12);
     for (const [i, atraso] of [0, 0.14].entries()) {
@@ -1236,6 +1306,81 @@ export const EFEITOS: Record<SomNome, Receita> = {
     tom(ctx, destino, { freq: abre ? 240 : 200, glide: 110, quando: t + 0.3, dur: 0.08, vol: 0.07, ataque: 0.003, tipo: 'square', abafo: 700 });
   },
 
+  // --------------------------------------------------------- o Bebito Mobile
+  /*
+   * A BUZINA do carrinho: o "bi-bi!" agudo e alegre de carro pequeno (o
+   * ônibus faz "fon-fon", grave). Duas notas de terça uma oitava e meia
+   * acima das do ônibus, em quadrado abafado (a cornetinha), curtas e
+   * iguais — duas buzinadinhas de quem chegou.
+   */
+  buzinaDoBebito: ({ ctx, destino, t }) => {
+    for (const atraso of [0, 0.19]) {
+      for (const grau of [4, 7]) {
+        tom(ctx, destino, { freq: nota(DO + grau), quando: t + atraso, dur: 0.12, vol: 0.05, ataque: 0.008, tipo: 'square', abafo: 2200, detune: grau === 4 ? -5 : 5 });
+        tom(ctx, destino, { freq: nota(DO + grau) * 2, quando: t + atraso, dur: 0.12, vol: 0.012, ataque: 0.008, tipo: 'triangle' });
+      }
+    }
+  },
+
+  // o motorzinho: um "pó-pó-pó" macio de carro pequeno (três estalinhos graves por toque; a cena toca em fila)
+  motorDoBebito: ({ ctx, destino, t, n }) => {
+    const f = n % 2 ? 98 : 92;
+    for (let i = 0; i < 3; i++) {
+      tom(ctx, destino, { freq: f, glide: f * 0.78, quando: t + i * 0.085, dur: 0.075, vol: 0.06, ataque: 0.006, tipo: 'triangle', abafo: 420 });
+    }
+    chiado(ctx, destino, { quando: t, dur: 0.26, vol: 0.03, freq: 240, glide: 170, q: 0.8, tipo: 'lowpass', sustenta: 0.5 });
+  },
+
+  // a freada do carrinho: o pneu cantando curtinho (dois apitos de borracha descendo) e o tranco no fim
+  freadaDoBebito: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 1150, glide: 760, quando: t, dur: 0.22, vol: 0.05, ataque: 0.01, tipo: 'sawtooth', abafo: 2600 });
+    tom(ctx, destino, { freq: 1420, glide: 900, quando: t + 0.02, dur: 0.2, vol: 0.03, ataque: 0.01, tipo: 'square', abafo: 2400 });
+    chiado(ctx, destino, { quando: t, dur: 0.26, vol: 0.07, freq: 1700, glide: 900, q: 1.2, sustenta: 0.5 });
+    tom(ctx, destino, { freq: 120, glide: 70, quando: t + 0.24, dur: 0.1, vol: 0.07, ataque: 0.004, tipo: 'sine' });
+  },
+
+  // o portão de correr da garagem: o "clac" do contator e o zumbido do motorzinho, com a roldana no trilho por cima
+  portaoEletrico: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.03, vol: 0.16, freq: 1900, q: 2 });
+    tom(ctx, destino, { freq: nota(DO - 24), glide: nota(DO - 22), quando: t + 0.04, dur: 0.75, vol: 0.05, ataque: 0.08, tipo: 'sawtooth', abafo: 520 });
+    tom(ctx, destino, { freq: nota(DO - 12), quando: t + 0.04, dur: 0.7, vol: 0.016, ataque: 0.1, tipo: 'square', abafo: 900 });
+    chiado(ctx, destino, { quando: t + 0.06, dur: 0.7, vol: 0.03, freq: 700, glide: 900, sustenta: 0.6 });
+  },
+
+  // a porta do carro: o "clec" do trinco e o "tum" abafado de lata (`n` par abre, ímpar bate)
+  portaDoBebito: ({ ctx, destino, t, n }) => {
+    const abre = n % 2 === 0;
+    chiado(ctx, destino, { quando: t, dur: 0.035, vol: 0.2, freq: 2600, q: 2.2 });
+    tom(ctx, destino, { freq: abre ? 190 : 140, glide: abre ? 150 : 82, quando: t + (abre ? 0.03 : 0.05), dur: abre ? 0.08 : 0.15, vol: abre ? 0.09 : 0.11, ataque: 0.004, tipo: 'sine' });
+  },
+
+  // o ronco baixinho de quem cochila no carro: um ciclo de respiração — puxa o ar (um chiado grave que sobe, com
+  // o motorzinho da garganta embaixo) e solta devagar (desce). Dois por ronco, o segundo um tico mais fraco
+  roncoNoCarro: ({ ctx, destino, t, n }) => {
+    const fraco = n % 2 === 0 ? 1 : 0.8;
+    chiado(ctx, destino, { quando: t, dur: 0.95, vol: 0.05 * fraco, freq: 330, glide: 520, q: 0.9, tipo: 'lowpass', sustenta: 0.5 });
+    tom(ctx, destino, { freq: 52, glide: 66, quando: t, dur: 0.95, vol: 0.035 * fraco, ataque: 0.25, tipo: 'sawtooth', abafo: 260 });
+    chiado(ctx, destino, { quando: t + 1.15, dur: 1.05, vol: 0.045 * fraco, freq: 300, glide: 160, q: 0.9, tipo: 'lowpass', sustenta: 0.4 });
+    tom(ctx, destino, { freq: 66, glide: 42, quando: t + 1.15, dur: 1.05, vol: 0.03 * fraco, ataque: 0.2, tipo: 'sawtooth', abafo: 240 });
+  },
+
+  // o Ari cantarolando "Dança Kuduro" no banco do passageiro: não é a música — é como ela soa na cabeça de quem canta
+  // baixinho no carro: um "lá-lá-lá" sincopado em oito notas, na pentatônica menor, com o suingue da batida (130 bpm)
+  cantarolarKuduro: ({ ctx, destino, t }) => {
+    const passo = 60 / 130 / 2;
+    const notas: Array<[number, number, number]> = [
+      [0, 0, 0.7], [1, 0, 0.45], [3, 3, 0.7], [4, 5, 0.45], [5.5, 3, 0.45], [6, 0, 0.8], [8, -2, 0.45], [9, 0, 0.9],
+    ];
+    for (const [pos, grau, dur] of notas) {
+      const quando = t + pos * passo;
+      const f = nota(57 + grau);
+      // a vogal: uma onda macia com o filtro abrindo (o "lá"), e um chiadinho de ar por cima
+      tom(ctx, destino, { freq: f, glide: f * 1.012, quando, dur: dur * 0.5, vol: 0.05, ataque: 0.03, tipo: 'triangle', abafo: 1500 });
+      tom(ctx, destino, { freq: f * 2, quando, dur: dur * 0.3, vol: 0.012, ataque: 0.03, tipo: 'sine' });
+      chiado(ctx, destino, { quando, dur: 0.08, vol: 0.012, freq: 3200, q: 1.5 });
+    }
+  },
+
   // ------------------------------------------- a festa surpresa (o salão da abóbora)
   // as luzes acendendo no escuro: o "tec" do interruptor e um arpejo de vidro subindo,
   // uma nota por fio de luzinha que pega
@@ -1264,6 +1409,123 @@ export const EFEITOS: Record<SomNome, Receita> = {
   },
 
   // a foto de todos: o "clic-clac" do obturador e o zumbido do flash carregando, subindo
+  // ------------------------------------------------- a Kombi de sorvete do Mano
+  // A MUSIQUINHA DE SORVETEIRO, de caixinha de música: uma frase alegre na
+  // pentatônica (sobe, dá a voltinha e desce para a tônica), em colcheias com
+  // uma nota comprida no fim de cada metade. O timbre é o "plim" de caixinha
+  // (seno com o harmônico de oitava curtinho), agudo e baixinho: é um carro
+  // passando, não a trilha. Toca quando a Kombi chega e quando ela vai embora.
+  musiquinhaDoSorvete: ({ ctx, destino, t }) => {
+    const passo = 0.15;
+    const frase: Array<[number, number]> = [
+      [0, 1], [4, 1], [7, 1], [12, 1], [9, 1], [7, 1], [4, 2],
+      [2, 1], [4, 1], [7, 1], [9, 1], [7, 1], [4, 1], [0, 3],
+    ];
+    let quando = t;
+    for (const [grau, dura] of frase) {
+      const f = nota(DO + 7 + grau);
+      tom(ctx, destino, { freq: f, quando, dur: 0.22 + dura * 0.1, vol: 0.05, ataque: 0.004, tipo: 'sine' });
+      tom(ctx, destino, { freq: f * 2, quando, dur: 0.1, vol: 0.016, ataque: 0.003, tipo: 'sine' });
+      quando += passo * dura;
+    }
+  },
+
+  /**
+   * A CORNETA DO CARRINHO DO COOKIE (`world/carrinhoDoCookie.ts`): a buzina de
+   * pera que a tromba dele aperta — "fon-FON", duas notas de palhacinho, a
+   * segunda mais alta e mais comprida. Cada uma é um quadrado abafado que cai
+   * um tico de tom no fim (a pera murchando), com o sopro de ar por baixo.
+   */
+  cornetaDoCookie: ({ ctx, destino, t }) => {
+    for (const [atraso, grau, dur] of [[0, 4, 0.13], [0.2, 7, 0.22]] as const) {
+      const f = nota(DO - 12 + grau);
+      tom(ctx, destino, { freq: f * 1.04, glide: f * 0.94, quando: t + atraso, dur, vol: 0.062, ataque: 0.012, tipo: 'square', abafo: 1500 });
+      tom(ctx, destino, { freq: f * 2.08, glide: f * 1.88, quando: t + atraso, dur: dur * 0.8, vol: 0.018, ataque: 0.012, tipo: 'triangle' });
+      chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.9, vol: 0.03, freq: 900, glide: 600, q: 1.2 });
+    }
+  },
+
+  /**
+   * A buzina do 2CV do Jean-Luc: o "pin-pon" das sirenes francesas, em duas
+   * notas da pentatônica (lá e mi, descendo), fanhoso e de lata — um quadrado
+   * abafado com o dente-de-serra baixinho uma oitava acima (a lata) e um
+   * chiadinho de ar. Não é sirene: é curto, uma vez só.
+   */
+  buzinaDoJeanLuc: ({ ctx, destino, t }) => {
+    for (const [atraso, grau, dur] of [[0, 9, 0.17], [0.21, 4, 0.24]] as const) {
+      const f = nota(DO - 12 + grau);
+      tom(ctx, destino, { freq: f, glide: f * 0.985, quando: t + atraso, dur, vol: 0.056, ataque: 0.01, tipo: 'square', abafo: 1900 });
+      tom(ctx, destino, { freq: f * 2, glide: f * 1.97, quando: t + atraso, dur: dur * 0.85, vol: 0.016, ataque: 0.01, tipo: 'sawtooth', abafo: 2600 });
+      chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.7, vol: 0.02, freq: 1300, glide: 900, q: 1.4 });
+    }
+  },
+
+  /**
+   * O carimbo da Gina no vidro: o "tum" grave e abafado da borracha batendo,
+   * o "tec" seco do cabo de madeira por cima e um plim de aprovado no fim,
+   * subindo na pentatônica.
+   */
+  carimbo: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO - 24), glide: nota(DO - 31), quando: t, dur: 0.12, vol: 0.12, ataque: 0.004, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.05, vol: 0.07, freq: 1800, glide: 700, q: 1.6 });
+    tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.006, dur: 0.035, vol: 0.03, ataque: 0.002, tipo: 'square', abafo: 2200 });
+    tom(ctx, destino, { freq: nota(DO + 12), quando: t + 0.2, dur: 0.12, vol: 0.05, ataque: 0.01, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO + 16), quando: t + 0.29, dur: 0.18, vol: 0.05, ataque: 0.01, tipo: 'triangle' });
+  },
+
+  /**
+   * A buzina do conversível da Tia Liz: de carrão antigo, em três notas
+   * subindo na pentatônica (dó, mi, sol), redonda — um dente-de-serra bem
+   * abafado com o seno uma oitava abaixo (o "fom" grave de buzina de carro
+   * grande) —, e a última nota mais comprida, de festa.
+   */
+  buzinaDaTiaLiz: ({ ctx, destino, t }) => {
+    for (const [atraso, grau, dur] of [[0, 0, 0.11], [0.13, 4, 0.11], [0.26, 7, 0.26]] as const) {
+      const f = nota(DO - 12 + grau);
+      tom(ctx, destino, { freq: f, glide: f * 0.99, quando: t + atraso, dur, vol: 0.05, ataque: 0.01, tipo: 'sawtooth', abafo: 1400 });
+      tom(ctx, destino, { freq: f / 2, quando: t + atraso, dur, vol: 0.04, ataque: 0.01, tipo: 'sine' });
+    }
+  },
+
+  /**
+   * O TOCA AQUI do Flynn pela janela: o "pá!" de duas palmas se encontrando
+   * (um chiado curtíssimo e aberto, com o grave do impacto por baixo) e um
+   * "plim" de duas notas subindo (sol e dó), de comemoração.
+   */
+  /**
+   * O Gatito esfregando o ônibus: a esponja indo e voltando na lataria ("fsh-fsh", dois chiados de pano molhado,
+   * o segundo mais curto) e, de vez em quando, o rangidinho da fibra no metal (`n` par) — o "nhec" agudo e curto
+   * de quem esfrega com vontade. É fundo: baixinho, tocado a cada ~0,9 s com a dupla perto.
+   */
+  esfrega: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.16, vol: 0.047, freq: 1500, glide: 2300, q: 0.7, sustenta: 0.4 });
+    chiado(ctx, destino, { quando: t + 0.2, dur: 0.12, vol: 0.036, freq: 2100, glide: 1400, q: 0.7, sustenta: 0.4 });
+    if (n % 2 === 0) tom(ctx, destino, { freq: nota(DO + 28), glide: nota(DO + 31), quando: t + 0.08, dur: 0.06, vol: 0.012, ataque: 0.006, tipo: 'triangle' });
+  },
+
+  tocaAqui: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.045, vol: 0.13, freq: 2300, glide: 1200, q: 0.8 });
+    chiado(ctx, destino, { quando: t + 0.004, dur: 0.03, vol: 0.06, freq: 4200, q: 1.4 });
+    tom(ctx, destino, { freq: nota(DO - 17), glide: nota(DO - 24), quando: t, dur: 0.07, vol: 0.07, ataque: 0.003, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.09, dur: 0.1, vol: 0.045, ataque: 0.008, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO + 12), quando: t + 0.17, dur: 0.18, vol: 0.05, ataque: 0.008, tipo: 'triangle' });
+  },
+
+  /**
+   * A buzina da limusine da Valentina: chique e sem pressa — dois "fom" largos e graves (um acorde de terça,
+   * dó e mi, em dente-de-serra bem abafado com o seno uma oitava abaixo) e um terceiro mais comprido subindo para
+   * o sol, como quem anuncia uma estrela.
+   */
+  buzinaDaLimusine: ({ ctx, destino, t }) => {
+    for (const [atraso, graus, dur] of [[0, [0, 4], 0.16], [0.22, [0, 4], 0.16], [0.46, [4, 7], 0.42]] as const) {
+      for (const grau of graus) {
+        const f = nota(DO - 12 + grau);
+        tom(ctx, destino, { freq: f, quando: t + atraso, dur, vol: 0.038, ataque: 0.02, tipo: 'sawtooth', abafo: 1100 });
+        tom(ctx, destino, { freq: f / 2, quando: t + atraso, dur, vol: 0.03, ataque: 0.02, tipo: 'sine' });
+      }
+    }
+  },
+
   fotoFlash: ({ ctx, destino, t }) => {
     tom(ctx, destino, { freq: 2400, glide: 5200, quando: t, dur: 0.35, vol: 0.018, ataque: 0.02, tipo: 'sine' });
     chiado(ctx, destino, { quando: t + 0.36, dur: 0.03, vol: 0.14, freq: 3200, q: 2.5 });

@@ -30,6 +30,9 @@ const ABRE_MAO = 0.75;
  * tronco. 0,17 é só o bastante para a mão sair da cápsula do corpo: a de
  * patins (0,34) e a do provador (0,36) abrem bem mais.
  */
+/** no carro: quem dirige (as mãos no volante) ou quem vai de passageiro (as mãos no colo) */
+export type PoseNoCarro = 'dirigindo' | 'passageiro';
+
 /** sentado no banco (as pernas para a frente) ou na beirada (penduradas) */
 export type JeitoDeSentar = 'banco' | 'beirada';
 /** a duração do arremesso de lado, e o instante (fração) em que a pedra sai da mão */
@@ -188,6 +191,28 @@ export class CharacterRig {
    * com o pé dentro d'água, balançando mais — é o chutinho na água.
    */
   private jeitoDeSentar: JeitoDeSentar = 'banco';
+  /**
+   * NO CARRO (o Bebito Mobile): sentado no banco, mas cada um do seu jeito —
+   * quem DIRIGE leva as duas mãos ao volante (e elas acompanham o giro dele),
+   * e o PASSAGEIRO descansa as mãos no colo. Diferente do `sitting`, é por
+   * pessoa: um dirige enquanto o outro espera de pé no jardim.
+   */
+  private noCarro: PoseNoCarro | null = null;
+  private volante = 0;
+  private carinhoNoCarro = 0;
+  /** o braço de quem vai de carona pela janela (o toca aqui do Flynn): 0 no colo, 1 para fora; e o tapa (0 a 1) */
+  private pelaJanela = 0;
+  private tapaNaJanela = 0;
+  /**
+   * A LAVAGEM DO ÔNIBUS (o mutirão do Gatito, `eventos/mutiraoDaLavagem.ts`): de pé, esfregando a lataria em roda com
+   * a esponja, ou com as duas mãos na pistola da mangueira. `miraAlta` (0 a 1) ergue a mangueira para o céu. O peso
+   * entra e sai devagar, por cima da pose de parado.
+   */
+  private lavagem: 'esponja' | 'mangueira' | null = null;
+  private lavagemAlvo = 0;
+  private lavagemPeso = 0;
+  private miraAlta = 0;
+  private relogioDaLavagem = 0;
   /** o arremesso de lado (a pedrinha no lago): o relógio, em segundos; 0 = parado */
   private arremesso = 0;
   private deitado = false;
@@ -1718,6 +1743,67 @@ export class CharacterRig {
 
   // --- fim guarda-roupa -----------------------------------------------------
 
+  /**
+   * A pose de carro desta pessoa (`null` desfaz). `volante` é o giro do
+   * volante agora, em radianos (o do `BebitoMobile.estercar`): as mãos de
+   * quem dirige sobem e descem com ele.
+   */
+  /** esconde (ou mostra) a cabeça inteira: o cabelo, o rosto, o chapéu. A primeira pessoa não pode nascer dentro da própria cabeça */
+  mostrarCabeca(sim: boolean): void {
+    this.head.visible = sim;
+  }
+
+  setNoCarro(pose: PoseNoCarro | null, volante = 0): void {
+    const saiu = this.noCarro !== null && pose === null;
+    this.noCarro = pose;
+    this.volante = volante;
+    if (pose !== 'passageiro') this.encostarNoCarro(0);
+    if (saiu) {
+      this.poeAltura(0);
+      this.legL.rotation.x = 0;
+      this.legR.rotation.x = 0;
+      this.armL.rotation.set(0, 0, -BRACO_SOLTO);
+      this.armR.rotation.set(0, 0, BRACO_SOLTO);
+      this.body.rotation.x = 0;
+    }
+  }
+
+  /**
+   * O BRAÇO PELA JANELA (o toca aqui do Flynn na estrada): só de carona, o
+   * braço do lado da porta (o `armL`, em `-X`, que é o lado da janela do
+   * passageiro) sai pela janela aberta e sobe, a mão aberta; o `tapa` (0 a 1)
+   * leva a mão para fora e para a frente, até a pata dele. A janela é da cena.
+   */
+  bracoPelaJanela(quanto: number, tapa = 0): void {
+    this.pelaJanela = THREE.MathUtils.clamp(quanto, 0, 1);
+    this.tapaNaJanela = THREE.MathUtils.clamp(tapa, 0, 1);
+  }
+
+  /**
+   * LAVANDO O ÔNIBUS: `'esponja'` esfrega a lataria em roda (o braço direito, com a esponja que a cena põe na mão, e o
+   * esquerdo apoiado nela); `'mangueira'` segura a pistola com as duas mãos na altura do peito, e `alto` (0 a 1) ergue
+   * a mira para o céu. `null` devolve os braços devagar. Só de pé (sentado, nadando ou deitado não vale).
+   */
+  lavar(pose: 'esponja' | 'mangueira' | null, alto = 0): void {
+    if (pose) this.lavagem = pose;
+    this.lavagemAlvo = pose ? 1 : 0;
+    this.miraAlta = THREE.MathUtils.clamp(alto, 0, 1);
+  }
+
+  /** a ponta da mão do lado `-X` (o `armL`) no mundo: o toca aqui mede o encontro com a pata do Flynn */
+  maoEsquerdaNoMundo(alvo: THREE.Vector3): THREE.Vector3 {
+    this.armL.updateWorldMatrix(true, false);
+    return this.armL.localToWorld(alvo.set(0, -this.spec.height * 0.3 * 0.98, 0));
+  }
+
+  encostarNoCarro(quanto: number): void {
+    this.carinhoNoCarro = THREE.MathUtils.clamp(quanto, 0, 1);
+    if (this.carinhoNoCarro === 0) {
+      this.body.rotation.z = 0;
+      this.head.rotation.z = 0;
+    }
+  }
+
   /** Sentado: pernas para a frente e corpo mais baixo. */
   setSitting(v: boolean, jeito: JeitoDeSentar = 'banco'): void {
     this.sitting = v;
@@ -2128,6 +2214,49 @@ export class CharacterRig {
       return;
     }
 
+    if (this.noCarro) {
+      this.phase += dt * 0.9;
+      // as pernas para a frente, quietas (no carro não se balança o pé): o joelho de quem dirige um tico mais aberto
+      this.legL.rotation.x = -Math.PI / 2 + 0.05;
+      this.legR.rotation.x = -Math.PI / 2 + (this.noCarro === 'dirigindo' ? 0.12 : 0.03);
+      if (this.noCarro === 'dirigindo') {
+        /*
+         * AS MÃOS NO VOLANTE: os dois braços para a frente, quase na
+         * horizontal, e fechando um pouco para DENTRO (as mãos pegam o aro
+         * às dez e dez). A pegadinha de sempre: o braço esquerdo nasce em
+         * `-X`, e nele `rotation.z` POSITIVO é que vai para dentro; no
+         * direito, negativo. Com o volante girando, uma mão sobe e a outra
+         * desce.
+         */
+        const gira = THREE.MathUtils.clamp(this.volante, -1.4, 1.4) * 0.22;
+        this.armL.rotation.set(-1.32 + gira, 0, 0.1);
+        this.armR.rotation.set(-1.32 - gira, 0, -0.1);
+        this.body.rotation.x = 0.03;
+      } else {
+        // o passageiro: as mãos no colo, os braços soltos e um tico para a frente
+        this.armL.rotation.set(-0.5, 0, 0.12);
+        this.armR.rotation.set(-0.5, 0, -0.12);
+        this.body.rotation.x = -0.04;
+        // o braço pela janela: o do lado da porta (`-X`) abre para FORA (no esquerdo, `rotation.z` negativo) e
+        // sobe acima do ombro; no tapa, desce um tico e vai para a frente, até a pata do Flynn
+        const k = this.pelaJanela;
+        if (k > 0) {
+          const tapa = this.tapaNaJanela;
+          // (com o braço deitado para fora, quem leva a mão para a FRENTE é o `rotation.y`, não o `x`: o `x` só o gira em
+          // volta de si mesmo)
+          this.armL.rotation.set(-0.5 + 0.55 * k, (0.1 + 0.35 * tapa) * k, 0.12 + (-2.0 + 0.3 * tapa - 0.12) * k);
+        }
+      }
+      this.poeAltura(Math.sin(this.phase) * 0.008);
+      this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
+      // O passageiro fica em −X: inclinar em Z negativo aproxima do motorista.
+      const carinho = this.noCarro === 'passageiro' ? this.carinhoNoCarro : 0;
+      // (com o braço pela janela, o corpo pende um tico para a porta: `rotation.z` positivo vai para o `-X`)
+      this.body.rotation.z = -0.29 * carinho + (this.noCarro === 'passageiro' ? 0.1 * this.pelaJanela : 0);
+      this.head.rotation.z = -0.13 * carinho;
+      return;
+    }
+
     if (this.sitting) {
       this.phase += dt * 0.9;
       // Pernas balancando BEM devagar: um vaivem a cada ~3 s. E o gesto de quem
@@ -2294,6 +2423,54 @@ export class CharacterRig {
 
     this.body.rotation.x = walking ? (this.patinando ? 0.16 : 0.06) : 0;
     this.head.rotation.x = walking ? -0.05 : Math.sin(this.phase * 0.6) * 0.03;
+
+    // a lavagem do ônibus: por cima de TUDO da pose de pé (até do tronco e da cabeça, escritos logo acima)
+    this.lavagemPeso += (this.lavagemAlvo - this.lavagemPeso) * Math.min(1, dt * 5);
+    if (this.lavagem && this.lavagemPeso > 0.002) this.poseDeLavar(dt);
+    else if (this.lavagemAlvo === 0) this.lavagem = null;
+  }
+
+  /**
+   * A POSE DA LAVAGEM, misturada pelo peso (o braço vai da pose de parado até a de lavar, sem estalo).
+   *
+   * ESPONJA: o braço direito erguido para a frente e um tico para fora (de lado, a cabeça chibi não tapa a esponja
+   * da câmera), fazendo a RODA da esponja — o `x` sobe e desce
+   * e o `z` abre e fecha, defasados de um quarto de volta (no direito, `z` positivo abre para FORA). O esquerdo apoia
+   * a mão na lataria, um tico mais baixo e fechando para dentro (no esquerdo, `z` POSITIVO é para dentro). O tronco
+   * ginga com a roda e debruça um tico.
+   *
+   * MANGUEIRA: as duas mãos juntas na pistola, na frente do peito (o direito fecha com `z` negativo, o esquerdo com
+   * positivo), tremendo de leve com a pressão; o tronco recua um tico (é a força da água). A mira alta ergue os dois.
+   *
+   * A mão desfaz o giro do braço (como na pose de segurar): a esponja fica de pé com a face para a lataria, e a
+   * pistola aponta para a frente, inclinando para cima com a mira.
+   */
+  private poseDeLavar(dt: number): void {
+    const k = this.lavagemPeso;
+    this.relogioDaLavagem += dt;
+    const mix = (o: THREE.Euler, x: number, y: number, z: number): void => {
+      o.x += (x - o.x) * k;
+      o.y += (y - o.y) * k;
+      o.z += (z - o.z) * k;
+    };
+    if (this.lavagem === 'esponja') {
+      const t = this.relogioDaLavagem * 6.5;
+      mix(this.armR.rotation, -2.0 + Math.sin(t) * 0.24, 0, 0.42 + Math.cos(t) * 0.26);
+      mix(this.armL.rotation, -1.55 + Math.sin(t * 0.5) * 0.05, 0, 0.18);
+      this.body.rotation.z += Math.cos(t) * 0.04 * k;
+      this.body.rotation.x += 0.05 * k;
+      this.head.rotation.x += 0.06 * k;
+      this.head.rotation.z += Math.cos(t) * 0.05 * k;
+      this.maoDir.rotation.set(-this.armR.rotation.x, 0, -this.armR.rotation.z);
+    } else {
+      const a = this.miraAlta;
+      const tremor = Math.sin(this.relogioDaLavagem * 23) * 0.018;
+      mix(this.armR.rotation, -1.16 - 0.62 * a + tremor, 0, -0.24);
+      mix(this.armL.rotation, -1.02 - 0.6 * a + tremor, 0, 0.4);
+      this.body.rotation.x += (-0.07 - 0.05 * a) * k;
+      this.head.rotation.x += (-0.04 - 0.22 * a) * k;
+      this.maoDir.rotation.set(-this.armR.rotation.x - 0.62 * a - 0.04, 0, -this.armR.rotation.z);
+    }
   }
 
   /**

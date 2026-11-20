@@ -61,6 +61,19 @@ export class Estella extends Bicho {
   private readonly patas: THREE.Group[] = [];
   private readonly rabo: THREE.Group[] = [];
   private readonly laco = new THREE.Group();
+  /** os óculos de costureira: saem quando ela põe os de aviador (na lambreta) */
+  private readonly oculosDeCostura = new THREE.Group();
+  /**
+   * NA LAMBRETA (`world/lambretaDaEstella.ts`): sentada no banco, o peito em
+   * pé, as patas da frente no guidão e as de trás no assoalho. É o mesmo
+   * contrato da moto do Capy: quem monta a pose é ela, quem a põe no banco é
+   * o veículo. `olharNaLambreta` vira a cabeça para o lado (na conversa, para
+   * o Bebito).
+   */
+  pilotando = false;
+  olharNaLambreta = 0;
+  /** onde o capacete encaixa: a cabeça, para virar junto quando ela olha */
+  get apoioDoCapacete(): THREE.Group { return this.cabeca; }
   /** as duas pontas da fita metrica, que balancam quando ela anda */
   private readonly pontasDaFita: THREE.Group[] = [];
 
@@ -435,7 +448,7 @@ export class Estella extends Bicho {
      *
      * Eles ficam presos na CABECA, e nao no focinho: o focinho mastiga.
      */
-    const oculos = new THREE.Group();
+    const oculos = this.oculosDeCostura;
     oculos.position.set(0, -0.012, 0.128);
     for (const lado of [-1, 1] as const) {
       const aroDoOculos = new THREE.Mesh(
@@ -524,6 +537,41 @@ export class Estella extends Bicho {
    * biscoito. A cena chama antes da fala em que entrega — gesto que chega
    * DEPOIS da fala explica um boneco parado.
    */
+  /**
+   * A POSE DE PILOTAR. O corpo gira para trás (`rotation.x` NEGATIVO levanta o
+   * peito, como o Capy na moto): a ovelha senta no traseiro, de peito em pé. As
+   * patas da frente esticam para a frente, até as manoplas, e as de trás vão
+   * para a frente, apoiadas no assoalho. A cabeça desce de volta o que o corpo
+   * levantou, para ela olhar a estrada, e não o céu.
+   */
+  private poseNaLambreta(fase: number): void {
+    const INCLINA = -0.62;
+    this.corpo.position.y = Math.sin(fase * 1.5) * 0.004;
+    this.corpo.rotation.set(INCLINA, 0, 0);
+    // as da frente no guidão; as de trás no assoalho
+    for (let i = 0; i < 4; i++) {
+      const frente = i < 2;
+      const lado = i % 2 ? 1 : -1;
+      this.patas[i].position.set(lado * (frente ? 0.17 : 0.2), frente ? 0.5 : 0.36, frente ? 0.24 : -0.16);
+      this.patas[i].rotation.set(frente ? -1.25 : -1.05, 0, lado * (frente ? -0.12 : -0.08));
+    }
+    this.cabeca.rotation.set(-INCLINA - 0.12, this.olharNaLambreta, 0);
+    for (let i = 0; i < this.orelhas.length; i++) {
+      const lado = i === 0 ? -1 : 1;
+      // as orelhas saem por baixo do capacete, abanando no vento
+      this.orelhas[i].rotation.z = -lado * (0.25 + Math.sin(fase * 9 + i) * 0.06);
+      this.orelhas[i].rotation.x = 0;
+    }
+    for (const olho of this.olhos) olho.scale.y = 1;
+    for (let i = 0; i < this.pontasDaFita.length; i++) {
+      const ponta = this.pontasDaFita[i];
+      const base = ponta.userData.base as { x: number; z: number };
+      // a fita métrica voa para trás com o vento
+      ponta.rotation.z = base.z + Math.sin(fase * 8 - i) * 0.12;
+      ponta.rotation.x = base.x + 0.4;
+    }
+  }
+
   oferecerBiscoito(segundos = 2.2): void {
     this.oferecendo = segundos;
     this.duracaoDaOferta = segundos;
@@ -532,6 +580,13 @@ export class Estella extends Bicho {
   // -------------------------------------------------------------------- pose
 
   protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
+    // na lambreta, os óculos de costura e o laço dão lugar ao capacete e aos de aviador
+    this.oculosDeCostura.visible = !this.pilotando;
+    this.laco.visible = !this.pilotando;
+    if (this.pilotando) {
+      this.poseNaLambreta(fase);
+      return;
+    }
     // o passo: patas em diagonal, num seno curto — perna de ovelha e curta, e
     // passo curto e o que faz ela trotar em vez de marchar
     if (andando) {

@@ -264,6 +264,41 @@ parecido com outro que já existe ganha ficha, não cópia do arquivo. A
 PERSONALIDADE também é modelo: o sorrisão e a orelha em pé da Sol, o olhar
 sereno e a orelha caída da Estrella — ela é lida de longe antes da fala.
 
+**Bicho que já existe sem ficha vira ficha antes do irmão.** O Rocco, o lobo
+rival do Flynn, nasceu assim: o `Flynn.ts` ganhou a `FichaDeAtleta` (cores,
+orelha, focinho, rabo, boca, sobrancelha, juba, pingente, pin e o uniforme
+do time inteiro, até o escudo como função) e a `FICHA_DO_FLYNN` com os
+números que estavam espalhados no código. A prova de que o Flynn não mudou
+é a IMPRESSÃO DIGITAL do modelo montado (ordem e nome dos filhos, material,
+vértices e caixa de cada malha), igual antes e depois, com e sem `fundir` —
+a foto de longe não pega um milímetro. Daí o irmão é uma ficha e uma linha:
+`class Rocco extends Flynn { constructor(a) { super(a, FICHA_DO_ROCCO); } }`.
+O que muda o JEITO entra na ficha como escolha (`boca: 'de-lado'`,
+`pingente: 'plaquinha'`, `juba: true`), e não como `if (rocco)` no corpo.
+Cuidados que custaram foto: boca num focinho comprido tem que ficar NA PELE
+do focinho (um ponto do elipsoide), senão some dentro dele; e o rabo dobrado
+mais fundo atravessa o chão — meça o pé do último gomo.
+
+**Dois bichos jogando JUNTOS** (o um contra um do Flynn e do Rocco,
+`scenes/escolaUmContraUm.ts`): uma máquina de estados só para os dois e
+para a bola (quem ataca, quem defende, a fase da bola), e a bola tem UM dono
+por vez — no drible quem a põe a cada quadro é a pata (`bolaDoDrible`), na
+pegada e no arremesso ela vai para a `maoDaBola` com `attach`, e no ar ela é
+da cena. Três lições da foto: quem marca em pé, parado, NÃO pode andar com
+`seguir` para gingar (bicho que anda vira para onde anda e marcaria de
+lado) — a ginga é um deslize curto na posição; com a câmera de `+X/+Z`, a
+jogada que fica na diagonal da câmera esconde um atrás do outro (a cesta da
+esquerda foi espelhada para o outro lado da linha); e pausar para conversar
+só num ponto SEGURO (ninguém no meio de um arremesso, a bola em alguma mão
+ou no chão, e os dois perto), com quem tem a bola quicando no lugar.
+
+**Bicho de muitos pedaços também se junta** (o Flynn e o Rocco, 140 e 158
+malhas): a `fundir(this.group)` no fim do construtor, DEPOIS de dar nome a
+todo pivô que a pose mexe (corpo, pernas, braços, gomos, orelhas, olhos,
+pontas da faixa) — grupo sem nome ela trata como fixo, junta ao pai e ele
+para de mexer. Prova: os mesmos triângulos e materiais com e sem
+`?semFundir`, a caixa igual e a foto igual.
+
 **Olhar calmo é um TRAÇO, não uma tampa.** A primeira pálpebra da Estrella
 foi uma meia esfera de pelo por cima do olho: de longe passava, de perto era
 um calombo marrom tapando o branco, com o cílio boiando acima — olho de sono.
@@ -501,6 +536,56 @@ pontos de pesca ficam nos vãos da beira (longe de ninféia, pedra e tronco).
 estados própria (sol, pulando, nadando só com a cabeça de fora, subindo). O
 casco é canvas visto de cima, com o UV projetado de cima também.
 
+## Bicho de água em TERRA (a travessia da viagem de carro)
+
+Os patos e os tigres-d'água do lago atravessam a faixa de pedestres da
+estrada do Bebito Mobile (`eventos/bebitoMobile/travessia.ts`). A classe é a
+mesma do lago; o que a terra pediu:
+
+- **o pato do lago nasce com a barriga debaixo d'água** (o chão esconde): em
+  terra ele SOBE (a caixa dele mede quanto) e ganha o que a água escondia —
+  duas patinhas laranja penduradas num pivô na linha d'água, que batem no
+  passo, e o gingado de lado (`rotation.z`);
+- **a fila**: cada um anda o mesmo caminho, um tanto atrás do da frente
+  (`atras`), um tico para o lado (`desvio`) — a mãe na frente;
+- **a guia**: na calçada eles estão um degrau acima do asfalto, e descem e
+  sobem a guia num passo;
+- **de longe eles somem**: no tamanho do lago, vistos de trás do carro, os
+  patinhos eram pontinhos — em terra eles crescem, mas a escala é um FATOR
+  POR CIMA da ficha (`ficha.escala × fator`: a pata 1,35×, o patinho 1,6×;
+  `pato.escala`), e nunca um número cravado por cima dela. A primeira versão
+  trocava a escala por 1,55 e 1,7 e o patinho (ficha 0,52) ficava MAIOR que a
+  mãe, a 3,3× do lago — o Renan reparou no celular. O teste
+  (`SO=bichos` do `scripts/viagem.mjs`) exige o patinho com menos de 70% da
+  altura da mãe;
+- **sem os gestos de água**: o pato do lago, parado, mergulha o bico, bica a
+  asa e bate as asas. Na calçada isso enfiava o bico no asfalto, então a cena
+  desliga com `pato.gestosDeAgua = false`;
+- **cada um reage do seu jeito à buzina**: a pata apressa o passo e reclama;
+  a tartaruga se esconde no casco e para — é a piada. (Com o piloto de teste
+  ligado a buzina é IGNORADA: o teste solta o piloto para apertar a tecla.)
+
+**A tartaruga da estrada NÃO é o `TigreDagua`.** O do lago é um bicho de
+tronco (toma sol, pula, nada); o que anda na faixa é a
+`TartarugaDeEstrada` (`entities/bichos/TartarugaDeEstrada.ts`), e o do lago
+ficou como estava. O que ela tem:
+
+- **casco em relevo, tinta e relevo da MESMA conta**: a lista `PLACAS` pinta
+  o canvas (claro no meio, junta escura, risco amarelo) e levanta a cúpula
+  (cada placa uma bossa, cada junta um vale) — nunca se desencontram. A
+  emenda da esfera é soldada (`mergeVertices`) antes das normais, senão
+  sobra um risco de luz; a cúpula é uma só para todas as tartarugas;
+- **quatro pernas de verdade**, cada uma num pivô no quadril, andando em
+  diagonal; o passo vai por DISTÂNCIA andada (o pé não escorrega) e o corpo
+  balança de lado (`rotation.z` só 0,04: com 0,06 um lado do casco descia
+  1 cm do chão — a medida pegou, a foto não);
+- **cabeça grande e fofa**, olho pousado no crânio (oval escuro com brilho,
+  piscando), sorrisinho, mancha laranja atrás do olho e riscos amarelos no
+  pescoço — o "tigre" do nome;
+- **esconder no casco** (`esconder` de 0 a 1): cabeça, pescoço e pernas
+  recolhem e o casco desce até o chão; vai rápido para dentro e devagar para
+  fora.
+
 ## Fantasia de EVENTO, por fora da classe (a Estella de aranha)
 
 Evento é camada: a classe do bicho não muda. A fantasia é uma função que
@@ -539,6 +624,71 @@ o mesmo molde, e deixaram três truques:
 - **acessório branco em bicho branco some**: a máscara do Jean-Luc só se lê
   pelo contorno escuro (um tubo na borda do pedaço de esfera) e pelo aro do
   olho.
+
+## Bicho que TRABALHA numa peça grande (o Gatito lavando o ônibus)
+
+`eventos/gatitoLavaOOnibus.ts` é o molde de um bicho pequeno fazendo serviço numa peça enorme:
+
+- **A pose é um peso a mais**, como o six seven (`esfregar(sim)` → `esfregaPeso`, 0 a 1): os dois somam no "de pé"
+  (`dePe`), e o six seven ganha (o peso do esfregar é multiplicado por `1 − pe`). A pata da esponja faz a RODA com o
+  `rotation.x` e o `rotation.z` defasados de um quarto de volta; a outra apoia na lataria; o corpo ginga junto.
+- **O alcance decide a altura do apoio, e se MEDE assentado**: num caixote só, de pé, a esponja ficava abaixo do
+  primeiro friso. O navegador do teste anda a ~1/10 do relógio, e a pose leva segundos de JOGO para assentar —
+  medida cedo, a esponja parecia 50 cm mais baixa. Espere `jogo.elapsed` e meça a ponta (`pontaDaEsponja`).
+- **O que é dele mora nele** (a esponja, escondida fora do serviço); o que é do lugar (os caixotes, o balde, a espuma
+  na lataria, as bolhas) mora na camada.
+- **Gesto somado por cima da pose** (a SACUDIDA de gato molhado, `sacudir()`): o corpo torce em volta da espinha e a
+  cabeça vai junto; como a pose interpola a partir do valor do quadro anterior, o gesto TIRA o que somou antes de a
+  pose rodar (`sacudidaAntes`) — sem isso a torção acumulava e o corpo ficava torto no fim.
+
+## Ave com cauda que abre (o Pietro, o pavão motorista)
+
+O Pietro (`entities/bichos/Pavao.ts`) é o motorista da limusine da Valentina. O que custou foto:
+
+- **Cauda de pavão é LOTE de penas planas** (23, de dois lados), cada uma a lâmina verde em degradê de cor por
+  vértice, a haste e o OCELO (três discos empilhados um fio acima: bronze, turquesa, miolo azul-noite). Fina demais,
+  a cauda dobrada lia como um feixe de fios: as penas são largas (0,1 na ponta), as de cima mais curtas e abertas
+  para os lados, em escama, para cada olho aparecer. A raiz fofa (coberteiras) fica EMBAIXO das penas: em cima,
+  vista de trás, era um picles.
+- **Dobrada e aberta são duas poses de cada pena**, misturadas por `slerp` (`leque`, 0 a 1, que anda devagar: abrir
+  o leque é acontecimento). Aberta, cada pena aponta em roda, em pé atrás do corpo, com a lâmina virada para a
+  frente (a base montada com `makeBasis`).
+- **Uniforme de bicho**: o quepe é da cabeça (a copa larga, a pala, o cordão e o emblema dourados) e o topete sai por
+  TRÁS dele; luva branca na PONTA DA ASA (é a asa que vai ao volante); a gravata-borboleta na base do pescoço, um
+  dedo à frente da pele.
+- **Risquinho branco embaixo da pala vira dente**: a faixa branca de cima do olho do pavão (que ele tem de verdade)
+  ficava sob a sombra da pala e lia como um dentinho. Saiu; ficou a meia-lua de baixo.
+- **Ao volante** (`aoVolante`, nasce `null`): as pernas para a frente, as asas nas dez e dez, a cabeça para onde a
+  cena manda (giro negativo é o `−X`) e a cauda para o lado da porta.
+
+## Muitos bichos de UMA classe, montados pela FOTO (os visitantes da portaria)
+
+`entities/bichos/VisitanteDaPortaria.ts` monta dez espécies (hipopótamo,
+alpaca, porquinho, tamanduá, preguiça, lontra, bode, coala, panda-vermelho,
+texugo) numa classe só, porque o minigame da Portaria julga uma FOTO: o
+`Retrato` do dia (espécie, cor, marca, penteado, enfeite) é o mesmo que o
+pintor da carteirinha usa (`world/retratosDaPortaria.ts`), então o corpo e a
+foto não se desencontram — a pinta no focinho da Alpacina, a pinta na orelha
+esquerda do Bento, o chifre torto do bode, o narizão do coala estão nos dois.
+
+- **O corpo sai de um PLANO por espécie** (quadril, tronco, crânio, pescoço,
+  escala, grossura dos membros), o rosto e as orelhas de um `switch`, e o
+  TRAÇO de cada personagem de um bloco próprio (a boia do Hipólito, a mochila
+  do Tatá, o gorro do coala). Personagem que pede algo novo ganha um bloco,
+  não uma classe.
+- **Pousar na casca** (`pousar(obj, ângulo x, ângulo y, folga)`): olho,
+  pinta, bochecha, sobrancelha e lente vão num ponto do elipsoide do crânio,
+  virados pela normal. O que mora em cima de OUTRA peça (a máscara da
+  preguiça, por cima da cara clara que avança 4 cm) precisa da folga dessa
+  peça — com a folga do crânio, a cara clara tapou a máscara inteira.
+- **O que a pata segura desce até o chão, não além**: a bengala da vovó
+  nasceu com 32 cm e a pata dela fica a 17 cm do chão — atravessou o piso
+  (o teste mede o ponto mais baixo de cada um).
+- **O elevador lê o rosto** (`alturaDoRosto`), e não o alto da caixa.
+- **Tique por ficha**: um ciclo de 6 s em que, parado, o bicho faz o gesto
+  dele na segunda metade (`ciclo > 0,55`), somado por cima da pose — o
+  chiclete do Beto escala até estourar, o texugo cruza um braço e abana o
+  leque com o outro.
 
 ## A cor da fala (todo bicho que fala tem a sua)
 

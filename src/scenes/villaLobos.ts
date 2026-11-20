@@ -8,6 +8,8 @@ import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
+import { bebitoMobileNestaPagina } from '../eventos/BebitoMobile';
+import { DESCIDA_NO_PARQUE, montarBebitoNoParque, montarEstacionamento } from '../eventos/bebitoMobile/noParque';
 import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
 import { bonecoDeNeve, bordaDeGelo, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
 import { Frisbee } from '../entities/Frisbee';
@@ -98,6 +100,8 @@ export const villaLobos: SceneDef = {
     'da-lojinha': { x: -33.6, z: -16.5, facing: Math.PI / 2 },
     // voltando da Casinha da Abóbora (Halloween): na frente do portão laranja, de costas para ele
     'do-portao-laranja': { x: -11.3, z: -25.6, facing: Math.PI / 4 },
+    // descendo do Bebito Mobile, na passagem do estacionamento, do outro lado da rua
+    'do-carro': DESCIDA_NO_PARQUE,
   },
 
   build(w) {
@@ -4879,20 +4883,25 @@ export const villaLobos: SceneDef = {
         }
         const destino = await api.ask('Pra onde a gente vai?', ['Clube', 'Escola do Gatito', 'Ficar no parque']);
         if (destino === 0) api.goTo('clube', 'portaria');
-        else if (destino === 1) api.goTo('escola', 'da-rua');
+        else if (destino === 1) api.goTo('escola-patio', 'do-onibus'); // o ônibus para na rua da portaria
       },
     });
     w.onUpdate(() => {
       pegarOOnibus.label = g.flag('escola-aberta') ? 'Pegar o ônibus' : 'Pegar o ônibus pro clube';
     });
 
-    w.door({
+    // (com o Bebito Mobile no jogo, quem volta do parque chega pela calçada da frente da casa)
+    const voltarPraCasa = w.door({
       x: 0, z: 27,
-      to: 'casa', entry: 'da-rua',
+      to: bebitoMobileNestaPagina() ? 'frente-da-casa' : 'casa', entry: 'da-rua',
       label: 'Voltar pra casa', icon: '🏠',
       highlight: portao,
       radius: 2.2,
     });
+    // o estacionamento do outro lado da rua do ônibus, e o carro nele quando eles vieram de carro
+    // (`eventos/bebitoMobile/noParque.ts`; só com a chave do Bebito Mobile)
+    const entradaDoEstacionamento = montarEstacionamento(w);
+    montarBebitoNoParque(w, { voltarPraCasa, entrada: entradaDoEstacionamento });
 
     // ------------------------------------------------------------- frisbee
     const disco = new Frisbee(P.frisbee);

@@ -33,6 +33,26 @@ import type { VozDaFala } from '../../core/types';
  * O CINZA PUXA PARA O ROXO (`P.elefantePele`), e nao para o azul: cinza
  * azulado, no toon shading, sai como pedra.
  */
+/**
+ * A POSE DELE NO CARRINHO (`world/carrinhoDoCookie.ts`, `docs/CARRINHO-DO-COOKIE.md`).
+ *
+ * Ele vai ESPREMIDO num carrinho que serve certinho: as patas somem dentro da
+ * lataria, as ORELHAS abrem para fora, por cima das portas (e o vento da
+ * estrada as leva para trás, tremulando), e a TROMBA segue a pose que o
+ * carrinho pede — ela sai por um furo no para-brisa.
+ */
+export interface PoseNoCarrinho {
+  /** 0 parado … 1 na estrada: o quanto o vento leva as orelhas para trás e as faz tremular */
+  vento: number;
+  /** o ângulo de cada gomo da tromba, em `x` (cada um em relação ao anterior) */
+  tromba: readonly number[];
+  /** o quanto a tromba vai de lado (rad no segundo gomo; negativo é para o `−X`) */
+  deLado: number;
+  /** para que lado a cabeça vira (rad; negativo é o `−X`) */
+  olhar: number;
+}
+const DE_ORELHA = new THREE.Euler();
+
 export class Cookie extends Bicho {
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Cookie', cor: P.falaCookie };
@@ -53,6 +73,14 @@ export class Cookie extends Bicho {
    * so a cabeca e a tromba sobem.
    */
   private sonhando = 0;
+
+  /** a pose no carrinho (quem liga e mexe é o veículo); `null` é o Cookie de sempre */
+  noCarrinho: PoseNoCarrinho | null = null;
+
+  /** a ponta da tromba (o último gomo, que aponta para o `−Y` dele): é com ela que ele segura e entrega */
+  get pontaDaTromba(): THREE.Group {
+    return this.tromba[this.tromba.length - 1];
+  }
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -515,6 +543,10 @@ export class Cookie extends Bicho {
   protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
     if (this.sonhando > 0) this.sonhando = Math.max(0, this.sonhando - dt);
     const sonho = this.sonhando > 0 ? 1 : 0;
+    const carro = this.noCarrinho;
+    // no carrinho as patas somem dentro da lataria (ele vai espremido lá dentro). Fora dele, nada disto
+    // é tocado: o Cookie do carrinho é outro, só dele, e o de sempre continua como sempre foi
+    if (carro) for (const perna of this.patas) perna.visible = false;
 
     /**
      * O PASSO. Patas em diagonal (dianteira esquerda com traseira direita), num
@@ -549,6 +581,25 @@ export class Cookie extends Bicho {
     for (let i = 0; i < this.orelhas.length; i++) {
       const lado = i === 0 ? -1 : 1;
       const venta = Math.sin(fase * 1.7 + i * 1.1) * 0.13;
+      if (carro) {
+        /*
+         * NO CARRINHO, AS ORELHAS VÃO PARA FORA. Abertas quase retas para os
+         * lados (1,3 rad), com a ponta caindo por cima da porta; na estrada o
+         * vento as leva para trás e elas tremulam, cada uma no seu tempo. E
+         * elas ESTICAM no comprimento (o leque vira orelha ao vento): sem
+         * isso a ponta parava em cima da porta, e de cima não saía do carro.
+         *
+         * A ordem é 'ZYX': primeiro abre (em `y`), depois a ponta cai (em
+         * `z`, o eixo da cabeça). Na ordem de sempre o `z` torceria a orelha
+         * no próprio comprimento.
+         */
+        const abre = 1.3 - carro.vento * 0.45 + venta * 0.5;
+        const treme = Math.sin(fase * (2.6 + carro.vento * 9) + i * 1.9) * (0.03 + carro.vento * 0.13);
+        const cai = 0.32 - carro.vento * 0.2 + Math.sin(fase * (2.1 + carro.vento * 7) + i) * carro.vento * 0.06;
+        this.orelhas[i].quaternion.setFromEuler(DE_ORELHA.set(0, -lado * (abre + treme), -lado * cai, 'ZYX'));
+        this.orelhas[i].scale.set(1, 1, 1.7);
+        continue;
+      }
       this.orelhas[i].rotation.y = lado * (-0.5 - carinho * 0.35) + venta * lado;
       this.orelhas[i].rotation.z = lado * (0.16 + carinho * 0.1);
     }
@@ -571,14 +622,19 @@ export class Cookie extends Bicho {
       const base = i === 0 ? -0.15 : -0.08;
       // levantar a tromba e girar cada gomo para TRAS (x positivo abaixa a
       // ponta porque os gomos apontam para baixo)
-      const alvo = base + solto + enrolar * (0.16 + t * 0.34);
-      this.tromba[i].rotation.x += (alvo - this.tromba[i].rotation.x) * Math.min(1, dt * 4);
-      this.tromba[i].rotation.z += (solto * 0.7 - this.tromba[i].rotation.z) * Math.min(1, dt * 4);
+      // (no carrinho a pose é a que o carro pede, com o balanço por cima, mais miúdo)
+      const alvo = carro ? (carro.tromba[i] ?? 0) + solto * 0.5 : base + solto + enrolar * (0.16 + t * 0.34);
+      const deLado = carro ? (i === 1 ? carro.deLado : i === 2 ? carro.deLado * 0.45 : 0) + solto * 0.5 : solto * 0.7;
+      const pressa = Math.min(1, dt * (carro ? 5 : 4));
+      this.tromba[i].rotation.x += (alvo - this.tromba[i].rotation.x) * pressa;
+      this.tromba[i].rotation.z += (deLado - this.tromba[i].rotation.z) * pressa;
     }
 
     // a cabeca: sobe no sonho e no carinho, e balanca de leve o tempo todo
     const alvoCabeca = -sonho * 0.5 - carinho * 0.14 + Math.sin(fase * 1.1) * 0.02;
     this.cabeca.rotation.x += (alvoCabeca - this.cabeca.rotation.x) * Math.min(1, dt * 4);
+    // (no carrinho ele vira a cabeça para quem parou do lado)
+    if (carro) this.cabeca.rotation.y += (carro.olhar - this.cabeca.rotation.y) * Math.min(1, dt * 4);
 
     // olho fechando no carinho — e o que faz o bicho parecer que gostou
     const abertura = 1 - carinho * 0.8;

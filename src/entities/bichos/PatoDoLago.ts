@@ -74,6 +74,12 @@ export class PatoDoLago extends Bicho {
   private readonly cabeca = new THREE.Group();
   private readonly rabo = new THREE.Group();
   private readonly asas: THREE.Group[] = [];
+  /**
+   * Os gestos de parado (mergulhar, bicar a asa…) são de quem está n'água: em
+   * terra firme (a travessia da viagem de carro) a cena desliga, senão o pato
+   * parado na calçada mergulhava o bico no asfalto.
+   */
+  gestosDeAgua = true;
   private gesto: Gesto = 'nenhum';
   private tGesto = 0;
   private ateGesto = 2;
@@ -270,7 +276,7 @@ export class PatoDoLago extends Bicho {
     // -------------------------------------------- escolher o próximo gesto
     if (this.gesto === 'nenhum') {
       this.ateGesto -= dt;
-      if (this.ateGesto <= 0 && !andando) {
+      if (this.ateGesto <= 0 && !andando && this.gestosDeAgua) {
         const s = this.sorte();
         this.gesto = s < 0.38 ? 'mergulho' : s < 0.62 ? 'olhar' : s < 0.86 ? 'arrumar' : 'asas';
         this.tGesto = 0;

@@ -476,6 +476,10 @@ export const PALETTE = {
   salvaVidasVermelho: 0xd8382f,
   salvaVidasBranco: 0xf7f2e8,
   cadeiraDeGuarda: 0xe8d9b8,
+  // o oculos esportivo do Capy: a lente fume que da a volta na cara e o reflexo
+  // espelhado azulado por cima dela (preto puro some no toon)
+  oculosEsportivoLente: 0x262a35,
+  oculosEsportivoReflexo: 0x6f9cc4,
 
   // o Noel, o peru do bar de sucos. A pena e marrom-escuro com brilho de
   // bronze; o leque da cauda alterna essa base com a barra clara da ponta, que
@@ -1123,6 +1127,78 @@ export const PALETTE = {
   guaritaFaixa: 0x2f7d6b,
   guaritaBalcao: 0xb07c46,
   guaritaTelhado: 0xc4553f,
+  // a guarita nova (`world/guaritaDoClube.ts`): a cumeeira e os espigões um
+  // tom abaixo da telha (é a sombra deles que desenha as quatro águas), o
+  // pilar de reboco da cor do portão, o ladrilho hidráulico de dentro, a
+  // caixa do monitor de câmeras e o arquivo de aço
+  guaritaCumeeira: 0xa4412f,
+  guaritaLadrilho: 0x8fc4ad,
+  guaritaMonitor: 0x5b646d,
+  guaritaArquivo: 0x9db0ab,
+  // A PORTARIA (o minigame, `world/papeisDaPortaria.ts`): as pelagens dos
+  // retratos das carteirinhas, por nome (o `Retrato.cor` das fichas), e o
+  // papel, a tinta e os carimbos da mesa
+  peloLilas: 0xb7a3c9,
+  peloCreme: 0xf3e6c8,
+  peloRosa: 0xf2b3bf,
+  peloCaramelo: 0xcf9a5e,
+  peloBege: 0xd8c2a0,
+  peloMarrom: 0x8a5f3f,
+  peloChocolate: 0x5e4030,
+  peloMel: 0xd9a65a,
+  peloCinza: 0x9ea3a8,
+  peloCinzaClaro: 0xc7ccd1,
+  peloCinzaAzulado: 0x9fb0c2,
+  peloCinzaEscuro: 0x5f6469,
+  peloCinzaRosado: 0xb3a5b0,
+  peloGrafite: 0x4f5459,
+  peloBranco: 0xf7f4ee,
+  peloMalhado: 0xe6ddd0,
+  peloFerrugem: 0xc0582f,
+  peloLaranja: 0xe58a3a,
+  peloVermelhoEscuro: 0x9b3b2c,
+  peloPretoEBranco: 0x3c3d42,
+  peloVerde: 0x7aa86a,
+  peloAzulMarinho: 0x39415a,
+  peloAzulPelucia: 0x7d9fd6,
+  peloAzulPavao: 0x2f78a8,
+  peloVariado: 0xb98a5a,
+  papelDaPortaria: 0xfbf7ec,
+  tintaDaPortaria: 0x2e3440,
+  carimboEntra: 0x2e9a5b,
+  carimboHojeNao: 0xd8423a,
+  carimboSoClube: 0xe0a21e,
+  // os VISITANTES NOVOS da portaria (`entities/bichos/VisitanteDaPortaria.ts`): o que cada um tem de só seu
+  portariaToalha: 0xf7f4ee, // a toalha do Seu Hipólito, no ombro
+  portariaToalhaListra: 0x5aa0d6,
+  portariaBoiaPato: 0xf6c93a, // a boia de patinho na cintura dele
+  portariaBoiaBico: 0xf08a2a,
+  portariaChinelo: 0x3f86c6,
+  portariaPerola: 0xf7f0e2, // o colar de pérolas da Dona Alpacina (e da prima)
+  portariaColete: 0x4f8a5a, // o colete do Bento
+  portariaCamisa: 0xf7f5ef,
+  portariaGravata: 0xc23b48,
+  portariaRelogio: 0xd9b45e,
+  portariaBoneBeto: 0xd8453a, // o boné virado do Beto
+  portariaCamisetaBeto: 0xf09a3e,
+  portariaChiclete: 0xf7a6c4,
+  portariaPapita: 0xf2b53a, // o amarelo do Papita Delivery (o boné e a mochila térmica do Tatá)
+  portariaPapitaEscuro: 0xc98a22,
+  portariaCelular: 0x2b2f3a,
+  portariaXale: 0xb7a3d9, // o xale de crochê da Dona Preguiça
+  portariaXaleFlor: 0xf6c3d2,
+  portariaBengala: 0x8a5a2a,
+  portariaOculosNatacao: 0x3aa6d8, // os óculos de natação da lontra
+  portariaSino: 0xe0b84a, // o sininho do bode
+  portariaColeira: 0xc94040,
+  portariaGorro: 0x7fa8e0, // o gorro de dormir do coala
+  portariaGorroListra: 0xf7f4ee,
+  portariaLeque: 0xf2d27a, // o leque de papel do texugo (reclama do calor)
+  dogaoPelo: 0xc08a5a, // os Dogões, o time do Rocco
+  dogaoPeloClaro: 0xf3e6d2,
+  dogaoPeloEscuro: 0x6b4630,
+  dogaoOrelhaDentro: 0xe9c3b0,
+  dogaoBochecha: 0xeaa58f,
 
   // o deque de descanso da beira da piscina. A madeira é mais clara e mais
   // acinzentada que a do deque do restaurante de propósito: aqui é tábua que
@@ -1557,6 +1633,39 @@ export const PALETTE = {
   escolaCarteira: 0xd9a869,
   escolaCarteiraPe: 0x5d6770,
   escolaFaixa: 0xd9483f,
+  // A ESCOLA POR FORA (o pátio da frente): o prédio de tijolinho de escola
+  // de filme americana, da foto do Renan — o tijolo vermelho com o rejunte
+  // creme, a pedra clara das faixas e da cornija, o caixilho branco, o vidro
+  // escuro, a cúpula de metal cinza e a lanterninha branca no alto
+  escolaTijoloFora: 0xa9483a,
+  escolaRejunte: 0xeee4d3,
+  escolaPedra: 0xe7dcc3,
+  escolaPedraSombra: 0xcdbfa1,
+  escolaCaixilho: 0xf7f5ef,
+  escolaVidroFora: 0x34495a,
+  escolaVidroBrilho: 0x9bbcd3,
+  escolaCupula: 0xc3c9cf,
+  escolaCupulaFriso: 0xe2e6ea,
+  escolaLanterna: 0xf8f7f2,
+  escolaLaje: 0x9ea2a6,
+  escolaMaquinaDoTeto: 0xb9bec2,
+  escolaLetra: 0x6a2f2a,
+  // o banco do pátio, no bordô da foto (o ferro e a ripa da mesma cor)
+  escolaBanco: 0x8e2b35,
+  escolaBancoFerro: 0x5e1c25,
+  escolaMastro: 0xdfe3e6,
+  // a portaria e o estacionamento: o ferro batido do portão e da grade, o
+  // granito da guia que contorna o concreto, e o azul da vaga de cadeira de rodas
+  escolaFerro: 0x272b31,
+  escolaGranito: 0xb3ada2,
+  vagaAcessivel: 0x2f6db3,
+  // as três bandeiras do pátio: a dos Gatitos no meio, e as do Brasil e da
+  // Venezuela dos lados (as duas casas do Ari e do Renan)
+  bandeiraGatitosAzul: 0x2f5596,
+  brasilVerde: 0x2a9a4a,
+  brasilAmarelo: 0xf6d02d,
+  brasilAzul: 0x24418f,
+  // (as da Venezuela já moram aqui, nas cores da Tia Liz: `venezuelaAmarelo`…)
   escolaQuadra: 0xd8a466,
   escolaQuadraLinha: 0xf7f3ea,
   escolaQuadraGarrafao: 0x4677c9,
@@ -1642,6 +1751,24 @@ export const PALETTE = {
   flynnApito: 0xc9d1d9,
   flynnTenisFaixa: 0xf26b4a,
 
+  // O ROCCO, o lobo capitão dos DOGÕES (a escola rival, de cachorro — nós somos os Gatitos): o cinza de lobo (o claro
+  // do focinho, do peito e da juba, o chumbo das meias e da ponta do rabo), o olho amarelo-dourado. E o time de
+  // VERMELHO E CINZA com detalhe branco (a escolha do Renan); a plaquinha de cachorro e a corrente de metal
+  roccoPelo: 0x8e939c,
+  roccoPeloClaro: 0xe8e5de,
+  roccoPeloEscuro: 0x474b55,
+  roccoOrelhaDentro: 0xd8c8c3,
+  roccoNariz: 0x222024,
+  roccoOlho: 0xe3b23c,
+  roccoPupila: 0x1f1c1e,
+  roccoBochecha: 0xc9a5a2,
+  dogoesVermelho: 0xc9343c,
+  dogoesCinza: 0x3e414a,
+  dogoesCinzaClaro: 0xb9bdc4,
+  dogoesBranco: 0xf5f3ee,
+  dogoesSola: 0xe6e1d6,
+  dogoesCorrente: 0x9aa0a8,
+
   // A VALENTINA, a flamingo italiana do marketing dos Gatitos: o rosa de
   // flamingo (mais claro no rosto e no topete, coral forte nas asas, a ponta
   // das penas de voo quase preta), a perna rosa-salmão, o bico claro com a
@@ -1697,6 +1824,9 @@ export const PALETTE = {
   venezuelaAmarelo: 0xf6c431,
   venezuelaAzul: 0x2a56a8,
   venezuelaVermelho: 0xd2373b,
+  // o conversível da Tia Liz e das irmãs: o couro da mala antiga de viagem e o vime da cesta de arepinhas
+  tiaLizMalaCouro: 0x9a5b34,
+  vimeCesta: 0xd2a560,
 
   // A COMIDA DA TIA LIZ (a cantina da escola): a sopita de caldo dourado com
   // cenoura, batata, milho, abóbora e coentro; a pasta com almôndegas e o
@@ -2136,9 +2266,11 @@ export const PALETTE = {
   falaSol: 0xff9a2c, // o laranja da presilha de sol
   falaEstrella: 0x2fb3a6, // o turquesa (a estrela já é amarela como a Gina)
   falaFlynn: 0xc4562a, // a ferrugem da raposa
+  falaRocco: 0x6b7280, // o cinza do lobo
   falaValentina: 0xd2337a, // o fúcsia de flamingo (mais forte que o rosa do Ari)
   falaLiz: 0x7d8a2e, // o verde-oliva da blusa dela
   falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
+  falaPietro: 0x1f63c6, // o azul do pavão
 
   /*
    * AS TINTAS DO ATELIÊ DE TINGIMENTO (mezanino da boutique da Estella): a
@@ -2783,6 +2915,48 @@ export const PALETTE = {
   palquinhoBarra: 0xf39a3c,
   plaquinhaDeVoto: 0xf5861f,
   flashDaFoto: 0xffffff,
+  // as placas pintadas em canvas da estrada da escola: o branco que deixa o desenho com as cores dele
+  placaPintada: 0xffffff,
+  // a lambreta da Estella (a moto com sidecar e a pilha de roupas): menta pastel com creme,
+  // o banco de couro caramelo, e o capacete rosa com os óculos grandes de aviador
+  lambretaMenta: 0x9fd8c4,
+  lambretaMentaSombra: 0x78bba6,
+  lambretaCreme: 0xf6eedb,
+  lambretaBanco: 0x9b5a3c,
+  lambretaBorracha: 0x3a3a40,
+  capaceteDaEstella: 0xf2a7b6,
+  capaceteDaEstellaFaixa: 0xfff4ea,
+  oculosDeAviador: 0x8a5a32,
+  oculosDeAviadorLente: 0xbfe4f2,
+  cordaDaPilha: 0xd8b98a,
+  // a Kombi de sorvete do Mano: chocolate embaixo (com o granulado pintado), creme em cima,
+  // o V creme no nariz, a neve escorrendo do teto e a geada que o ar do freezer deixa no para-brisa
+  kombiChocolate: 0x6e4129,
+  kombiChocolateEscuro: 0x4e2c1b,
+  kombiCreme: 0xfbefdc,
+  kombiVidro: 0x2f4a5a,
+  geadaDoParaBrisa: 0xeef8ff,
+  // o carrinho do Cookie: um microcarro rosa-bebê em que ele vai espremido, com as orelhas para
+  // fora; o debrum e o forro creme, a borracha do furo da tromba e o brigadeirinho que ele dá
+  carrinhoRosa: 0xf9c0d0,
+  carrinhoRosaEscuro: 0xe790ac,
+  carrinhoForro: 0xfff3e2,
+  carrinhoBorracha: 0x3a3440,
+  carrinhoLatao: 0xe9b949,
+  docinhoForminha: 0xf7a8c4,
+  docinhoGranulado: 0x3d2416,
+  // o 2CV do Jean-Luc: o azul de carro francês (mais claro que a boina, para o pato não sumir na
+  // lata), o vinco das nervuras, a lona creme da capota enrolada e do banco de rede, o couro das
+  // cintas, e os óculos escuros (a armação de tartaruga escura e a lente fumê)
+  doisCavalosAzul: 0x3a6fb3,
+  doisCavalosAzulEscuro: 0x28548e,
+  doisCavalosLona: 0xece3cc,
+  doisCavalosLonaListra: 0xd9534b,
+  doisCavalosCouro: 0x7a4a2a,
+  oculosEscurosArmacao: 0x1d1a1f,
+  oculosEscurosLente: 0x2b3448,
+  baguete: 0xd9a35a,
+  bagueteCasca: 0xb97a36,
   /**
    * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
    * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e
@@ -2793,6 +2967,264 @@ export const PALETTE = {
   noiteEmCasaLuar: 0xa9bcff,
   vidroDeNoite: 0x27305e,
   luarNaJanela: 0x9fb4ff,
+  /**
+   * O BEBITO MOBILE (`world/bebitoMobile/`), o carro que o Renan dá de presente
+   * para o Ari. As três primeiras são a PINTURA DE FÁBRICA da ficha (a lataria
+   * azul-céu que os dois escolheram, o teto creme e o estofado caramelo) — a
+   * edição futura troca essas três pela ficha, e o resto é do carro: o cromo,
+   * a borracha, o pneu com a banda branca, as luzes, o carpete, o painel e o
+   * volante de baquelite creme.
+   */
+  bebitoAzulCeu: 0x86c8f2,
+  bebitoCreme: 0xfbf2de,
+  bebitoEstofado: 0xe2b184,
+  bebitoEstofadoVivo: 0xfbf2de,
+  bebitoCromo: 0xdfe5ea,
+  bebitoBorracha: 0x262a31,
+  bebitoPneu: 0x2d3037,
+  bebitoBandaBranca: 0xf6f3ea,
+  bebitoFarol: 0xfff4cf,
+  bebitoPisca: 0xf5a93a,
+  bebitoLanterna: 0xdc3f3a,
+  bebitoRe: 0xf6f3e8,
+  bebitoCarpete: 0x6e7f96,
+  bebitoChassi: 0x30353d,
+  bebitoPainel: 0x8a6a4c,
+  bebitoVolante: 0xf7efdc,
+  bebitoMostrador: 0xfdf8ea,
+  /** as miudezas de dentro: o vaso de barro do girassol, a folha, o laço rosa da Josefina, a mola do Jean-Luc */
+  bebitoVasinho: 0xc8774a,
+  bebitoFolha: 0x5aa24e,
+  bebitoLacoRosa: 0xf48fb1,
+  bebitoMola: 0xb9c2ca,
+  /** a estrela do retrovisor: a MESMA cor da presilha de estrela do cabelo do Ari (`CharacterRig`) */
+  estrelaDoAri: 0xf2e6cf,
+  bebitoCordao: 0xfaf6ee,
+  /** a carga: a capa de pano do Bebito book, os dois livros, a mantinha de lã da Estella e o pote de biscoitos */
+  bebitoBookCapa: 0xd98a6a,
+  bebitoBookElastico: 0x7a3f2e,
+  bebitoBookEtiqueta: 0xfdf6e6,
+  livroDoAri: 0x2f7f9a,
+  livroDoAriFaixa: 0xf2c14a,
+  livroDoRenan: 0xd9652f,
+  livroDoRenanFaixa: 0x2a1d1a,
+  livroMiolo: 0xf7f0de,
+  mantinhaLa: 0xfaf3e6,
+  mantinhaListra: 0xf2a7b8,
+  mantinhaEtiqueta: 0xc9a25e,
+  poteTampa: 0xf2a7b8,
+  /**
+   * A FRENTE DA CASA DO ARI (`world/frenteDaCasa.ts`): a parede é a `wallCream`
+   * da sala (é a mesma casa) e a porta, a `woodDark` de dentro. Aqui moram o
+   * que só existe do lado de fora: a madeira branca das janelas e da cerca,
+   * a veneziana menta, o rodapé e a caixa de correio.
+   */
+  casaBranco: 0xfbf8f1,
+  casaVeneziana: 0x7ab8a1,
+  casaRodape: 0xd9c4a6,
+  casaCortina: 0xf6d9c9,
+  // as casas VIZINHAS da rua do Ari (`scenes/frenteDaCasa.ts`): o mesmo molde
+  // da casa dele, cada uma de uma cor de casinha de bairro
+  vizinhaAmarela: 0xf6dfa0,
+  vizinhaRosa: 0xf3c9c2,
+  vizinhaAzul: 0xc3dcea,
+  vizinhaVerde: 0xd3e4c4,
+  vizinhaLilas: 0xddd0ea,
+  vizinhaTelhaEscura: 0x97564a,
+  vizinhaTelhaCinza: 0x7c8090,
+  vizinhaVenezianaAzul: 0x6a97c4,
+  vizinhaVenezianaVinho: 0xb5665f,
+  vizinhaVenezianaMostarda: 0xd9a84e,
+  // a casa do Ari por fora, modernizada (`world/frenteDaCasa.ts`): o muro
+  // claro de reboco com o capeamento e a ferragem de grafite, o ripado de
+  // madeira dos portões e do pergolado, e a laje do caminho
+  casaMuro: 0xf2ede3,
+  casaMuroBase: 0xbfb8ab,
+  casaGrafite: 0x3d4046,
+  casaRipa: 0xbd8a58,
+  casaLaje: 0xddd9d0,
+  casaLuzDoMuro: 0xfff0c8,
+  // as plantas do jardim (`world/plantasDeJardim.ts`)
+  capimVerde: 0x86b85a,
+  capimPalha: 0xcfc27a,
+  capimPluma: 0xf2dfc6,
+  lavandaFolha: 0x9fb89d,
+  lavandaEspiga: 0x8f7fd9,
+  lavandaEspigaClara: 0xcbbcf5,
+  hortensiaFolha: 0x3f8f47,
+  hortensiaAzul: 0x7fa8ec,
+  hortensiaLilas: 0xb99cea,
+  hortensiaRosa: 0xf3a5c7,
+  agaveFolha: 0x7fb09e,
+  agaveBorda: 0xbcdcc8,
+  agaveEspinho: 0x6b4a3a,
+  margaridaBranca: 0xfffdf6,
+  margaridaMiolo: 0xffc93a,
+  costelaFolha: 0x2f8a45,
+  costelaTalo: 0x6f8f4a,
+  buxinho: 0x3a8a3c,
+  vasoDeCimento: 0xc9c6bf,
+  heraEscura: 0x2a6e34,
+  heraMedia: 0x3f9544,
+  heraClara: 0x7cc45a,
+  cascaDePinus: 0x8a6244,
+  pedriscoBranco: 0xf0ede6,
+  // O QUINTAL DECORADO (`docs/QUINTAL.md`): os móveis do Papita Delivery
+  // (`world/decoracoesDoQuintal.ts`) e as peças do correio e da garagem
+  quintalFerro: 0x4f7a62, // o ferro pintado de verde-sálvia da mesinha bistrô
+  quintalAlmofadaBistro: 0xf6d77a, // a almofadinha amarela das cadeiras
+  quintalMadeira: 0xc98d55, // a madeira clara da espreguiçadeira (o veio vem do canvas)
+  quintalAlmofada: 0xf3eadb, // o colchonete de lona cru
+  quintalAlmofadaListra: 0x6fb3c9, // e a listra azul-piscina dele
+  quintalLona: 0xf7f1e3, // o guarda-sol: os gomos claros…
+  quintalLonaListra: 0xe9876f, // …e os de terracota, alternados
+  quintalBaseDoGuardaSol: 0xb9b3a8,
+  papelao: 0xc9a06a, // a caixa da encomenda
+  papelaoEscuro: 0xa57d4c,
+  fitaAdesiva: 0xe8d9a8,
+  papitaAmarelo: 0xffd25a, // a etiqueta do Papita Delivery
+  papitaVerde: 0x4fae6a,
+  ferramentaCabo: 0xb7834e, // os cabos de madeira das ferramentas da garagem
+  ferramentaMetal: 0x9aa3ab,
+  ferramentaVerde: 0x5fae6e, // o cabo de plástico verde da tesoura e da pazinha
+  painelDeFuros: 0xd9c9a8, // o painel de furinhos das ferramentas
+  // os caminhos do quintal (`world/caminhosDoQuintal.ts`) e os pisos (`world/pisosDoQuintal.ts`)
+  pedraDoCaminho: 0xc9c2b5, // a pedra de passar: o cinza-areia…
+  pedraDoCaminhoClara: 0xddd6c8, // …o claro…
+  pedraDoCaminhoEscura: 0x9c968c, // …e o escuro (também a guia da pedra portuguesa)
+  tijolinhoDoCaminho: 0xd98a62, // o tijolinho da espinha de peixe
+  tijolinhoGuia: 0xb8674a, // e o tijolo em pé da guia (e da serrilha do canteiro)
+  dormenteMadeira: 0x8a6142, // o dormente de madeira escura
+  pedraPortuguesa: 0xf1ede5, // a pedrinha branca da calçada portuguesa
+  deckDoQuintal: 0xc79363, // a tábua do deck
+  deckDoQuintalVao: 0x4d3a2a, // o escuro do vão entre as tábuas
+  gramadoDeFlores: 0x5fae4f, // a grama mais funda embaixo das florzinhas
+  // as peças de parede, de cima do muro, penduradas e de ponta a ponta (`world/decoracoesDeParede.ts`)
+  casinhaDePassaro: 0x8fc7d9, // a casinha de passarinho, azul-céu
+  espelhoDeJardim: 0xbfe0f2, // o espelho refletindo o céu
+  suculenta: 0x8cc49a, // as rosetas: o verde-água…
+  suculentaRosada: 0xe8a7b8, // …e a rosada
+  gatinhoDeCeramica: 0x9aa0aa, // o gatinho de cerâmica cinza
+  placaSolar: 0x2f3a5c, // a plaquinha solar da lanterninha
+  cortinaDaSala: 0xf1c9d6, // as cortinas das janelas da frente da sala do Ari, rosa-claro
+  sinoDeVento: 0xc9d3dc, // os tubos do sino de vento
+  lanternaDePapel: 0xffc98a, // a lanterna de papel acesa, pêssego
+  // os móveis de usar (`world/moveisDeUsar.ts`)
+  redeListraA: 0xe9876f, // a rede: a listra terracota…
+  redeListraB: 0x6fb3c9, // …e a azul-piscina (a terceira é a lona crua)
+  casinhaDoPelusa: 0xf3c6d4, // a casinha do Pelusa, rosinha
+  // a piscininha (`world/moveisDeUsar.ts`): a água, o fundo, a marolinha e o patinho
+  piscininhaAgua: 0x86d4ea,
+  piscininhaFundo: 0x9fd0e0,
+  piscininhaOnda: 0xeefcff,
+  // o fogo de chão: as pedras em três tons, a tora, o toquinho de sentar, a cinza e o fogo
+  fogueiraPedra: 0x8f8a82,
+  fogueiraPedraClara: 0xb2aca2,
+  fogueiraPedraEscura: 0x6f6a64,
+  fogueiraTora: 0x6b4a33,
+  fogueiraBanco: 0xb98255,
+  fogueiraBancoTopo: 0xd9b07a,
+  fogueiraCinza: 0x3a3532,
+  fogueiraBrasa: 0xff6a2a,
+  fogueiraChama: 0xffa63a,
+  fogueiraChamaClara: 0xffe08a,
+  // a estrada da viagem de carro (`world/estrada.ts`)
+  placaVerso: 0x8d949c,
+  coneLaranja: 0xf28a2e,
+  semaforoCaixa: 0x34373d,
+  semaforoVermelho: 0xf0553f,
+  semaforoAmarelo: 0xffc53a,
+  semaforoVerde: 0x4fd07a,
+  lombadaAsfalto: 0xe9e4d6,
+  buracoBeira: 0x8a8d92,
+  buracoFundo: 0x3d3f45,
+  patoPe: 0xf2a23a,
+  // o estacionamento do Villa Lobos (`world/estacionamento.ts`): os carros dos
+  // outros (cores de carrinho de brinquedo, que não brigam com o azul-céu do
+  // Bebito), o vidro, o pneu, a cancela e o rosa da vaga deles
+  carroVermelho: 0xe0645a,
+  carroAmarelo: 0xf2c94c,
+  carroMenta: 0x8fd3b8,
+  carroLilas: 0xb9a3e3,
+  carroVidro: 0x6f97b3,
+  carroParaChoque: 0xc9ccd1,
+  pneu: 0x34363c,
+  cancelaAmarela: 0xf2c431,
+  vagaRosa: 0xff8fae,
+  // o estacionamento do clube: concreto frio, piso cinza e metal acetinado;
+  // os detalhes verdes reaproveitam o portão do próprio clube.
+  clubeEstacionamentoPiso: 0x647175,
+  clubeEstacionamentoConcreto: 0xd5dedb,
+  clubeEstacionamentoMetal: 0x42555b,
+
+  /*
+   * O PIETRO, o pavão motorista da Valentina (`entities/bichos/Pavao.ts`,
+   * `docs/CARROS-DA-ESCOLA.md` §4): o azul do pavão no corpo e no pescoço, a
+   * cara branca, a asa canela listrada, a cauda verde-bronze com os OCELOS
+   * (o anel bronze, o turquesa e o miolo azul-noite) — e o uniforme de
+   * chofer: o quepe e a gravata quase pretos, o fio dourado e as luvas
+   * brancas (sem branco puro: estoura no sol).
+   */
+  pavaoAzul: 0x2361c4,
+  pavaoAzulClaro: 0x3f8fe0,
+  pavaoRosto: 0xf7f5ee,
+  pavaoBico: 0xc9b79c,
+  pavaoPupila: 0x1d1a24,
+  pavaoOlho: 0x7a4a24,
+  pavaoBochecha: 0x9fc3f0,
+  pavaoAsa: 0xc78a4e,
+  pavaoAsaListra: 0x5e3b22,
+  pavaoPerna: 0x8b8580,
+  pavaoCauda: 0x2e8a57,
+  pavaoCaudaClara: 0x7cc07c,
+  pavaoBronze: 0xb88a3a,
+  pavaoOcelo: 0x25b2ad,
+  pavaoOceloMiolo: 0x1a2e78,
+  pavaoCrista: 0x2aa0b8,
+  motoristaQuepe: 0x23222c,
+  motoristaDourado: 0xd8b45c,
+  motoristaLuva: 0xfbf8f1,
+  /*
+   * A LIMUSINE CONVERSÍVEL DA VALENTINA (`world/limusineDaValentina.ts`): o rosa
+   * da lataria é mais FUNDO e mais frio que as penas dela (em cima de um rosa
+   * igual, ela sumiria), com a lança perolada; por dentro, couro branco-pérola
+   * (o contraste que deixa a silhueta dela ler), o tapete vermelho e o dourado
+   * só em fio, botão e no flamingo do capô.
+   */
+  limusineRosa: 0xe8578f,
+  limusineRosaFundo: 0xc93f78,
+  limusinePerola: 0xfbe0ea,
+  limusineCouro: 0xfff6f0,
+  limusineTapete: 0xc8283c,
+  limusineDourado: 0xdcb65e,
+  limusineChapeleira: 0xf7b8cf,
+  /*
+   * O ÔNIBUS ESCOLAR DOS GATITOS, estacionado na escola (`world/onibusEscolarDosGatitos.ts`): o amarelo de ônibus
+   * escolar (mais laranja que o amarelo dos Gatitos, que fica nos detalhes), o preto dos frisos e das borrachas, o
+   * vermelho do PARE e das luzes de alerta, e o rosinha de dentro das orelhinhas do teto.
+   */
+  onibusEscolarAmarelo: 0xf2ac1d,
+  onibusEscolarPreto: 0x2a282e,
+  onibusEscolarVidro: 0x5d7f99,
+  onibusEscolarPare: 0xd9332f,
+  onibusEscolarOrelha: 0xf6a9b4,
+  /* o céu refletido no alto dos vidros, e a placa do Mercosul (o branco e a faixa azul) */
+  onibusEscolarReflexo: 0xc4dceb,
+  onibusEscolarPlaca: 0xf7f8fa,
+  onibusEscolarPlacaAzul: 0x1f4fa8,
+  /*
+   * O GATITO LAVANDO O ÔNIBUS (`eventos/gatitoLavaOOnibus.ts`): a esponja amarela com a fibra verde, a espuma de
+   * sabão quase branca e o balde de plástico azul dos Gatitos
+   */
+  esponjaAmarela: 0xf5d35a,
+  esponjaVerde: 0x4f9a5a,
+  espumaDeSabao: 0xf8fbff,
+  baldeDeLavar: 0x4f8fd6,
+  /* o mutirão da lavagem: a mangueira verde (e o verde da volta de baixo), a pistola laranja e o carrinho de enrolar */
+  mangueiraVerde: 0x4fae5f,
+  mangueiraVerdeEscuro: 0x2f7d43,
+  pistolaDeMangueira: 0xf07a3c,
+  carrinhoDeMangueira: 0x3f6fc6,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

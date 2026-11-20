@@ -597,6 +597,63 @@ export function brincosDePerola(m: MedidasDaValentina): THREE.Object3D {
   return g;
 }
 
+/**
+ * OS ÓCULOS GATINHO NO ROSTO (o look de limusine): a mesma armação dourada do
+ * `oculosNaCabeca`, maior, com a lente escura em cima dos olhos. Flamingo tem o
+ * olho de lado, então cada lente acompanha a curva da cara (virada pela normal
+ * do crânio no lugar do olho), e a ponte cruza por cima da raiz do bico; as
+ * hastes voltam pela lateral da cabeça.
+ */
+export function oculosNoRosto(m: MedidasDaValentina): THREE.Object3D {
+  const g = new THREE.Group();
+  g.name = 'oculos-no-rosto';
+  const ouro = toon(OURO, { doubleSide: true });
+  const lente = toon(P.valentinaLente, { doubleSide: true });
+  const C = m.cabeca;
+  const gatinho = (k: number, lado: -1 | 1): THREE.Shape => {
+    const s = new THREE.Shape();
+    const X = (x: number): number => x * lado * k;
+    s.moveTo(X(-0.018), 0.004 * k);
+    s.quadraticCurveTo(X(-0.02), -0.014 * k, X(-0.002), -0.015 * k);
+    s.quadraticCurveTo(X(0.018), -0.015 * k, X(0.021), 0.002 * k);
+    s.quadraticCurveTo(X(0.024), 0.012 * k, X(0.027), 0.016 * k);
+    s.quadraticCurveTo(X(0.008), 0.014 * k, X(-0.012), 0.012 * k);
+    s.quadraticCurveTo(X(-0.018), 0.011 * k, X(-0.018), 0.004 * k);
+    return s;
+  };
+  // onde fica cada olho (o mesmo ponto do `naPele` dos olhos da Valentina) e a normal ali
+  const naCara = (x: number, y: number): { p: THREE.Vector3; n: THREE.Vector3 } => {
+    const z = C.rz * Math.sqrt(Math.max(0, 1 - (x / C.rx) ** 2 - (y / C.ry) ** 2));
+    return { p: new THREE.Vector3(x, y, z), n: new THREE.Vector3(x / C.rx ** 2, y / C.ry ** 2, z / C.rz ** 2).normalize() };
+  };
+  const pontas: THREE.Vector3[] = [];
+  for (const lado of [-1, 1] as const) {
+    const { p, n } = naCara(lado * 0.035, 0.016);
+    const peca = new THREE.Group();
+    peca.name = lado < 0 ? 'lente-esquerda' : 'lente-direita';
+    const aro = gatinho(1.45, lado);
+    aro.holes.push(gatinho(1.15, lado));
+    peca.add(new THREE.Mesh(new THREE.ExtrudeGeometry(aro, { depth: 0.004, bevelEnabled: false, curveSegments: 8 }), ouro));
+    const vidro = new THREE.Mesh(new THREE.ShapeGeometry(gatinho(1.15, lado), 8), lente);
+    vidro.position.z = 0.0015;
+    peca.add(vidro);
+    peca.position.copy(p).addScaledVector(n, 0.009);
+    peca.lookAt(peca.position.clone().add(n));
+    g.add(peca);
+    peca.updateMatrixWorld(true);
+    pontas.push(peca.localToWorld(new THREE.Vector3(-lado * 0.022, 0.004, 0)));
+    // a haste: da ponta de fora da lente, rente à cabeça, até atrás do olho
+    const fora = peca.position.clone().add(new THREE.Vector3(lado * 0.03, 0.006, -0.004));
+    const tras = new THREE.Vector3(lado * C.rx * 1.02, 0.012, -0.012);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([fora, fora.clone().lerp(tras, 0.5).add(new THREE.Vector3(lado * 0.004, 0, 0)), tras]), 8, 0.0016, 5), ouro));
+  }
+  // a ponte por cima da raiz do bico, de uma lente à outra
+  const a = pontas[0], b = pontas[1];
+  const meio = a.clone().add(b).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.006, 0.012));
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([a, meio, b]), 8, 0.0019, 5), ouro));
+  return g;
+}
+
 /** o que vai na cabeça no look dos Gatitos: os óculos e os brincos */
 export function cabecaDosGatitos(m: MedidasDaValentina): THREE.Object3D {
   const g = new THREE.Group();
@@ -736,7 +793,25 @@ export const LOOK_GATITOS_CHIQUE: LookDaValentina = {
   pe: (m, lado) => scarpin(m, lado),
 };
 
+/**
+ * O LOOK DE LIMUSINE (`world/limusineDaValentina.ts`): o uniforme chique de
+ * sempre — o azul do blazer é o que separa ela do rosa do carro —, com os
+ * ÓCULOS GATINHO no rosto, de estrela de cinema, em vez de na cabeça.
+ */
+export const LOOK_DE_LIMUSINE: LookDaValentina = {
+  ...LOOK_GATITOS_CHIQUE,
+  id: 'limusine',
+  nome: 'De limusine',
+  cabeca: (m) => {
+    const g = new THREE.Group();
+    g.add(oculosNoRosto(m));
+    g.add(brincosDePerola(m));
+    return g;
+  },
+};
+
 /** todos os looks dela, pelo id (a cena e o teste escolhem por aqui) */
 export const LOOKS_DA_VALENTINA: Record<string, LookDaValentina> = {
   [LOOK_GATITOS_CHIQUE.id]: LOOK_GATITOS_CHIQUE,
+  [LOOK_DE_LIMUSINE.id]: LOOK_DE_LIMUSINE,
 };

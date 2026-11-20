@@ -174,6 +174,11 @@ export class CoelhaDaTorcida extends Bicho {
   private sentidoDaFesta: 1 | -1 = 1;
   private maiorGiroDaFesta = 0;
 
+  /** a cabeça (o conversível da Tia Liz pendura nela os óculos de sol da Luna) */
+  get cabecaDaCoelha(): THREE.Group {
+    return this.cabeca;
+  }
+
   constructor(area: AreaDoBicho, ficha: FichaDeCoelha) {
     super(area, {
       // ela é de POSTO (o piquenique): a área que a cena passa a segura ali

@@ -209,6 +209,15 @@ export const DUPLA = [ARI, RENAN] as const;   // [controlado, acompanhante]
 
 Trocar a ordem troca quem começa jogável. Passar só uma ficha esconde o parceiro.
 
+## Lavando o ônibus (pose de serviço por cima da de pé)
+
+`g.lavarNaCena(quem, 'esponja' | 'mangueira' | null, alto)` (`CharacterRig.lavar`): a pose entra por PESO, por cima
+de TUDO da pose de pé (até do tronco e da cabeça, que a pose de pé escreve no fim — por isso ela é a última coisa do
+ramo de pé). Esponja: o braço direito erguido e um tico para FORA fazendo a roda (de lado, a cabeça chibi não tapa a
+esponja), o esquerdo apoiado na lataria. Mangueira: as duas mãos na pistola, o tremor da pressão, e `alto` ergue a
+mira. O que vai na mão é da cena (`segurarNaCena(id, obj, 'none')`), e a mão desfaz o giro do braço. O pulinho de
+comemorar de qualquer um dos dois: `g.comemorar(quem)`.
+
 ## Limites conhecidos (candidatos a evoluir)
 
 - Sem expressões faciais além do sorriso fixo.

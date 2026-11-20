@@ -6,6 +6,22 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 import type { VozDaFala } from '../../core/types';
 
 /**
+ * A POSE DELE AO VOLANTE do 2CV (`world/doisCavalosDoJeanLuc.ts`): o veículo
+ * preenche, o `animar` desenha. Nasce desligada (`aoVolante = null`), e fora do
+ * carro nada disto toca no Jean-Luc de sempre.
+ */
+export interface PoseAoVolante {
+  /** 0 parado, 1 correndo: a boina treme e deita para trás no vento */
+  vento: number;
+  /** para onde a cabeça vira (radianos; negativo olha para a janela da esquerda dele, a do Bebito) */
+  olhar: number;
+  /** a asa da janela larga o volante e levanta a raquete (0 a 1) */
+  raquete: number;
+  /** o golpe da raquete, de 0 a 1 enquanto ele rebate (0 fora dele) */
+  golpe: number;
+}
+
+/**
  * O JEAN-LUC, o pato francês do lago do Villa Lobos — e o maior entusiasta de
  * tênis de mesa que este parque já teve.
  *
@@ -54,6 +70,10 @@ export class JeanLuc extends Bicho {
   private readonly pes: THREE.Group[] = [];
   private readonly olhos: THREE.Mesh[] = [];
   private readonly rabo = new THREE.Group();
+  private readonly punhoDaRaquete = new THREE.Group();
+
+  /** a pose ao volante do 2CV; `null` (o de sempre) é o pato do lago */
+  aoVolante: PoseAoVolante | null = null;
 
   /**
    * Quanto ainda falta da comemoração, em segundos.
@@ -249,7 +269,7 @@ export class JeanLuc extends Bicho {
      * a ponta de baixo do cabo fica em `-0,365`. Vezes a escala 0,58 dá
      * `-0,2117` — e é essa a subida que encosta a ponta do cabo na origem.
      */
-    const punhoDaRaquete = new THREE.Group();
+    const punhoDaRaquete = this.punhoDaRaquete;
     punhoDaRaquete.position.set(0.015, -0.185, 0.03);
     /*
      * O GIRO EM `y` DECIDE PARA ONDE A FACE DA RAQUETE OLHA, e ele é medido
@@ -429,6 +449,27 @@ export class JeanLuc extends Bicho {
     this.group.position.y = y;
   }
 
+  /** o punho da raquete (a cara dela fica 0,21 acima, no `y` dele) */
+  get raqueteNaMao(): THREE.Object3D {
+    return this.punhoDaRaquete;
+  }
+
+  /** a cabeça (o 2CV pendura nela os óculos escuros) */
+  get cabecaDoPato(): THREE.Group {
+    return this.cabeca;
+  }
+
+  /**
+   * NO CARRO a raquete vai para a asa da ESQUERDA, a da janela do lado do
+   * Bebito (a direita fica no volante). É o mesmo punho espelhado: o pivô na
+   * ponta da asa e o disco para fora do corpo.
+   */
+  raqueteNaJanela(): void {
+    this.asas[0].add(this.punhoDaRaquete);
+    this.punhoDaRaquete.position.set(-0.015, -0.185, 0.03);
+    this.punhoDaRaquete.rotation.set(0.18, 0.45, 0.3);
+  }
+
   /** a altura atual dele, para a cena interpolar a saída da água */
   get altura(): number {
     return this.group.position.y;
@@ -518,5 +559,30 @@ export class JeanLuc extends Bicho {
      */
     this.boina.rotation.z = 0.3 + Math.sin(this.fasa * 8 - 0.5) * 0.22 * mistura;
     this.boina.rotation.x = -0.12 + Math.sin(this.fasa * 6.4 - 0.5) * 0.1 * mistura;
+
+    /**
+     * AO VOLANTE (só com a pose ligada; o pato do lago nunca entra aqui): em pé
+     * no caixote, as duas asas no volante, sem gingado; a cabeça vira para quem
+     * parou do lado, e a boina deita para trás no vento. Para o ponto de ping
+     * pong, a asa da janela larga o volante e levanta a raquete para fora.
+     */
+    const carro = this.aoVolante;
+    if (carro) {
+      const tremido = Math.sin(fase * 17) * 0.006 * carro.vento;
+      this.corpo.position.y = respiro * 0.6 + tremido;
+      this.corpo.rotation.set(0.06, 0, 0);
+      const [esquerda, direita] = this.asas;
+      direita.rotation.set(-1.12 + Math.sin(fase * 1.7) * 0.03, 0, 0.16);
+      const r = carro.raquete, golpe = Math.sin(carro.golpe * Math.PI);
+      esquerda.rotation.set(-1.12 * (1 - r) - 0.35 * r - golpe * 0.9, 0, -0.16 - r * 1.05 + golpe * 0.35);
+      this.punhoDaRaquete.visible = r > 0.05;
+      for (const pe of this.pes) pe.rotation.x = 0;
+      this.rabo.rotation.y = Math.sin(fase * 2.4) * 0.1;
+      this.pescoco.rotation.set(0.12, 0, 0);
+      this.cabeca.rotation.y = carro.olhar;
+      for (const olho of this.olhos) olho.scale.y = 1;
+      this.boina.rotation.z = 0.3 + Math.sin(fase * 13) * 0.07 * carro.vento;
+      this.boina.rotation.x = -0.12 - 0.16 * carro.vento;
+    }
   }
 }

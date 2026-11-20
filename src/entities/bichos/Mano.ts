@@ -407,6 +407,27 @@ export class Mano extends Bicho {
    * `setTimeout`: o relógio do bicho é o `dt` que ele já recebe, e um
    * `setTimeout` continuaria correndo com o jogo pausado.
    */
+  /**
+   * AO VOLANTE (a Kombi de sorvete, `world/kombiDoMano.ts`): pinguim não senta,
+   * então ele dirige EM PÉ, e o painel e a porta escondem os pés. As duas
+   * nadadeiras vêm para a frente e seguram o volante, mexendo um tico (quem
+   * dirige corrige a direção). A dança ganha disto: na conversa, ele larga o
+   * volante para dançar.
+   */
+  dirigindo = false;
+
+  /**
+   * O chapéu de casquinha aparece ou some. Na Kombi ele não cabe na cabine (são
+   * 45 cm acima da cabeça), e ao volante quem vai na cabeça é o quepe de papel
+   * de sorveteiro, que o veículo pendura em `apoioDoChapeu`.
+   */
+  mostrarChapeu(v: boolean): void {
+    this.chapeu.visible = v;
+  }
+  get apoioDoChapeu(): THREE.Group {
+    return this.cabeca;
+  }
+
   dancar(segundos = 2.4): void {
     this.dancando = Math.max(this.dancando, segundos);
   }
@@ -486,10 +507,13 @@ export class Mano extends Bicho {
        * ele dance — mas aí a bandeja já foi entregue, porque a cena só o faz
        * dançar depois de servir.
        */
-      const paraAFrente = this.comBandeja && !dancando ? -1.15 : 0;
+      const noVolante = this.dirigindo && !dancando;
+      const paraAFrente = this.comBandeja && !dancando ? -1.15 : noVolante ? -1.05 + Math.sin(fase * 1.3 + lado) * 0.05 : 0;
       asa.rotation.x += (paraAFrente - asa.rotation.x) * Math.min(1, dt * 8);
       if (this.comBandeja && !dancando) {
         asa.rotation.z += (lado * 0.32 - asa.rotation.z) * Math.min(1, dt * 8);
+      } else if (noVolante) {
+        asa.rotation.z += (lado * 0.2 - asa.rotation.z) * Math.min(1, dt * 8);
       }
     }
 
