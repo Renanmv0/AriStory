@@ -421,10 +421,19 @@ export class VisitanteDaPortaria extends Bicho {
         listra.scale.set(cx * 0.32, cy * 1.02, cz * 1.02);
         h.add(listra);
         for (const lado of [-1, 1]) {
-          const faixa = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), this.mat(0x24222a));
-          faixa.scale.set(cx * 0.35, cy * 0.7, cz * 0.75);
-          faixa.position.set(lado * cx * 0.5, cy * 0.05, cz * 0.38);
-          h.add(faixa);
+          // Pelagem rente ao crânio: os elipsoides antigos tapavam os olhos.
+          const geo = new THREE.RingGeometry(0, 1, 32, 5);
+          const pontos = geo.getAttribute('position');
+          const giro = -lado * .25;
+          for (let i = 0; i < pontos.count; i++) {
+            const x = pontos.getX(i) * .23, y = pontos.getY(i) * .42;
+            const { p, n } = this.naCasca(lado * .42 + x * Math.cos(giro) - y * Math.sin(giro),
+              .12 + x * Math.sin(giro) + y * Math.cos(giro));
+            p.addScaledVector(n, .002);
+            pontos.setXYZ(i, p.x, p.y, p.z);
+          }
+          geo.computeVertexNormals();
+          h.add(new THREE.Mesh(geo, this.mat(0x3d3a40)));
         }
         this.esfera(h, 0xf2efe8, cx * 0.32, cy * 0.32, cz * 0.5, 0, -cy * 0.35, cz * 0.75, 14);
         this.esfera(h, 0x2b2622, 0.02, 0.014, 0.012, 0, -cy * 0.3, cz * 1.22, 8);
@@ -466,7 +475,7 @@ export class VisitanteDaPortaria extends Bicho {
       }
       const ax = (OLHO_AFASTADO as Record<string, number>)[especie] ?? 0.38;
       const ay = especie === 'hipopotamo' ? 0.3 : especie === 'bode' ? 0.18 : 0.12;
-      this.pousar(olho, lado * ax, ay, 0.0015);
+      this.pousar(olho, lado * ax, ay, especie === 'texugo' ? .006 : .0015);
       this.olhos.push(olho);
       const bochecha = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), this.mat(0xf3a0a8));
       bochecha.scale.set(0.026, 0.016, 0.005);
