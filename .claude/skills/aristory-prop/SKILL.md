@@ -1355,7 +1355,9 @@ ENTRA:
   das emendas.
 - **O que é de dentro tem que poder ser visto**: tudo acima do topo da parede
   (telhado, forro, placa, catavento) mora no grupo `teto`, a folha da porta na
-  `dobradica`, e as medidas que o teste lê ficam em `userData.medidas`.
+  `dobradica`, e as medidas que o teste lê ficam em `userData.medidas`. Tirar
+  o teto NÃO basta para a isométrica: parede de 3,4 do lado da câmera esconde
+  ~3 m de piso — a sala sem teto se vê por uma câmera de cena por cima.
 - **A regra do balcão**: a beira do telhado sai 26 cm e o guichê vai até 3,0
   (a cabeça da Gina chega a 2,9 e 39 cm para fora); o meio do guichê e do
   balcão fica vazio, e as folhas de vidro correm para as quinas.

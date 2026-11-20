@@ -388,7 +388,15 @@ const NO_TESTE = typeof location !== 'undefined' && new URLSearchParams(location
  */
 const KEY_DO_BEBITO = 'aristory.save.v1.bebito';
 const NO_BEBITO = !NO_TESTE && typeof location !== 'undefined' && new URLSearchParams(location.search).has('bebito');
-const KEY = NO_TESTE ? KEY_DO_TESTE : NO_BEBITO ? KEY_DO_BEBITO : KEY_DO_JOGO;
+/**
+ * O SAVE DE TESTE DA PORTARIA DO CLUBE (`eventos/portariaDoClube.ts`): com
+ * `?portaria` o desbloqueio do minigame vale antes da chave, num save à parte
+ * que nasce como cópia do de verdade — a "primeira vez" na guarita nova não é
+ * gasta no save do jogo.
+ */
+const KEY_DA_PORTARIA = 'aristory.save.v1.portaria';
+const NO_PORTARIA = !NO_TESTE && !NO_BEBITO && typeof location !== 'undefined' && new URLSearchParams(location.search).has('portaria');
+const KEY = NO_TESTE ? KEY_DO_TESTE : NO_BEBITO ? KEY_DO_BEBITO : NO_PORTARIA ? KEY_DA_PORTARIA : KEY_DO_JOGO;
 
 /**
  * A EDIÇÃO DO HALLOWEEN no save de verdade (`eventos/Halloween.ts`).
@@ -516,7 +524,7 @@ export class SaveState {
   private static read(): SaveData {
     try {
       // o save de teste começa do progresso de verdade, na primeira vez
-      const raw = localStorage.getItem(KEY) ?? (NO_TESTE || NO_BEBITO ? localStorage.getItem(KEY_DO_JOGO) : null);
+      const raw = localStorage.getItem(KEY) ?? (NO_TESTE || NO_BEBITO || NO_PORTARIA ? localStorage.getItem(KEY_DO_JOGO) : null);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
       // `loadouts` era o guarda-roupa paralelo; hoje ele so serve de entrada

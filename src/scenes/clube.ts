@@ -393,6 +393,9 @@ export const clube: SceneDef = {
       const z0 = GUARITA.z - meiaZ - 0.05;
       const z1 = GUARITA.z + balcao.frente;
       w.blockBox(GUARITA.x, (z0 + z1) / 2, meiaX + 0.05, (z1 - z0) / 2);
+      // a floreira da janela do lado da piscina sai 30 cm da parede, na altura do corpo
+      const { janelaDoLado: j } = GUARITA_DO_CLUBE;
+      w.blockBox(GUARITA.x + meiaX + j.sai / 2, GUARITA.z + j.z, j.sai / 2 + 0.02, j.meia);
     }
 
     /**

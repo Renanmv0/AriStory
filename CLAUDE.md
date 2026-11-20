@@ -393,7 +393,7 @@ o de sempre.
 `PORTARIA-DO-CLUBE.md` é o plano do terceiro minigame grande (Papers, Please na versão fofa, na guarita da Gina),
 aberto por um "COMECE AQUI": a guarita NOVA (`world/guaritaDoClube.ts`, maior, com o teto que sai e a porta) está no
 jogo desde 2026-11-20; o desbloqueio (a primeira conversa na guarita nova) está atrás da chave `PORTARIA_NO_JOGO`
-(`eventos/portariaDoClube.ts`, `?portaria` para testar), e o minigame em si ainda não existe — as perguntas ao Renan estão lá.
+(`eventos/portariaDoClube.ts`, `?portaria` para testar, num save à parte), e o minigame em si ainda não existe — as perguntas ao Renan estão lá.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,

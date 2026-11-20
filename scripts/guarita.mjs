@@ -137,10 +137,12 @@ const conversar = async (foto) => {
   await page.waitForTimeout(1200);
   return { rotulo, ditas };
 };
-const salvo = () => page.evaluate(() => {
-  const s = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
+/** o que um save guarda (o de verdade, ou o de teste do `?portaria`) */
+const salvo = (chave = 'aristory.save.v1') => page.evaluate((k) => {
+  const s = JSON.parse(localStorage.getItem(k) ?? '{}');
   return { memorias: (s.memories ?? []).map((m) => m.id), flags: Object.keys(s.flags ?? {}) };
-});
+}, chave);
+const TESTE = 'aristory.save.v1.portaria';
 const conversaDeSempre = await conversar('sempre');
 const prompt = conversaDeSempre.rotulo;
 const falas = conversaDeSempre.ditas;
@@ -152,14 +154,16 @@ const noDiario = depoisDeSempre.memorias.includes('girafa-da-portaria');
 await page.goto(`${BASE}/?cena=clube&portaria`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3400);
 const reforma = await conversar('reforma');
-const depoisDaReforma = await salvo();
+const depoisDaReforma = await salvo(TESTE);
+// (o `?portaria` joga num save à parte: o de verdade não pode ter ganho nada)
+const deVerdadeIntacto = await salvo();
 const outraVez = await conversar(null);
 // e num save do zero: a apresentação vem antes
-await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
+await page.evaluate((k) => { localStorage.removeItem('aristory.save.v1'); localStorage.removeItem(k); }, TESTE);
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(3400);
 const doZero = await conversar(null);
-const depoisDoZero = await salvo();
+const depoisDoZero = await salvo(TESTE);
 
 // ------------------------------------------------------------------ relatório
 console.log('1. posto · girafa em', JSON.stringify(inicio?.girafa),
@@ -173,7 +177,7 @@ for (const f of falas) console.log('   ', f);
 console.log('4. memória no diário:', noDiario, '· flags sem a chave:', JSON.stringify(depoisDeSempre.flags));
 console.log('5. guarita nova · teto', inicio?.teto, '· porta', inicio?.porta, '· medidas', JSON.stringify(inicio?.medidas));
 for (const f of reforma.ditas) console.log('   reforma', f);
-console.log('   depois:', JSON.stringify(depoisDaReforma));
+console.log('   depois:', JSON.stringify(depoisDaReforma), '· o de verdade:', JSON.stringify(deVerdadeIntacto));
 console.log('   outra vez:', outraVez.ditas.length, 'falas;', outraVez.ditas[0]);
 console.log('   do zero:', doZero.ditas.slice(0, 3).join(' | '), '…', JSON.stringify(depoisDoZero));
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
@@ -212,6 +216,9 @@ if (!reforma.ditas.some((f) => /guarita nova/i.test(f))) problemas.push('com a c
 if (reforma.ditas.some((f) => /Sou a Gina/.test(f))) problemas.push('quem já conhecia a Gina ouviu a apresentação de novo');
 if (!depoisDaReforma.flags.includes('portaria:liberada')) problemas.push('a flag do minigame não foi gravada');
 if (!depoisDaReforma.memorias.includes('guarita-nova')) problemas.push('a memória "A guarita nova" não entrou');
+if (deVerdadeIntacto.flags.includes('portaria:liberada') || deVerdadeIntacto.memorias.includes('guarita-nova')) {
+  problemas.push('o ?portaria gravou o desbloqueio no save de verdade');
+}
 if (outraVez.ditas.some((f) => /guarita nova/i.test(f)) || !outraVez.ditas.some((f) => /aproveit/i.test(f))) {
   problemas.push('a segunda conversa não voltou a ser a de sempre');
 }

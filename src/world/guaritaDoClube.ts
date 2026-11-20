@@ -30,8 +30,10 @@
  * O QUE A CENA E O MINIGAME VÃO PRECISAR:
  *
  * - tudo o que fica acima do topo da parede (o telhado, o forro, a placa, o
- *   catavento) mora no grupo `teto`: para trabalhar lá dentro, a câmera de
- *   cima precisa ver o chão, e o teto sai (o molde da barraca e do Bebito);
+ *   catavento) mora no grupo `teto`, que sai (o molde da barraca e do
+ *   Bebito). Sozinho isso NÃO basta para a isométrica ver o chão: as paredes
+ *   de 3,4 do lado da câmera escondem ~3 m de piso. Sem o teto, quem vê a
+ *   sala é uma câmera de cena por cima (`setCameraOmbro`), ou o guichê;
  * - a folha da porta mora no grupo `dobradica`, com o pivô no batente;
  * - o meio do guichê e o chão entre as bancadas ficam vazios: é o lugar da
  *   Gina, e cabem mais dois.
@@ -73,6 +75,11 @@ export const GUARITA_DO_CLUBE = {
   balcao: { topo: 1.25, meia: 2.0, frente: 2.27 },
   /** a porta, no lado `+X`: o meio dela em `z`, a meia largura e o alto do vão */
   porta: { z: -0.82, meia: 0.47, alto: 2.35 },
+  /**
+   * a janela do lado `+X` (o meio em `z` e a meia largura) e a floreira embaixo
+   * dela, que sai `sai` da parede na altura do corpo: a cena põe um colisor
+   */
+  janelaDoLado: { z: 0.825, meia: 0.525, sai: 0.3 },
   /** onde a Gina fica: 75 cm atrás da face da frente, como na guarita antiga */
   gina: { x: 0, z: 1.0 },
 } as const;
@@ -485,7 +492,7 @@ export class GuaritaDoClube {
     const GUICHE = { x0: -G.guiche.meia, x1: G.guiche.meia, y0: G.guiche.baixo, y1: G.guiche.alto };
     // no quadro da DIREITA o `x` é o `−z` da peça; no da ESQUERDA, o `+z`; no dos FUNDOS, o `−x`
     const PORTA = { x0: -G.porta.z - G.porta.meia, x1: -G.porta.z + G.porta.meia, y1: G.porta.alto };
-    const JANELA_LESTE = { x0: -1.35, x1: -0.3, y0: 1.2, y1: 2.65 };
+    const JANELA_LESTE = { x0: -G.janelaDoLado.z - G.janelaDoLado.meia, x1: -G.janelaDoLado.z + G.janelaDoLado.meia, y0: 1.2, y1: 2.65 };
     const JANELA_OESTE = { x0: -0.2, x1: 1.0, y0: 1.2, y1: 2.65 };
     const JANELA_FUNDOS = { x0: 0.95, x1: 1.75, y0: 1.5, y1: 2.6 };
 

@@ -9,7 +9,8 @@
  * minigame ainda não existe, o desbloqueio fica atrás de uma CHAVE (o molde do
  * Bebito Mobile): sem ela, a conversa com a Gina é a de sempre e o save não
  * ganha flag nenhuma — assim a "primeira vez" do Ari não é gasta antes de
- * haver o que jogar. `?portaria` liga na marra, para testar.
+ * haver o que jogar. `?portaria` liga na marra, para testar, num SAVE À PARTE
+ * (`aristory.save.v1.portaria`, que nasce como cópia do de verdade).
  */
 import type { GameAPI } from '../core/types';
 import { ARI, RENAN } from '../characters/cast';

@@ -26,10 +26,14 @@
   térmica), o quadro de chaves, o mural de cortiça, o arquivo de aço, o
   garrafão, o cabideiro com o quepe reserva e o banquinho alto.
 - **Pronto para o trabalho lá dentro**: tudo acima da parede mora no grupo
-  `teto` (`guarita.mostrarTeto(false)`: a câmera de cima vê o chão), a folha da
-  porta no grupo `dobradica`, e o meio entre as bancadas é livre (a Gina e mais
-  dois).
-- **O desbloqueio** (`src/eventos/portariaDoClube.ts`): a PRIMEIRA conversa com
+  `teto` (`guarita.mostrarTeto(false)`), a folha da porta no grupo
+  `dobradica`, e o meio entre as bancadas é livre (a Gina e mais dois).
+  ATENÇÃO: tirar o teto não basta para a isométrica de sempre — as paredes de
+  3,4 m do lado da câmera escondem ~3 m do piso. Sem o teto, quem vê a sala é
+  uma câmera de cena por cima (`setCameraOmbro`); a foto de cima está na
+  pergunta 1 abaixo.
+- **O desbloqueio** (`src/eventos/portariaDoClube.ts`, ideia de manter atrás de chave
+  é do Claude, para o Renan decidir): a PRIMEIRA conversa com
   a Gina na guarita nova é a da reforma — ela mostra a guarita e convida a dupla
   para a portaria; grava `portaria:liberada`, a memória "A guarita nova" e o
   aviso "Minigame desbloqueado". Quem ainda não conhecia a Gina ouve a
@@ -37,7 +41,8 @@
   sempre. **As falas são provisórias** (o Renan ainda não escreveu as dele).
 - **A chave**: `PORTARIA_NO_JOGO = false`. Desligada, a conversa com a Gina é a
   de sempre e o save não ganha flag — para a "primeira vez" do Ari não ser
-  gasta antes de o minigame existir. `?portaria` liga para testar;
+  gasta antes de o minigame existir. `?portaria` liga para testar, num save à parte
+  (`aristory.save.v1.portaria`, cópia do de verdade);
   `?semPortaria` força desligado. Ligar é decisão do Renan.
 - **O teste**: `node scripts/guarita.mjs` (o posto, a cabeça contra a frente e o
   balcão que a peça declara, o `teto` e a `dobradica`, e o desbloqueio sem e
@@ -50,8 +55,9 @@
 
 ## Perguntas ao Renan (próxima etapa)
 
-1. Onde se joga: **dentro da guarita** (o teto sai e a câmera fica de cima, a
-   fila de bichos chegando pelo portão) ou numa **tela própria** de balcão (o
+1. Onde se joga: **dentro da guarita** (o teto sai e uma câmera de cena fica
+   por cima — a isométrica de sempre não enxerga o piso por cima das paredes —,
+   a fila de bichos chegando pelo portão) ou numa **tela própria** de balcão (o
    documento na mesa, como no jogo de inspiração)?
 2. Quem entra na fila: só os bichos que já existem (Noel, Josefina, Capy,
    Walter, Mano, Cookie, Jean-Luc, Estella, a turma da escola…) ou também
