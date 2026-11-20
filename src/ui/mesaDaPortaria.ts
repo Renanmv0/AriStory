@@ -163,6 +163,8 @@ export class MesaDaPortaria implements PainelDaPortaria {
   private timerDoAviso = 0;
   private observador: ResizeObserver | null = null;
   private sairPedido = 0;
+  /** Zero ajusta a folha inteira; os demais valores controlam a ampliação com rolagem. */
+  private zoomDaLista = 0;
 
   private readonly vistas: HTMLElement;
   private readonly comparacao: HTMLElement;
@@ -226,6 +228,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
     this.acoes = acoes;
     this.vista = 'bancada';
     this.modoLupa = false; this.primeira = null;
+    this.zoomDaLista = 0;
     this.raiz.dataset.vista = this.vista;
     this.aberta = true;
     this.raiz.classList.add('show');
@@ -378,11 +381,13 @@ export class MesaDaPortaria implements PainelDaPortaria {
     if (!e) return;
     const caixa = this.folha.getBoundingClientRect();
     if (caixa.width < 20 || caixa.height < 20) return;
-    const chave = JSON.stringify([this.aba, Math.round(caixa.width), Math.round(caixa.height), this.modoLupa, this.primeira, e.regras.length, !!e.janela, e.podeChamar]);
+    const chave = JSON.stringify([this.aba, Math.round(caixa.width), Math.round(caixa.height), this.modoLupa, this.primeira, e.regras.length, !!e.janela, e.podeChamar, this.zoomDaLista]);
     if (!forcar && chave === this.chaveDaFolha && this.docsDaFolha === (e.janela?.docs ?? null)) return;
     this.chaveDaFolha = chave;
     this.docsDaFolha = e.janela?.docs ?? null;
     const rolagem = this.folha.querySelector('.pt-manual')?.scrollTop ?? 0;
+    const listaAntes = this.folha.querySelector('.pt-lista-rolagem');
+    const posicaoDaLista = { x: listaAntes?.scrollLeft ?? 0, y: listaAntes?.scrollTop ?? 0 };
     const dpr = Math.min(2.5, window.devicePixelRatio || 1);
     const aba = this.aba;
     if (aba.tipo === 'manual') {
@@ -424,11 +429,24 @@ export class MesaDaPortaria implements PainelDaPortaria {
       pintar = (c) => pintarCalendario(c, 240, 240, e.hoje);
       alvos = this.alvo('calendario', 0, 0, 1, 1);
     }
-    // cabe na caixa, sem deformar
-    const k = Math.min((caixa.width - 12) / l, (caixa.height - 12) / a);
+    // A lista ampliada rola em vez de encolher novamente para caber na altura.
+    const lista = aba.tipo === 'lista';
+    const largura = caixa.width - (lista ? 24 : 12);
+    const ajuste = Math.min(largura / l, (caixa.height - (lista ? 64 : 12)) / a);
+    const k = lista && this.zoomDaLista > 0 ? Math.max(largura / l, ajuste * 1.25) * this.zoomDaLista : ajuste;
     const cssL = Math.floor(l * k);
     const cssA = Math.floor(a * k);
-    this.folha.innerHTML = `<div class="pt-papel" style="width:${cssL}px;height:${cssA}px"><canvas></canvas>${alvos}</div>`;
+    const papel = `<div class="pt-papel" style="width:${cssL}px;height:${cssA}px"><canvas></canvas>${alvos}</div>`;
+    this.folha.innerHTML = lista ? `<div class="pt-leitura-lista">
+      <div class="pt-zoom-lista" role="group" aria-label="Zoom da lista de sócios">${this.zoomDaLista === 0
+        ? '<button data-acao="lista-mais" aria-label="Ampliar lista de sócios">🔎 Ampliar lista</button>'
+        : `<button data-acao="lista-menos" aria-label="Diminuir zoom da lista"${this.zoomDaLista <= .75 ? ' disabled' : ''}>−</button>
+          <output aria-label="Zoom da lista">${Math.round(this.zoomDaLista * 100)}%</output>
+          <button data-acao="lista-mais" aria-label="Aumentar zoom da lista"${this.zoomDaLista >= 2 ? ' disabled' : ''}>+</button>
+          <button data-acao="lista-ajustar" aria-label="Ajustar lista à área de leitura">Ajustar</button>`}</div>
+      <div class="pt-lista-rolagem" tabindex="0" aria-label="Lista de sócios; role para ler">${papel}</div></div>` : papel;
+    const listaDepois = this.folha.querySelector('.pt-lista-rolagem');
+    if (listaDepois) { listaDepois.scrollLeft = posicaoDaLista.x; listaDepois.scrollTop = posicaoDaLista.y; }
     const tela = this.folha.querySelector('canvas')!;
     tela.width = Math.round(cssL * dpr);
     tela.height = Math.round(cssA * dpr);
@@ -437,6 +455,19 @@ export class MesaDaPortaria implements PainelDaPortaria {
     const c = tela.getContext('2d')!;
     c.scale(tela.width / l, tela.height / a);
     pintar(c);
+  }
+
+  private mudarZoomDaLista(zoom: number, acao: string): void {
+    if (this.aba.tipo !== 'lista') return;
+    const rolagem = this.folha.querySelector('.pt-lista-rolagem');
+    const x = rolagem?.scrollLeft ?? 0, y = rolagem?.scrollTop ?? 0;
+    const largura = this.folha.querySelector('.pt-papel')?.clientWidth ?? 1;
+    this.zoomDaLista = zoom;
+    this.pintarFolha(true);
+    const nova = this.folha.querySelector('.pt-lista-rolagem');
+    const fator = (this.folha.querySelector('.pt-papel')?.clientWidth ?? largura) / largura;
+    if (nova) { nova.scrollLeft = x * fator; nova.scrollTop = y * fator; }
+    this.folha.querySelector<HTMLButtonElement>(`[data-acao="${acao}"]:not(:disabled)`)?.focus({ preventScroll: true });
   }
 
   private htmlDoManual(e: EstadoDaMesa): string {
@@ -588,6 +619,9 @@ export class MesaDaPortaria implements PainelDaPortaria {
       return;
     }
     switch (d.acao) {
+      case 'lista-mais': this.mudarZoomDaLista(this.zoomDaLista === 0 ? 1 : Math.min(2, this.zoomDaLista + .25), 'lista-mais'); break;
+      case 'lista-menos': this.mudarZoomDaLista(Math.max(.75, this.zoomDaLista - .25), 'lista-menos'); break;
+      case 'lista-ajustar': this.mudarZoomDaLista(0, 'lista-mais'); break;
       case 'fechar-popover': this.popover = null; this.acoes.sacolaMudou?.(false); this.pintarFlutuante(); break;
       case 'ampliar': this.raiz.classList.toggle('ampliada'); this.desenhar(this.estado); break;
       case 'lupa': this.lupa(!this.modoLupa); break;

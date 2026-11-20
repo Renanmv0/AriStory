@@ -7478,6 +7478,25 @@ body.portaria-aberta .prompt { display: none !important; }
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
 }
 .portaria .pt-papel canvas { display: block; }
+.portaria .pt-leitura-lista {
+  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px;
+  width: 100%; height: 100%; min-width: 0; min-height: 0;
+}
+.portaria .pt-zoom-lista { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.portaria .pt-zoom-lista button {
+  min-width: 44px; min-height: 44px; padding: 6px 10px; border: 1px solid #c3b18b;
+  border-radius: 12px; background: var(--pt-papel); color: var(--pt-tinta);
+  font: 800 13px 'Nunito', system-ui, sans-serif; cursor: pointer; touch-action: manipulation;
+}
+.portaria .pt-zoom-lista button:disabled { opacity: .5; cursor: default; }
+.portaria .pt-zoom-lista output { min-width: 42px; color: var(--pt-papel); text-align: center; font: 800 13px 'Nunito', system-ui, sans-serif; }
+.portaria .pt-lista-rolagem {
+  overflow: auto; min-width: 0; min-height: 0; padding: 6px; overscroll-behavior: contain;
+  scrollbar-color: #d7c7a4 #244b40; touch-action: pan-x pan-y;
+}
+.portaria .pt-lista-rolagem .pt-papel { margin-inline: auto; transform: none; }
+/* O canvas do jogo bloqueia gestos; o papel ampliado precisa permitir rolagem nativa. */
+#app .pt-lista-rolagem canvas { touch-action: pan-x pan-y; }
 .portaria .pt-vazio { color: #f6efdf; font-weight: 800; text-align: center; padding: 20px; opacity: 0.85; }
 
 /* ---- os alvos da lupa: invisíveis até a lupa ligar */
