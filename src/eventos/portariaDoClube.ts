@@ -11,9 +11,31 @@
  * ganha flag nenhuma — assim a "primeira vez" do Ari não é gasta antes de
  * haver o que jogar. `?portaria` liga na marra, para testar, num SAVE À PARTE
  * (`aristory.save.v1.portaria`, que nasce como cópia do de verdade).
+ *
+ * A GUARITA NOVA SÓ APARECE DEPOIS DO MANIA (pedido do Renan, 2026-11-20: "só
+ * pra ter uma sequência que faça sentido no jogo"): até a dupla terminar a
+ * ÚLTIMA noite da escala do Walter, o clube tem a guarita de antes (`guarita()`
+ * em `world/props.ts`). A sexta noite só abre com as três estrelas na quinta,
+ * e assim por diante, então tê-la jogado é ter passado por todas.
  */
 import type { GameAPI } from '../core/types';
 import { ARI, RENAN } from '../characters/cast';
+import { CHAVE, TURNOS } from '../minigames/turnosDoMania';
+
+/** a última noite da escala do Walter */
+const ULTIMA_NOITE = TURNOS[TURNOS.length - 1].numero;
+
+/**
+ * A GUARITA NOVA ESTÁ NO CLUBE? Depois da última noite do Mania jogada até o
+ * fim. `?guaritaNova` (e o `?portaria`, que testa o desbloqueio) mostra antes
+ * da hora; `?semGuaritaNova` força a de antes.
+ */
+export function guaritaNovaNoClube(g: GameAPI): boolean {
+  const busca = typeof location === 'undefined' ? null : new URLSearchParams(location.search);
+  if (busca?.has('semGuaritaNova')) return false;
+  if (busca?.has('guaritaNova') || busca?.has('portaria')) return true;
+  return g.stat(CHAVE.vezes(ULTIMA_NOITE)) > 0;
+}
 
 /** a chave: `true` quando o Renan mandar ligar o desbloqueio no link principal */
 export const PORTARIA_NO_JOGO = false;
@@ -28,9 +50,9 @@ export function portariaNestaPagina(): boolean {
   return PORTARIA_NO_JOGO || !!busca?.has('portaria');
 }
 
-/** a primeira vez na guarita nova ainda não aconteceu (e vale nesta página) */
+/** a guarita nova está no clube e a primeira vez nela ainda não aconteceu (e vale nesta página) */
 export function guaritaNovaPorVer(g: GameAPI): boolean {
-  return portariaNestaPagina() && !g.flag(PORTARIA_LIBERADA);
+  return portariaNestaPagina() && guaritaNovaNoClube(g) && !g.flag(PORTARIA_LIBERADA);
 }
 
 /**

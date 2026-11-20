@@ -25,6 +25,13 @@
   telefone, o rádio; o fichário das carteirinhas, os carimbos, a garrafa
   térmica), o quadro de chaves, o mural de cortiça, o arquivo de aço, o
   garrafão, o cabideiro com o quepe reserva e o banquinho alto.
+- **Só depois do Mania** (pedido do Renan, para a sequência do jogo fazer
+  sentido): até a dupla jogar a ÚLTIMA noite da escala do Walter (o turno 6, que
+  só abre com as três estrelas no 5, e assim para trás), o clube tem a guarita de
+  antes (`guarita()` em `world/props.ts`, guardada). Depois, a nova toma o lugar
+  dela, e só a nova desbloqueia a portaria (`guaritaNovaNoClube` em
+  `eventos/portariaDoClube.ts`; `?guaritaNova` mostra antes da hora, `?semGuaritaNova`
+  força a de antes). A troca é silenciosa: a dupla volta ao clube e ela já está lá.
 - **Pronto para o trabalho lá dentro**: tudo acima da parede mora no grupo
   `teto` (`guarita.mostrarTeto(false)`), a folha da porta no grupo
   `dobradica`, e o meio entre as bancadas é livre (a Gina e mais dois).

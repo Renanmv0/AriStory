@@ -10,7 +10,7 @@ import {
   canteiroDeHorta, estufa, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  meioFio, muroDoClube, poolShell, poolWater, portaoDoClube, sebe,
+  guarita, meioFio, muroDoClube, poolShell, poolWater, portaoDoClube, sebe,
   showerPost, sunLounger,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
@@ -27,7 +27,7 @@ import {
 } from '../eventos/bebitoMobile/noClube';
 import { Gina } from '../entities/bichos/Gina';
 import { GUARITA_DO_CLUBE, GuaritaDoClube } from '../world/guaritaDoClube';
-import { conversaDaGuaritaNova, guaritaNovaPorVer } from '../eventos/portariaDoClube';
+import { conversaDaGuaritaNova, guaritaNovaNoClube, guaritaNovaPorVer } from '../eventos/portariaDoClube';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Josefina } from '../entities/bichos/Josefina';
@@ -382,13 +382,24 @@ export const clube: SceneDef = {
      * A GUARITA NOVA (`world/guaritaDoClube.ts`, 4,8 × 3,5) cresceu para os
      * fundos e para o lado da piscina: a frente continua em `z = 3,7` e o lado
      * do portão onde estava, e a Gina continua à mesma distância do balcão.
+     *
+     * A GUARITA NOVA SÓ VEM DEPOIS DO MANIA (pedido do Renan): até a dupla
+     * terminar a última noite da escala do Walter, fica a de antes
+     * (`guarita()`, 2,6 × 2,2, a Gina em `x = −20,6`); depois, a nova
+     * (`eventos/portariaDoClube.ts`, `guaritaNovaNoClube`).
      */
-    const GUARITA = { x: -19.35, z: 3.7 - GUARITA_DO_CLUBE.meiaZ };
-    const guarita = new GuaritaDoClube();
-    w.add(fundir(w.place(guarita.group, GUARITA.x, 0, GUARITA.z)));
-    w.onUpdate((dt) => guarita.update(dt));
-    // a caixa engole o balcão, que avança além da parede da frente
-    {
+    const guaritaNova = guaritaNovaNoClube(g);
+    const GUARITA = guaritaNova
+      ? { x: -19.35, z: 3.7 - GUARITA_DO_CLUBE.meiaZ }
+      : { x: -20.6, z: 2.6 };
+    /** onde a Gina fica: 75 cm atrás da face da frente, nas duas */
+    let ginaX: number;
+    let ginaZ: number;
+    if (guaritaNova) {
+      const guarita = new GuaritaDoClube();
+      w.add(fundir(w.place(guarita.group, GUARITA.x, 0, GUARITA.z)));
+      w.onUpdate((dt) => guarita.update(dt));
+      // a caixa engole o balcão, que avança além da parede da frente
       const { meiaX, meiaZ, balcao } = GUARITA_DO_CLUBE;
       const z0 = GUARITA.z - meiaZ - 0.05;
       const z1 = GUARITA.z + balcao.frente;
@@ -396,6 +407,15 @@ export const clube: SceneDef = {
       // a floreira da janela do lado da piscina sai 30 cm da parede, na altura do corpo
       const { janelaDoLado: j } = GUARITA_DO_CLUBE;
       w.blockBox(GUARITA.x + meiaX + j.sai / 2, GUARITA.z + j.z, j.sai / 2 + 0.02, j.meia);
+      ginaX = GUARITA.x + GUARITA_DO_CLUBE.gina.x;
+      ginaZ = GUARITA.z + GUARITA_DO_CLUBE.gina.z;
+    } else {
+      const ANTIGA = { largura: 2.6, profundidade: 2.2 };
+      w.add(w.place(guarita(ANTIGA.largura, ANTIGA.profundidade), GUARITA.x, 0, GUARITA.z));
+      // a caixa engole o balcão, que avança 0,37 além da parede da frente
+      w.blockBox(GUARITA.x, GUARITA.z + 0.2, ANTIGA.largura / 2 + 0.2, ANTIGA.profundidade / 2 + 0.25);
+      ginaX = GUARITA.x;
+      ginaZ = GUARITA.z + 0.35;
     }
 
     /**
@@ -411,8 +431,6 @@ export const clube: SceneDef = {
      * cima do balcão — do lado de fora da parede E do lado de fora da sombra do
      * telhado, que a 34° come tudo que fica mais de meio metro para dentro.
      */
-    const ginaX = GUARITA.x + GUARITA_DO_CLUBE.gina.x;
-    const ginaZ = GUARITA.z + GUARITA_DO_CLUBE.gina.z;
     const gina = new Gina({
       minX: ginaX - 0.15, maxX: ginaX + 0.15,
       minZ: ginaZ - 0.15, maxZ: ginaZ + 0.15,
@@ -2124,7 +2142,7 @@ export const clube: SceneDef = {
         'clube:noel', 'clube:dar-as-sementes', 'clube:bar', 'clube:mesa-do-restaurante',
       ],
       recados: [
-        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: GUARITA.x + 2.7, z: GUARITA.z + 2.75, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: guaritaNova ? GUARITA.x + 2.7 : GUARITA.x + 2.0, z: guaritaNova ? GUARITA.z + 2.75 : GUARITA.z + 2.1, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.capy], autor: 'Capy', x: GUARDA.x + 1.7, z: GUARDA.z - 0.9, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.noel], autor: 'Noel', x: -13.9, z: 10.9, giro: Math.PI / 4 },
         { recados: [RECADOS_DO_CLUBE.josefina], autor: 'Josefina', x: JARDIM.caminho - 1.4, z: -13.75, giro: Math.PI / 4 },

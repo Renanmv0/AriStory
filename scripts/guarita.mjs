@@ -20,7 +20,10 @@
  *   chave, nada muda e o save não ganha flag; com `?portaria`, a primeira
  *   conversa (de quem já conhecia a Gina) é a da guarita nova — a flag, a
  *   memória "A guarita nova" e o aviso do minigame — e a segunda volta a ser
- *   a de sempre; e num save do zero, a apresentação vem antes da reforma.
+ *   a de sempre; e num save do zero, a apresentação vem antes da reforma;
+ * - a ORDEM do jogo: num save do zero o clube tem a guarita de ANTES (sem o
+ *   `teto`), e ela só vira a nova depois da última noite do Mania jogada.
+ *   O posto, a cabeça e as conversas são medidos na nova (`?guaritaNova`).
  *
  * Uso: node scripts/guarita.mjs /caminho/prefixo
  */
@@ -42,6 +45,18 @@ await page.goto(`${BASE}/?cena=clube`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2600);
 await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
 await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(3400);
+
+/** a guarita da cena é a nova? (só a nova tem o grupo `teto`) */
+const ehANova = () => page.evaluate(() => {
+  let nova = false;
+  window.jogo.scene.traverse((o) => { if (o.name === 'teto' && o.parent?.userData?.peca === 'guarita') nova = true; });
+  return nova;
+});
+// num save do zero, antes do Mania: a guarita de antes
+const novaNoComeco = await ehANova();
+// o resto é medido na guarita nova, mostrada antes da hora (o save continua o mesmo)
+await page.goto(`${BASE}/?cena=clube&guaritaNova`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3400);
 
 /** onde a girafa e a cabeça dela estão, em mundo */
@@ -165,6 +180,17 @@ await page.waitForTimeout(3400);
 const doZero = await conversar(null);
 const depoisDoZero = await salvo(TESTE);
 
+// ------------------------------------------- 5. a última noite do Mania traz a nova
+// (no save de verdade, sem nada na URL: antes, a de antes; com a sexta noite jogada, a nova)
+await page.goto(`${BASE}/?cena=clube`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3000);
+const novaAntesDoMania = await ehANova();
+await page.evaluate(() => window.jogo.bump('turno:6:vezes'));
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(3400);
+const novaDepoisDoMania = await ehANova();
+const ginaNaNova = await medir();
+
 // ------------------------------------------------------------------ relatório
 console.log('1. posto · girafa em', JSON.stringify(inicio?.girafa),
   '· andou em 7 s:', andou.toFixed(3));
@@ -179,6 +205,8 @@ console.log('5. guarita nova · teto', inicio?.teto, '· porta', inicio?.porta, 
 for (const f of reforma.ditas) console.log('   reforma', f);
 console.log('   depois:', JSON.stringify(depoisDaReforma), '· o de verdade:', JSON.stringify(deVerdadeIntacto));
 console.log('   outra vez:', outraVez.ditas.length, 'falas;', outraVez.ditas[0]);
+console.log('6. ordem · nova no começo:', novaNoComeco, '· antes do Mania:', novaAntesDoMania, '· depois da sexta noite:', novaDepoisDoMania,
+  '· a Gina em', JSON.stringify(ginaNaNova?.girafa));
 console.log('   do zero:', doZero.ditas.slice(0, 3).join(' | '), '…', JSON.stringify(depoisDoZero));
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
@@ -225,6 +253,9 @@ if (outraVez.ditas.some((f) => /guarita nova/i.test(f)) || !outraVez.ditas.some(
 if (!/Sou a Gina/.test(doZero.ditas.join(' ')) || !/guarita nova/i.test(doZero.ditas.join(' '))) {
   problemas.push('no save do zero, a apresentação e a reforma não vieram juntas');
 }
+if (novaNoComeco || novaAntesDoMania) problemas.push('a guarita nova apareceu antes da última noite do Mania');
+if (!novaDepoisDoMania) problemas.push('depois da última noite do Mania, a guarita continuou a de antes');
+if (ginaNaNova && Math.abs(ginaNaNova.girafa[0] - inicio.girafa[0]) > 0.3) problemas.push('na guarita nova de verdade, a Gina não está no posto dela');
 if (!depoisDoZero.memorias.includes('girafa-da-portaria') || !depoisDoZero.flags.includes('portaria:liberada')) {
   problemas.push('no save do zero, faltou a memória da Gina ou a flag');
 }
