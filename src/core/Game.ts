@@ -741,12 +741,13 @@ export class Game implements GameAPI {
     // o mouse e o dedo no mundo: nada de clique com painel, fala, troca de
     // cena, cutscene ou drone no ar
     const ocupado =
-      pausado || this.transitioning || this.player.locked || this.drone !== null ||
+      pausado || this.transitioning || this.drone !== null ||
+      (this.player.locked && !world.clicaveis.some(c => c.def.duranteTrava && c.ligado)) ||
       this.ui.dialogueOpen || this.ui.journalOpen || this.ui.mochilaOpen || this.ui.armarioOpen ||
       this.ui.memoriasOpen || this.ui.cardapioOpen || this.ui.quadroOpen || this.ui.lojaOpen ||
       this.ui.cartasOpen || this.ui.livroOpen || this.ui.fimOpen || this.ui.lojaJosefinaOpen ||
       this.ui.apostilaOpen || this.ui.xadrezOpen || this.ui.bebitoOpen || this.ui.quintalOpen;
-    this.apontador.atualizar(camera, world.clicaveis, ocupado);
+    this.apontador.atualizar(camera, this.player.locked ? world.clicaveis.filter(c => c.def.duranteTrava) : world.clicaveis, ocupado);
 
     if (this.pos?.ativo) this.pos.desenhar(camera, dt);
     else this.renderer.render(this.scene, camera);

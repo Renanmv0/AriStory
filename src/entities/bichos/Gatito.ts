@@ -52,6 +52,8 @@ const DURA_SIX_SEVEN = 2.8;
 const DURA_SACUDIDA = 1.4;
 
 export class Gatito extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.patas[0] ?? null; }
+
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Gatito', cor: P.falaGatito };
 

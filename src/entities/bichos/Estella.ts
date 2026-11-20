@@ -50,6 +50,8 @@ import type { VozDaFala } from '../../core/types';
  * ela — o equivalente da orelha do Cookie abanando.
  */
 export class Estella extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.patas[0] ?? null; }
+
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Estella', cor: P.falaEstella };
 

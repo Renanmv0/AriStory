@@ -1387,11 +1387,18 @@ PERTO, em primeira pessoa, por quem está sentado no meio da guarita:
 - **O carimbo que bate de verdade**: as etapas são pontos (casa, almofada,
   papel, de volta) e a tinta entra no papel no quadro do contato
   (`redesenhar` com o carimbo).
-- **Mesa 3D de VER, mesa em tela de TOCAR**: o `Apontador` não atira com o
-  jogador travado (`lockPlayer`), e a primeira pessoa trava o jogador na
-  cadeira — `w.clicavel` numa peça dessa cena nunca dispara. As ferramentas
-  são da mesa em tela (`ui/mesaDaPortaria.ts`); a mesa 3D só anima o que ela
-  manda.
+- **Bancada 3D de tocar**: `eventos/portaria/alvosDaBancada.ts` registra documentos,
+  campainha, carimbos, consultas e itens com áreas de toque invisíveis e realce.
+  Só esses alvos usam `duranteTrava: true`; o jogador continua sentado. A cena
+  desliga os alvos durante animações, falas ou leitura no painel. `mudarVista`
+  recolhe a leitura sem chamar `fechar()` (que encerra balões e expediente).
+- **Entrega pela mão/pata/asa**: `Bicho.membroDeEntrega` é opcional; a adaptação
+  `VisitanteDeVerdade` guarda a pose natural, aplica o gesto e a restaura antes
+  do próximo `update`. `pontoDaEntrega()` alimenta os trajetos de receber e
+  devolver de `MesaDaPortaria`. Não anexar o papel por `add` trocando sua escala.
+- **Sacola no balcão**: `world/sacolaDaPortaria.ts` apresenta somente os itens
+  do visitante. A animação usa o relógio da cena; o proibido fica nos achados,
+  o permitido volta à bolsa. Ler `docs/PORTARIA-BANCADA.md` para os testes.
 - **O ELEVADOR DO BALCÃO**: a guarita é de girafa (balcão a 1,25, a altura da
   cabeça da dupla) e quase todo visitante é menor; o disco num pistão de três
   gomos sobe cada um até o alto da cabeça chegar a 1,95

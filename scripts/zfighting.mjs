@@ -160,6 +160,8 @@ const PECAS = [
   ['muro-do-clube', 'clube'],
   ['portao-do-clube', 'clube'],
   ['guarita', 'clube'],
+  ['mesa-da-portaria', 'portaria&portaria&dia=1'],
+  ['sacola-da-portaria', 'portaria&portaria&dia=1'],
   ['cadeira-de-salva-vidas', 'clube'],
   ['sebe', 'clube'],
   ['espreguicadeira', 'clube'],

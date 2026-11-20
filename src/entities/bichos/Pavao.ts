@@ -120,6 +120,8 @@ function mergeSimples(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
 }
 
 export class Pavao extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.asas[0] ?? null; }
+
   static readonly voz: VozDaFala = { nome: 'Pietro', cor: P.falaPietro };
 
   private readonly corpo = new THREE.Group();

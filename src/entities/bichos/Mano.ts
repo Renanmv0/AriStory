@@ -42,6 +42,8 @@ import type { VozDaFala } from '../../core/types';
  * ombro, que é a parte que mais aparece nesse ângulo.
  */
 export class Mano extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.asas[0] ?? null; }
+
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Mano', cor: P.falaMano };
 

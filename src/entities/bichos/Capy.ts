@@ -42,6 +42,8 @@ const juntar = (geos: THREE.BufferGeometry[]): THREE.BufferGeometry =>
  * FUNCIONARIO. Sem ele o Capy seria um bicho que subiu numa cadeira.
  */
 export class Capy extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.patas[0] ?? null; }
+
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Capy', cor: P.falaCapy };
 

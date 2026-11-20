@@ -153,6 +153,8 @@ function torreEiffel(alto: number, ouro: THREE.Material): THREE.Group {
 }
 
 export class TiaLiz extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.bracos[0] ?? null; }
+
   /** a voz dela na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Tia Liz', cor: P.falaLiz };
 

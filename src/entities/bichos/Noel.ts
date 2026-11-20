@@ -31,6 +31,8 @@ import type { VozDaFala } from '../../core/types';
  * aparece de perfil nao aparece nunca, e foi o erro que a regata do Capy pagou.
  */
 export class Noel extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.asas[0] ?? null; }
+
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Noel', cor: P.falaNoel };
 

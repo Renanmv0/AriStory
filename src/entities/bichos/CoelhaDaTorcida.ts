@@ -131,6 +131,8 @@ export const DURA_DA_FESTA = 10.8;
 export type PapelNaFesta = 'luna' | 'sol' | 'estrella';
 
 export class CoelhaDaTorcida extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.bracos[0] ?? null; }
+
   readonly ficha: FichaDeCoelha;
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
