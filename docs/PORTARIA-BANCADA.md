@@ -19,6 +19,10 @@ Recolher conserva a folha, a rolagem e a primeira seleção da lupa. Não chama
 `fechar()`, que encerra o painel e seus balões. As mudanças de câmera têm
 interpolação e respeitam a preferência por movimento reduzido.
 
+A lista de sócios tem **Ampliar lista**, controles de **+ / −** e **Ajustar**.
+Ampliada, permite rolagem por toque ou mouse e mantém a comparação com a lupa.
+O canvas é redesenhado na resolução do zoom, e a rolagem sobrevive às atualizações.
+
 ## Coreografia e regras
 
 O membro de entrega é uma referência pública opcional em `Bicho`, implementada
