@@ -153,6 +153,12 @@ for (const dia of P.DIAS) {
       const todos = [...m.fila, ...Object.values(m.reservas)];
       const ids = new Set(m.fila.map((v) => v.id));
       if (ids.size !== m.fila.length) problemas.add(`${rotulo}: ids repetidos na fila`);
+      const temPapel = tipo => m.fila.some(v => v.docs.some(d => d.tipo === tipo));
+      if (n >= 3 && (!temPapel('carteirinha') || !temPapel('convite'))) problemas.add('fila sem mistura de sócios e convidados');
+      if (n >= 4 && !temPapel('ordem')) problemas.add('fila sem entregadores');
+      if (n >= 5 && (!m.fila.some(v => v.querPiscina) || !m.fila.some(v => !v.querPiscina && v.docs.some(d => d.tipo === 'carteirinha'))
+        || !m.fila.some(v => !v.querPiscina && v.docs.some(d => d.tipo === 'convite')))) problemas.add('fila sem contraste entre piscina, sócio e convidado só do clube');
+      if (n === 6 && !temPapel('conviteColetivo')) problemas.add('sábado sem convite coletivo');
       for (const v of todos) {
         if (!P.FICHAS[v.ficha]) problemas.add(`${v.id}: sem ficha ${v.ficha}`);
         const certo = P.carimboCerto(v, m.contexto);
@@ -162,6 +168,13 @@ for (const dia of P.DIAS) {
           if (regra && !m.contexto.regras.has(regra)) problemas.add(`${v.id}: traz ${d.tipo} antes da regra`);
         }
         if (v.sacola?.some((i) => P.PROIBIDOS[i]) && !m.contexto.regras.has('sacola')) problemas.add(`${v.id}: proibido na sacola antes do dia 5`);
+        const ordem = v.docs.find(d => d.tipo === 'ordem');
+        if (ordem && v.respostas?.motivo === undefined) {
+          const resposta = P.perguntar(v, 'motivo', false), texto = resposta.falas.join(' ');
+          if (!/entrega/i.test(resposta.valor) || !resposta.valor.includes(ordem.destino)
+            || !ordem.itens.every(i => resposta.valor.includes(i)) || !/entrega/i.test(texto)) problemas.add(`${v.id}: motivo não descreve a entrega do atendimento`);
+          if (P.perguntar(v, 'motivo', true).valor !== resposta.valor) problemas.add(`${v.id}: repetir a pergunta alterou o motivo`);
+        }
         const reais = P.diferencas(v, m.contexto).filter((d) => !d.aparente);
         if (certo !== 'entra') {
           const pegaveis = reais.filter((d) => P.ferramentasQuePegam(d, m.contexto).length);
@@ -280,6 +293,15 @@ const nada = new Set();
 }
 
 // ===================================================== 4. o fim do dia
+{
+  const { v } = achar(4, 'tata');
+  const semOrdem = { ...v, docs: v.docs.filter(d => d.tipo !== 'ordem') };
+  ok(P.valorDaResposta(semOrdem, 'motivo').includes('Papita Delivery'), 'entregador sem ordem ainda declara a entrega pela empresa do crachá');
+  const falaDoRoteiro = 'Vim fazer uma entrega especial para a Gina.';
+  ok(P.valorDaResposta({ ...v, respostas: { motivo: falaDoRoteiro } }, 'motivo') === falaDoRoteiro,
+    'uma resposta específica do roteiro tem prioridade sobre o motivo padrão de entrega');
+}
+
 console.log('\n4. o fim do dia');
 for (const r of certa.porDia) {
   const d = r.m.dia;

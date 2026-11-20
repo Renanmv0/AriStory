@@ -52,6 +52,25 @@ com as orelhas acima do responsável, e aparece ao apontar a diferença.
 menus, transições e outros painéis ainda bloqueiam o apontador. A cena também
 protege suas ações contra reentrada e limpa seus estados ao desmontar.
 
+## Filas e motivos da visita
+
+As mecânicas se acumulam: o dia 3 mistura sócios e convidados; a partir do
+dia 4 continuam chegando os dois, além das entregas. Nos dias 5 e 6 há também
+quem usa a piscina e quem veio só ao clube; o sábado acrescenta o convite
+coletivo. A mistura usa lugares existentes no roteiro, mantendo as cenas
+da carne, do adubo, do gelo e os desfechos da semana.
+
+O motivo de um entregador vem dos itens e do destino da ordem daquele
+atendimento, passando pelo jeito de falar do personagem. Uma resposta
+específica do roteiro tem prioridade. Mesmo sem ordem, o crachá dá a empresa
+da entrega. Os figurantes dos últimos dias esclarecem se pretendem usar a piscina.
+
+## Próxima etapa anotada
+
+Reconhecimento após encontros anteriores para os personagens novos da
+portaria. Os personagens que já existiam no jogo partem do vínculo que
+já têm com a dupla. Essa memória ainda não foi implementada nesta etapa.
+
 ## Publicação e validação
 
 `PORTARIA_NO_JOGO` continua **false**. O acesso permanece por `?portaria`,
