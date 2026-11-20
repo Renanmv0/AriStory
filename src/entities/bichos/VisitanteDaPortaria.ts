@@ -372,10 +372,10 @@ export class VisitanteDaPortaria extends Bicho {
         break;
       }
       case 'coala': {
-        // o NARIZÃO preto e oval, a cara clara embaixo
+        // Nariz oval proporcional à cara; a variação maior continua reconhecível.
         this.esfera(h, 0xe9e6e1, cx * 0.55, cy * 0.42, cz * 0.4, 0, -cy * 0.42, cz * 0.68, 16);
-        const nariz = r.marca === 'narizGrande' ? 1.35 : 1;
-        this.esfera(h, 0x2b2622, 0.04 * nariz, 0.05 * nariz, 0.03, 0, -cy * 0.18, cz * 1.02, 14);
+        const nariz = r.marca === 'narizGrande' ? 1.2 : 1;
+        this.esfera(h, 0x2b2622, 0.026 * nariz, 0.032 * nariz, 0.018, 0, -cy * 0.18, cz * 1.02, 14);
         break;
       }
       case 'pandaVermelho': {
