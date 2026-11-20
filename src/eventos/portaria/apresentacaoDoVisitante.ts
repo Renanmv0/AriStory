@@ -6,6 +6,7 @@ import { FICHAS } from '../../minigames/portaria';
 import { alturaDoElevador, modeloDoVisitante, type ModeloDeVisitante } from '../../world/visitantesDaPortaria';
 import { fundir } from '../../world/fundir';
 import { macia } from '../../world/moveisDaBoutique';
+import { capaceteDoCapy } from '../../world/motoDoCapy';
 
 /** A pessoa que se compara é a mesma dos dados: disfarces, capacete e acompanhantes no mundo. */
 export function apresentacaoDoVisitante(modelo: ModeloDeVisitante, v: Visitante) {
@@ -52,9 +53,7 @@ export function apresentacaoDoVisitante(modelo: ModeloDeVisitante, v: Visitante)
   }
   const capacete = new THREE.Group(); capacete.name = 'capacete-da-portaria';
   if (v.tapado) {
-    const casco = por(capacete, new THREE.SphereGeometry(1, 24, 16), P.carroVermelho, 0, y + r * .15, 0); casco.scale.set(r * 1.2, r * 1.05, Math.max(r, z) * 1.15);
-    const viseira = por(capacete, macia(r * 1.9, r * .62, r * .16, r * .07), P.pneu, 0, y + r * .08, Math.max(r, z) * 1.13);
-    viseira.rotation.x = -.12; cabeca.add(fundir(capacete)); extras.push(capacete);
+    capacete.add(capaceteDoCapy(true)); cabeca.add(capacete); extras.push(capacete);
   }
   fundir(acessorio);
   const apoios: Array<{ haste: THREE.Mesh; pessoa: ModeloDeVisitante }> = [];
