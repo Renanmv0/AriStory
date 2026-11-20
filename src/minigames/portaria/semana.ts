@@ -317,7 +317,7 @@ const DIA_3: DiaDaPortaria = {
   numero: 3,
   nome: 'Dia de convidado',
   segundos: 720,
-  novidade: 'O convite: a data de hoje, e o sócio que convidou tem que estar na lista.',
+  novidade: 'Agora também há convidados: confira a data do convite e o sócio responsável na lista. Sócios continuam mostrando a carteirinha.',
   regras: ['validade', 'foto', 'lista', 'convite'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
   gina: {
@@ -332,7 +332,7 @@ const DIA_3: DiaDaPortaria = {
       docs: [{ tipo: 'convite', convidado: 'Estella', socio: 'Noel', numeroDoSocio: '0007', data: HOJE[2] }],
       fatos: { barrado: ['estella-barrada'] },
     })),
-    figurante('convidado'),
+    figurante('socio'),
     roteiro((q) => ({
       id: 'mano', ficha: 'mano', nome: 'Mano', rosto: fotoDe('mano'), espera: 'hojeNao',
       docs: [],
@@ -408,7 +408,7 @@ const DIA_4: DiaDaPortaria = {
   numero: 4,
   nome: 'Dia de entrega',
   segundos: 720,
-  novidade: 'O crachá e a ordem de entrega: a mesma empresa, e um lugar que existe no clube.',
+  novidade: 'Agora também há entregas: confira o crachá, a empresa e o destino na ordem. As regras de sócios e convidados continuam valendo.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
   gina: {
@@ -426,7 +426,7 @@ const DIA_4: DiaDaPortaria = {
       ],
       fatos: { barrado: ['adubo-barrado'] },
     })),
-    figurante('entregador', null),
+    figurante('convidado', null),
     roteiro(() => ({
       id: 'gelo', ficha: 'lontra', nome: 'Marina', rosto: { especie: 'lontra', cor: 'mel', marca: 'bigodeBranco' }, espera: 'entra',
       docs: [
@@ -436,6 +436,7 @@ const DIA_4: DiaDaPortaria = {
       chegada: ['Gelo pro Noel! Antes que vire água! Hahaha!'],
       fatos: { barrado: ['gelo-barrado'] },
     })),
+    figurante('convidado', 'conviteDeAmanha'),
     roteiro(() => ({
       id: 'carne', ficha: 'bode', nome: 'Seu Bartolomeu', rosto: { especie: 'bode', cor: 'branco', marca: 'chifreTorto' }, espera: 'entra', caro: true,
       docs: [
@@ -469,7 +470,6 @@ const DIA_4: DiaDaPortaria = {
       pego: ['Ih. Clube errado.'],
       fatos: { entrou: ['tata-perdido-no-boliche'] },
     })),
-    figurante('socio', 'vencida'),
     roteiro((q) => ({
       id: 'jeanlucD4', ficha: 'jeanluc', nome: 'Jean-Pierre', espera: 'hojeNao',
       rosto: fotoDe('jeanluc', { enfeite: 'boneDeEntregador' }),
@@ -506,7 +506,7 @@ const DIA_5: DiaDaPortaria = {
   numero: 5,
   nome: 'Dia de piscina',
   segundos: 900,
-  novidade: 'O exame da piscina (vencido é 🟡 SÓ O CLUBE) e a sacola: o proibido vai para os achados.',
+  novidade: 'Quem vai à piscina precisa de exame; vencido é 🟡 SÓ O CLUBE. Inspecione as sacolas. Sócios, convidados e entregadores continuam chegando.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega', 'exame', 'sacola'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
   gina: {
@@ -535,11 +535,18 @@ const DIA_5: DiaDaPortaria = {
         fatos: { entrou: renovado ? [] : ['hipolito-entrou-vencido'], passou: { caixaDeSom: ['baile-do-hipopotamo'] } },
       };
     }),
+    figurante('convidado', 'conviteDeAmanha'),
     roteiro(() => ({
       id: 'cookie', ficha: 'cookie', nome: 'Cookie', rosto: fotoDe('cookie'), espera: 'entra', querPiscina: true,
       docs: [{ tipo: 'convite', convidado: 'Cookie', socio: 'Capy', numeroDoSocio: '0011', data: HOJE[4] }, exame('Cookie')],
       sacola: ['sabaoDeBolha', 'toalha'],
       fatos: { barrado: ['cookie-barrado'], passou: { sabaoDeBolha: ['espuma-na-piscina'] } },
+    })),
+    roteiro(() => ({
+      id: 'bento', ficha: 'bento', nome: 'Bento', rosto: fotoDe('bento'), espera: 'entra',
+      docs: [carteirinha('Bento', fotoDe('bento'))],
+      respostas: { motivo: 'Hoje vim só ler no clube. Tudo nos conformes.' },
+      fatos: { barrado: ['bento-barrado'] },
     })),
     roteiro(() => ({
       id: 'alpacina', ficha: 'alpacina', nome: 'Dona Alpacina', rosto: fotoDe('alpacina', { cabelo: 'cocoAlto' }), espera: 'soClube', querPiscina: true,
@@ -557,7 +564,6 @@ const DIA_5: DiaDaPortaria = {
       chegada: ['Faço hidroginástica, meu bem… o exame tá em dia… o tricô também…'],
       fatos: { barrado: ['preguica-barrada'] },
     })),
-    figurante('socio', 'exameVencido'),
     roteiro(() => ({
       id: 'tata', ficha: 'tata', nome: 'Tatá', rosto: fotoDe('tata'), espera: 'entra',
       docs: [
@@ -580,12 +586,6 @@ const DIA_5: DiaDaPortaria = {
       barrado: ['Amanhã eu volto. Amanhã é o disfarce DEFINITIVO.'],
       fatos: { entrou: ['jeanluc-d5-entrou'], barrado: ['jeanluc-d5-barrado'], apontado: ['jeanluc-d5-pego'] },
     })),
-    roteiro(() => ({
-      id: 'bento', ficha: 'bento', nome: 'Bento', rosto: fotoDe('bento'), espera: 'entra', querPiscina: true,
-      docs: [carteirinha('Bento', fotoDe('bento')), exame('Bento')],
-      sacola: ['oculosDeNatacao', 'livro'],
-      fatos: { barrado: ['bento-barrado'] },
-    })),
   ],
   figurantesExtras: 1,
   defeitos: ['itemProibido', 'exameVencido', 'vencida', 'foraDaLista'],
@@ -604,7 +604,7 @@ const DIA_6: DiaDaPortaria = {
   numero: 6,
   nome: 'O sábado cheio',
   segundos: 1200,
-  novidade: 'Tudo junto, a fila maior e o convite coletivo do Dia da Escola.',
+  novidade: 'Convite coletivo do Dia da Escola: confira nomes e quantidade. Continue conferindo sócios, convidados, entregas e acesso à piscina.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega', 'exame', 'sacola', 'coletivo'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
   gina: {
@@ -626,6 +626,7 @@ const DIA_6: DiaDaPortaria = {
       oferta: { item: 'arepita', fala: ['Uma arepita pela fresta, mi niño. Presente, não é suborno: eu tô no convite!'] },
       fatos: { barrado: ['tializ-barrada'], apontado: ['luna-achada'] },
     })),
+    figurante('convidado', 'sorteio'),
     roteiro(() => ({
       id: 'flynn', ficha: 'flynn', nome: 'Flynn', rosto: fotoDe('flynn'), espera: 'entra', querPiscina: true,
       docs: [coletivo(), exame('Flynn')],
@@ -673,7 +674,6 @@ const DIA_6: DiaDaPortaria = {
       chegada: ['Repara não, amores: penteado de TROFÉU! Pra fechar a semana.'],
       fatos: { barrado: ['alpacina-barrada-pelo-penteado'] },
     })),
-    figurante('socio', 'sorteio'),
     roteiro(() => ({
       id: 'tata', ficha: 'tata', nome: 'Tatá', rosto: fotoDe('tata'), espera: 'entra',
       docs: [
@@ -710,7 +710,7 @@ const DIA_6: DiaDaPortaria = {
     })),
   ],
   figurantesExtras: 1,
-  defeitos: ['vencida', 'fotoDeOutro', 'foraDaLista', 'suspenso', 'numeroChutado', 'exameVencido', 'itemProibido'],
+  defeitos: ['vencida', 'fotoDeOutro', 'foraDaLista', 'suspenso', 'numeroChutado', 'exameVencido', 'itemProibido', 'conviteDeAmanha', 'socioSuspenso', 'convidadoTrocado'],
   reservas: {
     noelDeVerdade: () => ({
       id: 'noelDeVerdade', ficha: 'noel', nome: 'Noel', rosto: fotoDe('noel'), espera: 'entra',
@@ -845,6 +845,10 @@ function montarFigurante(
     });
   }
   v.docs = docs;
+  // Nos dias misturados, a intenção precisa deixar claro se o exame é necessário.
+  if (n >= 5 && papel !== 'entregador') v.respostas = { ...v.respostas,
+    motivo: v.querPiscina ? 'Vim usar a piscina e aproveitar o clube.' : 'Vim aproveitar o clube, sem entrar na piscina.',
+  };
   v.espera = defeito === 'exameVencido' ? 'soClube' : defeito && defeito !== 'itemProibido' ? 'hojeNao' : 'entra';
   return { visitante: v, lista };
 }

@@ -137,7 +137,18 @@ export function valorDaResposta(v: Visitante, assunto: Assunto): string {
   switch (assunto) {
     case 'nome': return v.nome;
     case 'numero': return doc(v, 'carteirinha')?.numero ?? '';
-    case 'motivo': return fichaDe(v).motivo[0] ?? '';
+    case 'motivo': {
+      const ordem = doc(v, 'ordem');
+      if (ordem) {
+        const itens = ordem.itens.length > 1
+          ? `${ordem.itens.slice(0, -1).join(', ')} e ${ordem.itens[ordem.itens.length - 1]}`
+          : ordem.itens[0];
+        return `Vim fazer uma entrega${itens ? ` de ${itens}` : ''}. O destino é ${ordem.destino}.`;
+      }
+      const cracha = doc(v, 'cracha');
+      if (cracha) return `Vim fazer uma entrega pela ${cracha.empresa}.`;
+      return fichaDe(v).motivo[0] ?? '';
+    }
     case 'convidou': return doc(v, 'convite')?.socio ?? '';
     case 'destino': return doc(v, 'ordem')?.destino ?? '';
     case 'exame': { const e = doc(v, 'exame'); return e ? escrever(e.validade) : ''; }

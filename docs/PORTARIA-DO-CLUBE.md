@@ -653,7 +653,7 @@ texugo riscado na lista (🔴) · panda-vermelho com número que não existe (�
 Seu Hipólito, ainda vencido (🔴) · Alpacina de tranças (🟢) · dois figurantes.
 
 **Dia 3 · quarta · Dia de convidado** (o convite)
-Estella, convidada do Noel (🟢) · Mano sem convite, com a casquinha (🔴) ·
+Estella, convidada do Noel (🟢) · sócio figurante (🟢) · Mano sem convite, com a casquinha (🔴) ·
 Bento convida Beto (🟢 os dois) · Hipólito "convidado de mim mesmo" (🔴) · bode
 com o convite de amanhã (🔴) · convidado de um sócio riscado (🔴) · Dona
 Preguiça e o netinho convidado (🟢) · Alpacina black power (🟢) · figurantes.
@@ -662,17 +662,21 @@ Preguiça e o netinho convidado (🟢) · Alpacina black power (🟢) · figuran
 Tatá com o adubo da Josefina (🟢) · a carne do Mania (🟢, o Walter esperando) ·
 o gelo do Bar do Noel (🟢) · crachá de uma empresa e ordem de outra (🔴) · a
 Josefina perguntando do adubo (🟢) · a Alpacona com a carteirinha da Alpacina
-(🔴: 🔍 a pinta) · Tatá para a "Sala de Boliche" (🔴: 💬 o destino) · figurantes.
+(🔴: 🔍 a pinta) · Tatá para a "Sala de Boliche" (🔴: 💬 o destino) · convidados
+com convite de hoje (🟢) e de amanhã (🔴), intercalados às entregas.
 
 **Dia 5 · sexta · Dia de piscina** (o exame, o 🟡 e a sacola; o Capy olha)
 Seu Hipólito com a caixa de som (tirar o som, 🟢) · Cookie com o sabão (tirar,
 🟢) · Alpacina com o exame vencido (🟡) · lontra com copo de vidro (tirar, 🟢)
-· Dona Preguiça (🟢) · bode com exame vencido querendo piscina (🟡) · Tatá com
-os picolés (🟢) · o Walter com a salada, se a carne não passou · figurantes.
+· Dona Preguiça (🟢) · convidado com convite de amanhã (🔴) · Bento só para
+leitura, sem piscina (🟢) · Tatá com os picolés (🟢) · o Walter com a salada,
+se a carne não passou · figurantes. Quem veio só ao clube aparece entre os
+atendimentos de piscina.
 
 **Dia 6 · sábado · O sábado cheio** (tudo junto, o convite coletivo, a fila
 maior — ~14)
-Gatito (🟢) · Tia Liz e as irmãs (🟢; achar a Luna rende bônus) · Flynn com a
+Gatito (🟢) · Tia Liz e as irmãs (🟢; achar a Luna rende bônus) · convidado
+figurante com convite simples · Flynn com a
 bola de basquete (🟢) · Rocco e os Dogões (🔴) · Valentina e o Pietro (🟢, os
 dois no convite coletivo) · Seu Hipólito renovado (🟢) ou ainda vencido (🔴) · Bento e Beto, cada
 um com a sua (🟢) · Alpacina (🟢) · Tatá com o bolo (🟢) · Dona Preguiça com o
