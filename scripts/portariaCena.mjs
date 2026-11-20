@@ -165,7 +165,7 @@ if (!SO || SO === 'dia') {
       await espera(2500);
       const m1 = await page.evaluate(() => window.portaria.ex.minutos);
       ok(await botao.evaluate((el) => el.isConnected), `o relógio andou (${m0.toFixed(2)} → ${m1.toFixed(2)} min) sem trocar os botões da mesa`);
-      ok(m1 > m0, 'o relógio anda com alguém na janela');
+      ok(DIA === 1 ? m1 === m0 : m1 > m0, DIA === 1 ? 'o primeiro dia fica sem relógio' : 'o relógio anda com alguém na janela');
       await page.click('[data-aba="manual"]');
       await page.$eval('.pt-manual', (el) => { el.scrollTop = 40; });
       await espera(1500);

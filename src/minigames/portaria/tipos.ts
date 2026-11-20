@@ -194,7 +194,7 @@ export type Carimbo = 'entra' | 'hojeNao' | 'soClube';
 
 /**
  * O RELÓGIO DO EXPEDIENTE: das 9h às 17h, comprimidas nos `segundos` do dia
- * (cada dia tem os seus: a fila do sábado é maior). Perguntar e apontar gastam
+ * (dia 1 sem limite; os demais têm de 10 a 20 minutos). Perguntar e apontar gastam
  * MINUTOS DO RELÓGIO — a pressão é a fila, e não um erro.
  *
  * O relógio corre SÓ durante os atendimentos: para enquanto a Gina ensina a

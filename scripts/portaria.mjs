@@ -322,6 +322,7 @@ const jogarComCalma = (v, ctx) => {
   return ctx.ferramentas.has('perguntar') ? { ...a, perguntas: [...new Set(['nome', ...a.perguntas])] } : a;
 };
 for (const dia of P.DIAS) {
+  if (dia.segundos === null) continue; // aprendizado: não existe prazo para caber a fila
   let pior = 0;
   let piorCalma = 0;
   for (let semente = 1; semente <= 60; semente++) {
@@ -436,7 +437,7 @@ console.log('\n7. o expediente (o dia andando, como a cena joga)');
   ok(semAlvo.size === 0, `toda pista da conferência tem alvo na mesa${semAlvo.size ? ' — faltam: ' + [...semAlvo] : ''}`);
 
   // um dia inteiro pelo expediente, jogado certo: o mesmo envelope do jogarODia
-  for (const n of [2, 6]) {
+  for (const n of [1, 2, 6]) {
     const fatos = certa.porDia[n - 1].antes;
     const e = new P.Expediente(n, 1, fatos);
     let v;
@@ -451,7 +452,7 @@ console.log('\n7. o expediente (o dia andando, como a cena joga)');
       if (v.oferta) e.responderOferta(!!a.aceitouOferta);
       const r = e.carimbar(a.carimbo);
       if (r.chamado) chamados += 1;
-      e.passar(P.RELOGIO.segundosPorVisitante);
+      e.passar(n === 1 ? 86400 : P.RELOGIO.segundosPorVisitante);
     }
     const fim = e.terminar();
     const ref = jogarODia(n, 1, fatos, jogarCerto).fim;
@@ -460,10 +461,27 @@ console.log('\n7. o expediente (o dia andando, como a cena joga)');
   }
   // o relógio fecha a fila: o que sobrou entra como não atendido
   {
-    const e = new P.Expediente(1, 1, new Set());
+    const e = new P.Expediente(2, 1, new Set());
     e.proximo(); e.carimbar('entra');
     e.minutos = 480;
     ok(e.fechou && e.proximo() === null && e.terminar().resumo.atendidos === 1, 'às 17h ninguém novo é chamado, e o resto da fila fica para o envelope');
+  }
+  {
+    const e = new P.Expediente(1, 1, new Set());
+    e.proximo();
+    e.passar(86400);
+    e.apontar('doc:carteirinha:foto', 'rosto');
+    ok(e.semRelogio && e.minutos === 0 && e.hora === 'Sem limite' && !e.fechou,
+      'dia 1: leitura prolongada e lupa não gastam tempo nem fecham o expediente');
+    e.carimbar('entra'); e.minutos = 480;
+    ok(!e.fechou && e.proximo() !== null, 'dia 1: nenhum horário bloqueia o próximo visitante');
+  }
+  for (const dia of P.DIAS.filter(d => d.segundos !== null)) {
+    const e = new P.Expediente(dia.numero, 1, new Set());
+    e.passar(dia.segundos / 2);
+    ok(!e.fechou && e.hora === '13:00', `dia ${dia.numero}: metade do novo prazo ainda permite atender`);
+    e.passar(dia.segundos / 2);
+    ok(e.fechou && e.hora === '17:00' && e.proximo() === null, `dia ${dia.numero}: o limite continua valendo ao fim do prazo`);
   }
   // o chamado da fila e as ajudas do parceiro
   {
