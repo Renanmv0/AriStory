@@ -545,7 +545,7 @@ const DIA_5: DiaDaPortaria = {
     roteiro(() => ({
       id: 'bento', ficha: 'bento', nome: 'Bento', rosto: fotoDe('bento'), espera: 'entra',
       docs: [carteirinha('Bento', fotoDe('bento'))],
-      respostas: { motivo: 'Hoje vim só ler no clube. Tudo nos conformes.' },
+      respostas: { motivo: 'Hoje vim só ler no clube.' },
       fatos: { barrado: ['bento-barrado'] },
     })),
     roteiro(() => ({
