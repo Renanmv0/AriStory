@@ -9,7 +9,7 @@
  */
 import { carimboCerto, diferencas, fichaDe, proibidosNaSacola, type ContextoDoDia, type Diferenca, type Visitante } from './conferencia';
 import { DIAS, diaPorNumero, type DiaDaPortaria } from './semana';
-import { NOME_DO_ITEM, VALOR, type Assunto, type Carimbo, type Fato, type ItemDaSacola, type Pista } from './tipos';
+import { NOME_DO_ITEM, RELOGIO, VALOR, type Assunto, type Carimbo, type Fato, type ItemDaSacola, type Pista } from './tipos';
 
 // ================================================================ um atendimento
 
@@ -46,6 +46,18 @@ export interface AvaliacaoDoAtendimento {
   achou: boolean;
 }
 
+/**
+ * QUEM É, NO ENVELOPE: o nome de VERDADE (o da ficha, para os personagens com
+ * nome), e não o que ele disse na janela — o Beto que dizia ser o Bento aparece
+ * como "Beto (dizendo ser Bento)". O figurante não tem ficha com nome: vale o dele.
+ */
+export function quemNoEnvelope(v: Visitante): string {
+  const ficha = fichaDe(v);
+  const figurante = ficha.nome === ficha.nome.toLowerCase();
+  if (figurante) return v.nome;
+  return ficha.nome === v.nome ? ficha.nome : `${ficha.nome} (dizendo ser ${v.nome})`;
+}
+
 /** o fato que um proibido grava quando passa, se o visitante não tem um próprio */
 const FATO_DO_ITEM: Partial<Record<ItemDaSacola, Fato>> = {
   caixaDeSom: 'som-alto-na-piscina',
@@ -62,7 +74,9 @@ const AGRADO_PERMITIDO = (v: Visitante, certo: Carimbo): boolean => certo !== 'h
  */
 export function avaliarAtendimento(at: Atendimento, ctx: ContextoDoDia): AvaliacaoDoAtendimento {
   const v = at.visitante;
-  const nome = v.nome === 'Noel' && v.ficha === 'jeanluc' ? 'o "Noel" de bigode' : v.nome;
+  const nome = quemNoEnvelope(v);
+  /** o nome curto, para as linhas de bônus */
+  const curto = fichaDe(v).nome === fichaDe(v).nome.toLowerCase() ? v.nome : fichaDe(v).nome;
   const certo = carimboCerto(v, ctx);
   const linhas: LinhaDoEnvelope[] = [];
   const erros: TipoDeErro[] = [];
@@ -78,24 +92,28 @@ export function avaliarAtendimento(at: Atendimento, ctx: ContextoDoDia): Avaliac
   // ---- o carimbo
   const passou = at.carimbo !== 'hojeNao';
   if (at.carimbo === certo) {
-    linhas.push({ valor: VALOR.certo, texto: `${nome}, tudo certo` });
+    linhas.push({
+      valor: VALOR.certo,
+      texto: certo === 'hojeNao' ? `barrou ${nome} com razão` : certo === 'soClube' ? `${nome}, só o clube (sem piscina)` : `${nome}, tudo certo`,
+    });
     // o achado: um só bônus por visitante, o maior
     const real = achados.find((a) => a.diferenca && !a.diferenca.aparente);
     const aparente = achados.find((a) => a.diferenca?.aparente);
     if (real && certo === 'hojeNao') {
       const pelaResposta = real.pistas.some((p) => p.startsWith('transcricao:'));
+      const desfecho = v.desfecho ?? fichaDe(v).desfecho;
       linhas.push(pelaResposta
-        ? { valor: VALOR.mentiraPega, texto: `a resposta do ${nome} que não batia` }
-        : { valor: VALOR.confissao, texto: `a confissão de ${nome}` });
+        ? { valor: VALOR.mentiraPega, texto: `a resposta que não batia (${curto})` }
+        : { valor: VALOR.confissao, texto: desfecho === 'confessa' ? `a confissão (${curto})` : `pegou no pulo (${curto})` });
     } else if (aparente) {
-      linhas.push({ valor: VALOR.achado, texto: v.escondido ? 'achou quem estava escondido' : `${nome} se corrigiu` });
+      linhas.push({ valor: VALOR.achado, texto: v.escondido ? 'achou quem estava escondido' : `${curto} se corrigiu` });
     }
   } else if (passou && certo === 'hojeNao') {
     erros.push('entrouQuemNaoPodia');
     linhas.push({ valor: VALOR.entrouQuemNaoPodia, texto: `${nome} entrou sem poder` });
   } else if (!passou) {
     erros.push('barrouQuemPodia');
-    linhas.push({ valor: VALOR.barrouQuemPodia, texto: `${nome} foi barrado sem motivo` });
+    linhas.push({ valor: VALOR.barrouQuemPodia, texto: `barrou ${nome} sem motivo` });
   } else {
     erros.push('carimboTrocado');
     linhas.push({ valor: VALOR.carimboTrocado, texto: certo === 'soClube' ? `${nome} foi pra piscina sem exame` : `${nome} ficou sem piscina à toa` });
@@ -261,6 +279,31 @@ export function fecharODia(dia: DiaDaPortaria, atendimentos: readonly Atendiment
     resumo, linhas, total: Math.max(0, soma), estrelas, fatos, boletim,
     falaDaGina: estrelas === 3 ? dia.gina.fimBom : dia.gina.fimRuim,
   };
+}
+
+// ============================================================== o relógio
+
+/**
+ * QUANTO TEMPO UM DIA LEVA (segundos de verdade): a régua de cada atendimento
+ * mais os minutos de relógio do que se perguntou e apontou (e dos cochilos da
+ * Dona Preguiça). É a conta que diz se as três estrelas (a fila inteira)
+ * cabem no expediente.
+ */
+export function estimarOTempo(dia: DiaDaPortaria, atendimentos: readonly Atendimento[]): number {
+  const porMinuto = dia.segundos / (RELOGIO.fecha - RELOGIO.abre);
+  let minutos = 0;
+  for (const a of atendimentos) {
+    if (a.carimbo === null) continue;
+    const vistas = new Set<string>();
+    for (const p of a.perguntas) {
+      minutos += vistas.has(p) ? RELOGIO.perguntaRepetida : RELOGIO.pergunta;
+      if (fichaDe(a.visitante).jeito === 'dorminhoco') minutos += RELOGIO.cochilo;
+      vistas.add(p);
+    }
+    for (const ap of a.apontados) minutos += ap.diferenca ? RELOGIO.apontar : RELOGIO.apontarAToa;
+  }
+  const atendidos = atendimentos.filter((a) => a.carimbo !== null).length;
+  return atendidos * RELOGIO.segundosPorVisitante + minutos * porMinuto;
 }
 
 // ================================================================ na hora

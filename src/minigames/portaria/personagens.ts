@@ -122,7 +122,7 @@ const ALPACINA: FichaDaPortaria = {
   barrado: ['Barrada? EU? Com ESTE cabelo?', 'Tudo bem… mas o cabelo não merecia isso.'],
   aToa: ['Ah, tá olhando o cabelo? Pode olhar, amor, é de graça.', 'É o CABELO, amor, o rosto é o mesmo! Olha a pintinha.'],
   irritado: ['Amor, eu já respondi. Presta atenção em mim, não só no cabelo.'],
-  motivo: ['Mostrar ESTE cabelo, amor.', 'Tomar sol de lado, pra não amassar o penteado.'],
+  motivo: ['Mostrar ESTE cabelo.', 'Tomar sol de lado, pra não amassar o penteado.'],
   desfecho: 'confessa',
   pego: ['Ai, que vergonha… tá bom, não sou eu.'],
   animacoes: {
@@ -270,7 +270,7 @@ const PREGUICA: FichaDaPortaria = {
   barrado: ['Ah… tudo bem, meu bem… eu volto… outro dia… devagarinho…'],
   aToa: ['Hmm? …Ah, sou eu sim, meu bem… sempre fui…'],
   irritado: ['Meu bem… eu já disse… mas digo de novo… com calma…'],
-  motivo: ['Hidroginástica, meu bem… às dez… ou às onze… depende de quando eu chegar…'],
+  motivo: ['Hidroginástica… às dez… ou às onze… depende de quando eu chegar…'],
   desfecho: 'confessa',
   pego: ['Ah, meu bem… a vovó se enganou…'],
   animacoes: {
@@ -343,7 +343,7 @@ const BODE: FichaDaPortaria = {
   barrado: ['Isso é um absurdo! E eu vou ficar aqui reclamando.', 'Hunf! (cabeçada no balcão)'],
   aToa: ['E daí? Não tem nada errado aí, tem? TEM?'],
   irritado: ['Vai perguntar de novo? Por quê? Por QUÊ?'],
-  motivo: ['E por que eu precisaria de motivo? …Pra nadar.'],
+  motivo: ['Nadar. Algum problema nisso?'],
   desfecho: 'seEnrola',
   pego: ['E quem disse que isso importa?', 'Isso aí é detalhe de quem não tem o que fazer.'],
   animacoes: {
@@ -385,7 +385,7 @@ const PANDA: FichaDaPortaria = {
   barrado: ['(baixinho) …tá bom… desculpa…'],
   aToa: ['(some atrás do balcão) …sou eu…'],
   irritado: ['(mais baixinho ainda) …eu falei…'],
-  motivo: ['(baixinho) …ler na sombra.'],
+  motivo: ['Ler na sombra.'],
   desfecho: 'confessa',
   pego: ['(some atrás do balcão) …desculpa… não era meu…'],
   animacoes: {
@@ -790,43 +790,49 @@ export const VARIACOES_DOS_FIGURANTES: Readonly<Record<EspecieFigurante, { cores
 
 // ================================================================ as respostas
 
-/** a resposta "crua" de um assunto, antes do jeito de cada um */
+const POR_EXTENSO = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez'];
+
+/** a resposta "crua" de um assunto, antes do jeito de cada um (o valor continua o do papel: só a FALA muda) */
 function base(assunto: Assunto, valor: string): string {
   switch (assunto) {
-    case 'nome': return `${valor}.`;
-    case 'numero': return `É o ${valor}.`;
+    case 'nome': return `Meu nome é ${valor}.`;
+    case 'numero': return `O meu número é ${valor}.`;
     case 'motivo': return valor;
     case 'convidou': return `Quem me convidou foi ${valor}.`;
-    case 'destino': return `É pro ${valor}.`;
-    case 'exame': return `Vale até ${valor}.`;
-    case 'sacola': return `Tem ${valor}.`;
-    case 'quantos': return `Somos ${valor}.`;
+    case 'destino': return `Entrega em: ${valor}.`;
+    case 'exame': return `O exame vale até ${valor}.`;
+    case 'sacola': return `Na sacola tem ${valor}.`;
+    case 'quantos': return `Somos ${POR_EXTENSO[Number(valor)] ?? valor}.`;
   }
 }
 
-/** o que cada jeito põe antes e depois da resposta (escolhido pelo assunto: a mesma pergunta dá sempre a mesma frase) */
+/**
+ * o que cada jeito põe antes e depois da resposta (escolhido pelo assunto: a
+ * mesma pergunta dá sempre a mesma frase). O que vem DEPOIS começando por
+ * vírgula é vocativo ("…, mi amor."): a resposta perde o ponto final e emenda.
+ */
 const MOLDE: Readonly<Record<Jeito, { antes?: readonly string[]; depois?: readonly string[] }>> = {
   sincero: {},
   enrolado: { antes: ['Ah, meu filho… '], depois: [' Mas isso é detalhe.', ' Desde o tempo do brejo.', ' Pode confiar.'] },
   vaidoso: { antes: ['Amor, '], depois: [' Reparou no cabelo?', ' Anota aí, com a letra bonita.'] },
   certinho: { antes: ['Prontamente: '], depois: [' Nos conformes.'] },
   desencanado: { antes: ['Ah… '], depois: [' Relaxa.', ' Acho.'] },
-  apressado: { antes: [''], depois: [' Rápido!', ' Assina!'] },
+  apressado: { depois: [' Rápido!', ' Assina!'] },
   dorminhoco: { antes: ['Ah, meu bem… '] },
   brincalhao: { depois: [' Hahaha!', ' Tchibum!'] },
   teimoso: { antes: ['E por que você quer saber? '], depois: [' Satisfeito?'] },
   sonolento: { antes: ['(boceja) '], depois: [' …zz.'] },
   timido: { antes: ['(baixinho) …'] },
   resmungao: { depois: [' Que pergunta.', ' Hunf.'] },
-  afobado: { antes: [''], depois: [' TÔ ATRASADO!', ' GLUGLU!'] },
-  doce: { depois: [' Meu amor.'] },
+  afobado: { depois: [' TÔ ATRASADO!', ' GLUGLU!'] },
+  doce: { depois: [', meu amor.'] },
   seguranca: { depois: [' Confere aí, conferir é segurança.'] },
   dramatico: { antes: ['Mon Dieu… '], depois: [' Voilà.'] },
-  elegante: { depois: [' Querida.'] },
-  animado: { antes: [''], depois: [' (dancinha)'] },
+  elegante: { depois: [', querida.'] },
+  animado: { depois: [' (dancinha)'] },
   fofo: { antes: ['(baixinho) '], depois: [' …pequenininho.'] },
   professor: { depois: [' Anotem.'] },
-  carinhosa: { depois: [' Mi amor.'] },
+  carinhosa: { depois: [', mi amor.'] },
   atleta: { depois: [' (trotando no lugar)'] },
   marrento: { depois: [' Algum problema?'] },
   diva: { antes: ['Amore, '], depois: [' Perfetto.'] },
@@ -838,6 +844,15 @@ const pegar = <T>(lista: readonly T[] | undefined, i: number): T | undefined =>
 
 const INDICE: Readonly<Record<Assunto, number>> = { nome: 0, numero: 1, motivo: 2, convidou: 3, destino: 4, exame: 5, sacola: 6, quantos: 7 };
 
+/** emenda o que vem antes, a resposta e o que vem depois, com a pontuação certa */
+function emendar(antes: string, meio: string, depois: string): string {
+  let m = meio;
+  // depois de "Amor, " ou "Prontamente: " a resposta continua a frase: minúscula
+  if (/[,:]\s$/.test(antes) && !/^[A-ZÁÉÍÓÚÂÊÔ]{2}/.test(m)) m = m.charAt(0).toLowerCase() + m.slice(1);
+  if (depois.startsWith(',')) m = m.replace(/[.!?]$/, '');
+  return `${antes}${m}${depois}`;
+}
+
 /**
  * A FALA DE UMA RESPOSTA, no jeito da ficha. Devolve uma lista de balões: a
  * Dona Preguiça responde em DOIS (começa, cochila e termina — a cena põe o
@@ -846,11 +861,13 @@ const INDICE: Readonly<Record<Assunto, number>> = { nome: 0, numero: 1, motivo: 
 export function responder(ficha: FichaDaPortaria, assunto: Assunto, valor: string): string[] {
   const i = INDICE[assunto];
   const molde = MOLDE[ficha.jeito];
-  const texto = `${pegar(molde.antes, i) ?? ''}${base(assunto, valor)}${pegar(molde.depois, i) ?? ''}`;
+  const antes = pegar(molde.antes, i) ?? '';
+  const depois = pegar(molde.depois, i) ?? '';
   if (ficha.jeito === 'dorminhoco') {
-    const meio = Math.max(1, Math.floor(texto.length / 2));
-    const corte = texto.lastIndexOf(' ', meio) > 0 ? texto.lastIndexOf(' ', meio) : meio;
-    return [`${texto.slice(0, corte)}…`, '(zZz…)', `…${texto.slice(corte).trim()}`];
+    // ela começa a frase, cochila ANTES da última palavra, e termina com ela
+    const frase = emendar(antes, base(assunto, valor), depois);
+    const corte = frase.lastIndexOf(' ');
+    return [`${frase.slice(0, corte)}…`, '(zZz…)', `…${frase.slice(corte + 1)}`];
   }
-  return [texto];
+  return [emendar(antes, base(assunto, valor), depois)];
 }

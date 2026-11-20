@@ -193,23 +193,30 @@ export type Carimbo = 'entra' | 'hojeNao' | 'soClube';
 // ============================================================== o relógio e o dinheiro
 
 /**
- * O RELÓGIO DO EXPEDIENTE: das 9h às 17h, comprimidas em `SEGUNDOS` de jogo.
- * Perguntar e apontar gastam MINUTOS DO RELÓGIO (a pressão é a fila).
+ * O RELÓGIO DO EXPEDIENTE: das 9h às 17h, comprimidas nos `segundos` do dia
+ * (cada dia tem os seus: a fila do sábado é maior). Perguntar e apontar gastam
+ * MINUTOS DO RELÓGIO — a pressão é a fila, e não um erro.
+ *
+ * O relógio corre SÓ durante os atendimentos: para enquanto a Gina ensina a
+ * novidade e no fim do dia. A régua do teste é `segundosPorVisitante` (chegar,
+ * passar os papéis, ser carimbado e sair, sem pressa); quando a cena existir,
+ * ela tem que ser remedida jogando (`scripts/portaria.mjs` diz quanto sobra).
  */
 export const RELOGIO = {
   abre: 9 * 60,
   fecha: 17 * 60,
-  segundos: 210,
   /** cada pergunta */
-  pergunta: 12,
+  pergunta: 8,
   /** a mesma pergunta de novo */
-  perguntaRepetida: 15,
+  perguntaRepetida: 10,
   /** apontar uma diferença de verdade */
-  apontar: 6,
+  apontar: 5,
   /** apontar à toa */
-  apontarAToa: 12,
+  apontarAToa: 10,
   /** a Dona Preguiça dormindo no meio da resposta */
-  cochilo: 20,
+  cochilo: 15,
+  /** o tempo de um atendimento sem pergunta nem lupa (segundos de verdade) */
+  segundosPorVisitante: 10,
 } as const;
 
 /**

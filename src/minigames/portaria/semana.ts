@@ -103,6 +103,8 @@ export interface DiaDaPortaria {
   novidade: string;
   regras: readonly Regra[];
   ferramentas: readonly Ferramenta[];
+  /** quantos segundos de verdade dura o expediente (das 9h às 17h) */
+  segundos: number;
   gina: FalasDaGina;
   roteiro: readonly Entrada[];
   /** figurantes sorteados entre os do roteiro */
@@ -133,6 +135,7 @@ const figurante = (papel: PapelDoFigurante, defeito: DefeitoDoFigurante | 'sorte
 const DIA_1: DiaDaPortaria = {
   numero: 1,
   nome: 'O primeiro dia',
+  segundos: 150,
   novidade: 'A carteirinha: a validade e a foto.',
   regras: ['validade', 'foto'],
   ferramentas: ['olhar', 'apontar'],
@@ -185,6 +188,7 @@ const DIA_1: DiaDaPortaria = {
 const DIA_2: DiaDaPortaria = {
   numero: 2,
   nome: 'A lista de sócios',
+  segundos: 220,
   novidade: 'A prancheta: o número tem que estar na lista, e não pode estar riscado. E agora dá para perguntar.',
   regras: ['validade', 'foto', 'lista'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -269,6 +273,7 @@ const DIA_2: DiaDaPortaria = {
 const DIA_3: DiaDaPortaria = {
   numero: 3,
   nome: 'Dia de convidado',
+  segundos: 240,
   novidade: 'O convite: a data de hoje, e o sócio que convidou tem que estar na lista.',
   regras: ['validade', 'foto', 'lista', 'convite'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -296,7 +301,7 @@ const DIA_3: DiaDaPortaria = {
     roteiro((q) => ({
       id: 'bento', ficha: 'bento', nome: 'Bento', rosto: fotoDe('bento'), espera: 'entra',
       docs: [carteirinha('Bento', fotoDe('bento'))],
-      chegada: q.tem('bento-sem-carteirinha')
+      chegada: q.tem('beto-entrou-com-a-do-bento')
         ? ['Segunda via, tirada ontem à noite. Nos conformes. O Beto devolveu a outra… lavada.']
         : ['Tudo nos conformes. Hoje eu trouxe um convidado.'],
       fatos: { barrado: ['bento-barrado'] },
@@ -346,6 +351,7 @@ const PAPITA = 'Papita Delivery';
 const DIA_4: DiaDaPortaria = {
   numero: 4,
   nome: 'Dia de entrega',
+  segundos: 220,
   novidade: 'O crachá e a ordem de entrega: a mesma empresa, e um lugar que existe no clube.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -426,6 +432,7 @@ const exame = (nome: string, validade: Data = VALIDA): Documento => ({ tipo: 'ex
 const DIA_5: DiaDaPortaria = {
   numero: 5,
   nome: 'Dia de piscina',
+  segundos: 240,
   novidade: 'O exame da piscina (vencido é 🟡 SÓ O CLUBE) e a sacola: o proibido vai para os achados.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega', 'exame', 'sacola'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -509,6 +516,7 @@ const coletivo = (): Documento => ({ tipo: 'conviteColetivo', socio: 'Gatito', n
 const DIA_6: DiaDaPortaria = {
   numero: 6,
   nome: 'O sábado cheio',
+  segundos: 300,
   novidade: 'Tudo junto, a fila maior e o convite coletivo do Dia da Escola.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega', 'exame', 'sacola', 'coletivo'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -539,6 +547,7 @@ const DIA_6: DiaDaPortaria = {
     })),
     roteiro((q) => ({
       id: 'rocco', ficha: 'rocco', nome: 'Rocco', rosto: fotoDe('rocco'), grupo: ['dogoes'], espera: 'hojeNao',
+      respostas: { quantos: '6' },
       docs: [coletivo()],
       chegada: q.tem('dogoes-entraram') ? [] : ['A gente veio pro Dia da Escola. Tá no convite. Mais ou menos.'],
       fatos: { entrou: ['dogoes-entraram'], barrado: ['rocco-barrado'] },
@@ -601,6 +610,8 @@ const DIA_6: DiaDaPortaria = {
     }) : null),
     roteiro((q) => ({
       id: 'jeanlucDisfarcado', ficha: 'jeanluc', nome: 'Noel', rosto: fotoDe('jeanluc', { enfeite: 'bigodeFalso' }), espera: 'hojeNao',
+      bordao: 'GLUGLU! Bonjour… digo, BOM DIA, BEBITOS!',
+      respostas: { motivo: 'ABRIR O BAR! Tô atrasado! Gluglu… é assim que fala, né?' },
       docs: [carteirinha('Noel', fotoDe('noel'))],
       chegada: [q.tem('jeanluc-entrou-com-paris')
         ? '(de bigode) GLUGLU. Sou o Noel. Bonjour. Digo… ESQUECI O GELO.'

@@ -266,7 +266,8 @@ O que pode estar errado (no máximo UMA coisa por visitante):
 - **Não está na lista**, o número é outro, ou está **riscado** (suspenso, com o
   motivo bobo escrito: "comeu o sanduíche do salva-vidas").
 - **Convite**: data de outro dia; o sócio que convidou não está na lista, ou
-  está riscado; o convidado é outro.
+  está riscado; o convidado é outro; ou o sócio convidou A SI MESMO (o Seu
+  Hipólito, na quarta — o manual diz que não pode).
 - **Entrega**: o destino não existe no clube ("Sala de Boliche"); a empresa do
   crachá é outra que a da ordem; a resposta não bate com a ordem.
 - **A resposta não bate com o papel** (§6).
@@ -294,11 +295,14 @@ pela janela e pelo som:
   carteirinha e sem entender nada.
 
 **2. No fim do dia: o envelope e o Boletim.**
-- **O envelope da Gina** (o pagamento): uma linha por coisa, com o valor —
-  "+R$ 5 · Josefina, tudo certo", "+R$ 3 · a confissão do Jean-Luc",
-  "−R$ 8 · o Beto entrou com a carteirinha do Bento", "−R$ 6 · a Alpacina foi
-  barrada pelo penteado". O total vai para a carteira do casal. Errar é
-  receber menos; o envelope nunca fica negativo.
+- **O envelope da Gina** (o pagamento): uma linha por coisa, com o valor e o
+  nome DE VERDADE de quem era — "+R$ 15 · Josefina, tudo certo", "+R$ 15 ·
+  barrou Seu Hipólito com razão", "+R$ 8 · a confissão (Jean-Luc)", "−R$ 20 ·
+  Beto (dizendo ser Bento) entrou sem poder", "−R$ 15 · barrou Dona Alpacina
+  sem motivo". O total vai para a carteira do casal. Errar é receber menos;
+  o envelope nunca fica negativo. Um dia bem jogado rende de R$ 150 a R$ 230
+  (a faixa do turno do Mania); os valores estão em `VALOR`
+  (`src/minigames/portaria/tipos.ts`).
 - **O BOLETIM DO CLUBE** (o jornalzinho de uma folha, pintado em canvas, que a
   Gina prega no mural): duas ou três manchetes do dia, escolhidas pelo que
   aconteceu — primeiro as consequências dos erros, depois as boas. Exemplos:
@@ -507,7 +511,8 @@ acessório), o jeito vem com a espécie.
     da escola. Outra escola, mas escola."), uiva quando barrado — e, se
     entra, o Boletim: "GATITOS × DOGÕES TERMINA NA PISCINA";
   - **Valentina** convidada, posa para a "foto da carteirinha"; o **Pietro**
-    com o crachá de motorista, e abre o leque quando a cancela sobe.
+    vem junto (ele está no convite coletivo, como motorista) e abre o leque
+    quando a cancela sobe.
 
 ## §12 Prêmios
 
@@ -523,6 +528,13 @@ acessório), o jeito vem com a espécie.
 As ESTRELAS do dia: quantos atendimentos certos (o principal), quanto da fila
 foi atendido antes das 17h, e se não houve erro "caro" (a Dona Preguiça, a
 carne do Mania).
+
+**O relógio** (decisão provisória, a remedir quando a cena existir): cada dia
+tem a sua duração (150 s na segunda, 300 s no sábado, que tem a fila maior), e
+o relógio corre SÓ durante os atendimentos — para enquanto a Gina ensina e no
+fim. Perguntar gasta 8 minutos do relógio, apontar 5 (10 à toa), e a Dona
+Preguiça cochila 15. O `scripts/portaria.mjs` mede que a fila inteira cabe
+jogando certo (com folga) e também perguntando o nome de todo mundo.
 
 ## §13 A semana, visitante por visitante
 
@@ -567,9 +579,9 @@ os picolés (🟢) · o Walter com a salada, se a carne não passou · figurante
 
 **Dia 6 · sábado · O sábado cheio** (tudo junto, o convite coletivo, a fila
 maior — ~14)
-Gatito (🟢) · Tia Liz e as irmãs (🟢 depois de achar a Luna) · Flynn com a bola
-de basquete (🟢) · Rocco e os Dogões (🔴) · Valentina (🟢) e o Pietro (🟢,
-crachá) · Seu Hipólito renovado (🟢) ou ainda vencido (🔴) · Bento e Beto, cada
+Gatito (🟢) · Tia Liz e as irmãs (🟢; achar a Luna rende bônus) · Flynn com a
+bola de basquete (🟢) · Rocco e os Dogões (🔴) · Valentina e o Pietro (🟢, os
+dois no convite coletivo) · Seu Hipólito renovado (🟢) ou ainda vencido (🔴) · Bento e Beto, cada
 um com a sua (🟢) · Alpacina (🟢) · Tatá com o bolo (🟢) · Dona Preguiça com o
 cachecol (🟢) · o Mano, se a casquinha foi aceita · e por último o "Noel"
 (o Jean-Luc de bigode, 🔴: 🔍 rosto × foto) — e o Noel de verdade, se o

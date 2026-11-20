@@ -128,11 +128,17 @@ console.log('\n2. os dias');
 ok(P.DIAS.length === 6, `seis dias (${P.DIAS.length})`);
 const certa = jogarASemana(jogarCerto);
 const errada = jogarASemana(jogarErrado);
+/** a decisão de quem BARRA todo mundo (é o caminho que monta os "foi barrado sem motivo" da semana) */
+const barraTudo = (v) => ({ visitante: v, carimbo: 'hojeNao', perguntas: [], apontados: [], confiscados: [], aceitouOferta: v.oferta ? false : undefined });
+const barrando = jogarASemana(barraTudo);
 const caminhos = [
   ['sem fatos', () => new Set()],
   ['jogando certo', (n) => certa.porDia[n - 1].antes],
   ['jogando tudo errado', (n) => errada.porDia[n - 1].antes],
+  ['barrando todo mundo', (n) => barrando.porDia[n - 1].antes],
 ];
+ok(['josefina-barrada', 'noel-barrado', 'alpacina-barrada-pelo-penteado', 'preguica-barrada', 'carne-barrada'].every((f) => barrando.porDia.some((d) => d.fim.fatos.includes(f))),
+  'barrando todo mundo, a semana grava os "barrado sem motivo" (Josefina, Noel, Alpacina, Dona Preguiça, a carne)');
 const DOC_DA_REGRA = { convite: 'convite', conviteColetivo: 'coletivo', cracha: 'entrega', ordem: 'entrega', exame: 'exame' };
 for (const dia of P.DIAS) {
   const n = dia.numero;
@@ -291,9 +297,40 @@ for (const r of errada.porDia) {
   ok(r.fim.estrelas < 3 && r.fim.resumo.atendidos === 4, `a fila pela metade (17h): ${r.fim.estrelas} estrela(s), "${r.fim.boletim.map((b) => b.titulo).join(' / ')}"`);
 }
 {
-  const r = errada.porDia[0];
-  console.log('      o envelope do dia 1 jogado errado:');
-  for (const l of r.fim.linhas) console.log(`        ${l.valor > 0 ? '+' : '−'}R$ ${Math.abs(l.valor)} · ${l.texto}`);
+  const linhasE2 = errada.porDia[1].fim.linhas.map((l) => l.texto);
+  const linhasC1 = certa.porDia[0].fim.linhas.map((l) => l.texto);
+  const linhasE6 = errada.porDia[5].fim.linhas.map((l) => l.texto);
+  ok(linhasE2.some((t) => t.startsWith('Beto (dizendo ser Bento) entrou sem poder')) && linhasE6.some((t) => t.startsWith('Jean-Luc (dizendo ser Noel)')),
+    'o envelope diz quem era DE VERDADE: "Beto (dizendo ser Bento)", "Jean-Luc (dizendo ser Noel)"');
+  ok(linhasC1.includes('barrou Seu Hipólito com razão'), 'e o barrado com razão aparece como tal ("barrou Seu Hipólito com razão")');
+  const mostrar = (rotulo, fim) => {
+    console.log(`      ${rotulo}: R$ ${fim.total}, ${fim.estrelas} estrela(s)`);
+    for (const l of fim.linhas) console.log(`        ${l.valor > 0 ? '+' : '−'}R$ ${Math.abs(l.valor)} · ${l.texto}`);
+    for (const b of fim.boletim) console.log(`        📰 ${b.titulo} — ${b.linha}`);
+    console.log(`        🦒 ${fim.falaDaGina.join(' ')}`);
+  };
+  mostrar('o dia 2 jogado errado', errada.porDia[1].fim);
+  mostrar('o dia 4 barrando todo mundo', barrando.porDia[3].fim);
+  mostrar('o dia 6 jogado certo', certa.porDia[5].fim);
+}
+
+// ============================================================== o relógio
+console.log('\n4b. o relógio');
+/** quem joga com calma: pergunta o nome de todo mundo (do dia 2 em diante) e aponta o que achar */
+const jogarComCalma = (v, ctx) => {
+  const a = jogarCerto(v, ctx);
+  return ctx.ferramentas.has('perguntar') ? { ...a, perguntas: [...new Set(['nome', ...a.perguntas])] } : a;
+};
+for (const dia of P.DIAS) {
+  let pior = 0;
+  let piorCalma = 0;
+  for (let semente = 1; semente <= 60; semente++) {
+    const fatos = certa.porDia[dia.numero - 1].antes;
+    pior = Math.max(pior, P.estimarOTempo(dia, jogarODia(dia.numero, semente, fatos, jogarCerto).ats));
+    piorCalma = Math.max(piorCalma, P.estimarOTempo(dia, jogarODia(dia.numero, semente, fatos, jogarComCalma).ats));
+  }
+  ok(pior <= dia.segundos * 0.85 && piorCalma <= dia.segundos,
+    `dia ${dia.numero}: a fila inteira cabe nos ${dia.segundos} s — jogando certo, ${Math.round(pior)} s; perguntando o nome de todo mundo, ${Math.round(piorCalma)} s`);
 }
 
 // ======================================================= 5. a semana no save
@@ -319,7 +356,6 @@ console.log('\n5. a semana no save');
   ok(certa.porDia[1].m.fila.find((v) => v.id === 'hipolito').chegada[0] !== errada.porDia[1].m.fila.find((v) => v.id === 'hipolito').chegada[0],
     'e na terça ele lembra da segunda ("Segunda deixaram!")');
   // (deixar todo mundo entrar não barra a carne: aqui, a quinta de quem barra todo mundo)
-  const barraTudo = (v) => ({ visitante: v, carimbo: 'hojeNao', perguntas: [], apontados: [], confiscados: [] });
   const q4 = jogarODia(4, 1, certa.porDia[3].antes, barraTudo);
   ok(q4.fim.fatos.includes('carne-barrada') && q4.fim.boletim.some((b) => /SALADA/.test(b.titulo))
     && !P.montarDia(5, 1, certa.porDia[4].antes).cenas.some((c) => c.id === 'walterComSalada')
@@ -359,6 +395,18 @@ for (const v of certa.porDia[1].fila) {
   const ctx = certa.porDia[1].m.contexto;
   const ds = P.diferencas(v, ctx).map((d) => d.problema + (d.aparente ? '*' : ''));
   console.log(`      ${P.FICHAS[v.ficha].icone} ${v.nome.padEnd(16)} ${P.carimboCerto(v, ctx).padEnd(8)} ${ds.join(', ')}`);
+}
+
+if (process.env.FALAS) {
+  for (const n of [3, 6]) {
+    const m = P.montarDia(n, 1, certa.porDia[n - 1].antes);
+    console.log(`\n   as falas do dia ${n} (FALAS=1):`);
+    for (const v of m.fila) {
+      const f = P.FICHAS[v.ficha];
+      console.log(`      ${f.icone} ${v.nome}: "${v.bordao ?? f.bordao}" ${(v.chegada ?? f.chegada).slice(0, 1).map((x) => `"${x}"`).join(' ')}`);
+      for (const a of P.assuntosDe(v)) console.log(`         ${P.PERGUNTA[a]} → ${P.perguntar(v, a, false).falas.join(' / ')}`);
+    }
+  }
 }
 
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\ntudo certo');

@@ -59,6 +59,8 @@ export interface Visitante {
   desfecho?: Desfecho;
   /** a fala de quando é pego (no lugar da da ficha) */
   pego?: readonly string[];
+  /** o bordão DESTE dia (no lugar do da ficha: o disfarce do Jean-Luc não diz "Bonjour") */
+  bordao?: string;
   /** as falas de chegada DESTE dia (no lugar das da ficha, depois do bordão) */
   chegada?: readonly string[];
   /** a fala de quando entra / é barrado, DESTE dia */
@@ -118,7 +120,9 @@ export const fichaDe = (v: Visitante): FichaDaPortaria => FICHAS[v.ficha];
 export function assuntosDe(v: Visitante): Assunto[] {
   const a: Assunto[] = ['nome', 'motivo'];
   if (doc(v, 'carteirinha')) a.push('numero');
-  if (doc(v, 'convite')) a.push('convidou');
+  // (quem traz o convite de OUTRO — a Dona Preguiça com o do netinho — é quem convida: a pergunta não é pra ela)
+  const cv = doc(v, 'convite');
+  if (cv && cv.convidado === v.nome) a.push('convidou');
   if (doc(v, 'ordem')) a.push('destino');
   if (doc(v, 'exame')) a.push('exame');
   if (v.sacola?.length) a.push('sacola');
@@ -137,7 +141,10 @@ export function valorDaResposta(v: Visitante, assunto: Assunto): string {
     case 'convidou': return doc(v, 'convite')?.socio ?? '';
     case 'destino': return doc(v, 'ordem')?.destino ?? '';
     case 'exame': { const e = doc(v, 'exame'); return e ? escrever(e.validade) : ''; }
-    case 'sacola': return (v.sacola ?? []).map((i) => NOME_DO_ITEM[i]).join(', ');
+    case 'sacola': {
+      const itens = (v.sacola ?? []).map((i) => NOME_DO_ITEM[i]);
+      return itens.length > 1 ? `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}` : itens.join('');
+    }
     case 'quantos': return String(1 + (v.grupo?.length ?? 0) + (v.escondido ? 1 : 0));
   }
 }
