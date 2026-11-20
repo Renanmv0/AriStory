@@ -58,7 +58,28 @@
   e da `juntarPorCor`; na vista de perto da portaria, 533 → 546 desenhos por
   quadro.
 
-**Falta**: o minigame inteiro. O DESENHO está abaixo, com as decisões do
+**Feito (2026-11-20), a etapa 1 do §14: AS REGRAS, sem three** (`src/minigames/portaria/`):
+- `tipos.ts` — os papéis, o retrato (a foto bate por espécie, cor e marca; penteado e enfeite não contam),
+  os assuntos do 💬, as pistas da 🔍, o relógio do expediente e os valores do envelope (um dia bem jogado
+  rende R$ 150 a 230, a faixa do turno do Mania);
+- `personagens.ts` — a FICHA de cada um (30: os recorrentes, os cinco figurantes por espécie e os bichos do
+  jogo): a personalidade em uma linha, o bordão, o JEITO de responder (a Dona Preguiça cochila no meio), as
+  falas de cada momento e os NOMES das cinco animações (a cena implementa cada uma);
+- `conferencia.ts` — o certo e o errado tirados dos PAPÉIS: as diferenças com o par de pistas que as revela,
+  as aparentes que se corrigem (o capacete do Capy, a Luna), o perguntar, o apontar e o carimbo certo;
+- `semana.ts` — os seis dias (o roteiro de cada um, como no §13, que muda com os fatos da semana), a lista
+  de sócios, os figurantes sorteados por semente e os chamados da fila (o Noel de verdade, o Bento sem
+  carteirinha);
+- `consequencias.ts` — o envelope linha por linha, as estrelas, o Boletim do Clube (as manchetes com peso:
+  a maior consequência na frente), os efeitos na hora, as dicas do parceiro, o save da semana (o dia
+  seguinte abre por terminar; refazer um dia troca os fatos dele) e os prêmios.
+- O teste: `node scripts/portaria.mjs` (sem navegador): em 150 sementes por dia e nos três caminhos da
+  semana (sem fatos, jogando certo, jogando tudo errado), o que o roteiro espera é o que os papéis dizem,
+  todo visitante errado é pegável com as ferramentas do dia, e as consequências chegam.
+- Um ajuste no arco do Hipólito: barrado na segunda, ele já chega RENOVADO na sexta (com a caixa de som na
+  sacola) e de novo no sábado; deixado entrar, continua vencido a semana inteira.
+
+**Falta**: a cena (etapas 3 a 8 do §14). O DESENHO está abaixo, com as decisões do
 Renan de 2026-11-20 já incorporadas (§1). Nada dele é código ainda. Para
 construir, comece pelo §14 (a ordem das etapas) e leia a seção do pedaço.
 
@@ -350,9 +371,9 @@ encantador; acha que a antiguidade vale mais que qualquer carteirinha.
 - *Barrado*: um suspiro tão grande que EMBAÇA o vidro do guichê; vai embora
   devagar, olhando para trás.
 - *Arco*: seg vencida · ter vencida, desculpa nova · qua tenta entrar
-  "convidado de mim mesmo" · sex caixa de som na sacola com a boia gigante ·
-  sáb aparece RENOVADO, a carteirinha erguida como troféu — se a dupla foi
-  firme; se não foi, continua vencido e indignado.
+  "convidado de mim mesmo" · sex caixa de som na sacola com a boia gigante —
+  e, se a dupla foi firme na segunda, já RENOVADO · sáb a carteirinha erguida
+  como troféu (renovado) ou "segunda deixaram!" (vencido e indignado).
 
 **DONA ALPACINA, a alpaca** — a vaidosa do clube; cada dia um penteado, e
 cada penteado é um evento.

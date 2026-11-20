@@ -393,7 +393,7 @@ o de sempre.
 `PORTARIA-DO-CLUBE.md` é o plano do terceiro minigame grande (Papers, Please na versão fofa, na guarita da Gina),
 aberto por um "COMECE AQUI": a guarita NOVA (`world/guaritaDoClube.ts`, maior, com o teto que sai e a porta) está no
 jogo desde 2026-11-20, mas SÓ APARECE depois da última noite do Mania jogada (antes, a guarita de sempre; `?guaritaNova` mostra); o desbloqueio (a primeira conversa na guarita nova) está atrás da chave `PORTARIA_NO_JOGO`
-(`eventos/portariaDoClube.ts`, `?portaria` para testar, num save à parte), e o minigame em si ainda não existe — as perguntas ao Renan estão lá.
+(`eventos/portariaDoClube.ts`, `?portaria` para testar, num save à parte), as REGRAS do minigame (etapa 1, sem three) estão em `src/minigames/portaria/`, testadas pelo `scripts/portaria.mjs`; a cena ainda não existe.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
@@ -497,6 +497,7 @@ node scripts/casaDoAri.mjs /tmp/ca # o acabamento da casa e do quarto: assoalho,
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
 node scripts/guarita.mjs /tmp/gu    # a portaria: a guarita de antes até a última noite do Mania, e a nova depois; a Gina fica no posto da guarita nova (a cabeça fora do balcão, o teto e a porta com nome), apita e manda aproveitar o dia; e o desbloqueio da Portaria do Clube (sem a chave nada muda; com ?portaria a primeira conversa é a da reforma, com a flag e a memória)
+node scripts/portaria.mjs            # a Portaria do Clube, as REGRAS (sem navegador, docs/PORTARIA-DO-CLUBE.md): as fichas dos personagens (bordão, falas, jeito e as cinco animações), os seis dias em 150 sementes e nos três caminhos da semana (o roteiro bate com os papéis, todo errado é pegável), perguntar e apontar (o Hipólito, o capacete do Capy, o número do Beto, a Luna escondida, o bigode do Jean-Luc), o envelope, as estrelas e o Boletim, e a semana no save com as consequências e os chamados da fila
 node scripts/salvavidas.mjs /tmp/sv # o Capy salva-vidas: fica na cadeira, varre a piscina e tira o oculos
 node scripts/noel.mjs    /tmp/no    # o Noel do bar de sucos: passeia, abre o leque e nao rouba o prompt do balcao
 node scripts/jardim.mjs  /tmp/ja    # o jardim organizado e a Josefina: canteiros alinhados, e ela nao pisa na horta
