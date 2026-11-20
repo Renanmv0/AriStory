@@ -418,6 +418,72 @@ console.log('\n6. o Jean-Luc, todo dia com um disfarce');
     `ele lembra de cada dia em que não passou, barrado com ou sem a lupa (na quarta: "${semLupa.fala}"; deixado entrar: "${deixando.fala}")`);
 }
 
+// ============================================================ 7. o expediente
+console.log('\n7. o expediente (o dia andando, como a cena joga)');
+{
+  // toda pista que a conferência pode pedir tem onde ser tocada na mesa
+  const semAlvo = new Set();
+  for (const dia of P.DIAS) {
+    for (const [, fatos] of caminhos) {
+      for (let semente = 1; semente <= 40; semente++) {
+        const m = P.montarDia(dia.numero, semente, fatos(dia.numero));
+        for (const v of [...m.fila, ...Object.values(m.reservas)]) {
+          for (const d of P.diferencas(v, m.contexto)) for (const p of d.pistas) if (!P.pistaTemAlvo(p)) semAlvo.add(p);
+        }
+      }
+    }
+  }
+  ok(semAlvo.size === 0, `toda pista da conferência tem alvo na mesa${semAlvo.size ? ' — faltam: ' + [...semAlvo] : ''}`);
+
+  // um dia inteiro pelo expediente, jogado certo: o mesmo envelope do jogarODia
+  for (const n of [2, 6]) {
+    const fatos = certa.porDia[n - 1].antes;
+    const e = new P.Expediente(n, 1, fatos);
+    let v;
+    let vistos = 0;
+    let chamados = 0;
+    while ((v = e.proximo())) {
+      vistos += 1;
+      const a = jogarCerto(v, e.contexto);
+      for (const q of a.perguntas) e.perguntar(q);
+      for (const ap of a.apontados) e.apontar(ap.pistas[0], ap.pistas[1]);
+      for (const i of a.confiscados) e.confiscar(i);
+      if (v.oferta) e.responderOferta(!!a.aceitouOferta);
+      const r = e.carimbar(a.carimbo);
+      if (r.chamado) chamados += 1;
+      e.passar(P.RELOGIO.segundosPorVisitante);
+    }
+    const fim = e.terminar();
+    const ref = jogarODia(n, 1, fatos, jogarCerto).fim;
+    ok(fim.total === ref.total && fim.estrelas === 3 && vistos === e.fila.length,
+      `dia ${n} pelo expediente: ${vistos} atendidos até ${e.hora}, R$ ${fim.total} (o mesmo do jogarODia), ${fim.estrelas} estrelas`);
+  }
+  // o relógio fecha a fila: o que sobrou entra como não atendido
+  {
+    const e = new P.Expediente(1, 1, new Set());
+    e.proximo(); e.carimbar('entra');
+    e.minutos = 480;
+    ok(e.fechou && e.proximo() === null && e.terminar().resumo.atendidos === 1, 'às 17h ninguém novo é chamado, e o resto da fila fica para o envelope');
+  }
+  // o chamado da fila e as ajudas do parceiro
+  {
+    const e = new P.Expediente(6, 1, certa.porDia[5].antes);
+    let v;
+    let chamado = null;
+    while ((v = e.proximo())) {
+      const r = e.carimbar(v.id === 'jeanlucDisfarcado' ? 'entra' : P.carimboCerto(v, e.contexto));
+      if (r.chamado) chamado = r.chamado;
+    }
+    ok(chamado?.id === 'noelDeVerdade', 'o "Noel" de bigode deixado entrar chama o Noel de verdade para a fila');
+    const e2 = new P.Expediente(1, 1, new Set());
+    e2.proximo();
+    const dicas = [e2.ajuda(), e2.ajuda(), e2.ajuda(), e2.ajuda()];
+    ok(dicas.slice(0, 3).every((d) => typeof d === 'string') && dicas[3] === null, `três ajudas do parceiro por dia ("${dicas[0]}")`);
+    const e3 = new P.Expediente(1, 1, new Set());
+    ok(e3.proximo() && e3.assuntos().length === 0, 'no dia 1 não tem o que perguntar (o 💬 chega na terça)');
+  }
+}
+
 // ============================================================== um dia, por escrito
 console.log('\n   a fila do dia 2 (semente 1, jogando certo):');
 for (const v of certa.porDia[1].fila) {

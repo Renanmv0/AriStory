@@ -7,3 +7,5 @@ export * from './personagens';
 export * from './conferencia';
 export * from './semana';
 export * from './consequencias';
+export * from './campos';
+export * from './expediente';
