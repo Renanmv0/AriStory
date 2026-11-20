@@ -125,13 +125,13 @@ export type TipoDeDocumento = Documento['tipo'];
 /** o que pode ir na sacola (o proibido do dia vai para a caixa de achados) */
 export type ItemDaSacola =
   | 'toalha' | 'protetor' | 'oculosDeNatacao' | 'boia' | 'livro' | 'sanduiche' | 'patoDeBorracha'
-  | 'tricô' | 'bolaDeBasquete' | 'chinelo'
+  | 'tricô' | 'bolaDeBasquete' | 'chinelo' | 'raqueteDePingPong'
   | 'caixaDeSom' | 'copoDeVidro' | 'sabaoDeBolha' | 'bolaDeFutebol';
 
 export const NOME_DO_ITEM: Readonly<Record<ItemDaSacola, string>> = {
   toalha: 'toalha', protetor: 'protetor solar', oculosDeNatacao: 'óculos de natação', boia: 'boia',
   livro: 'livro', sanduiche: 'sanduíche', patoDeBorracha: 'pato de borracha', 'tricô': 'tricô',
-  bolaDeBasquete: 'bola de basquete', chinelo: 'chinelo',
+  bolaDeBasquete: 'bola de basquete', chinelo: 'chinelo', raqueteDePingPong: 'raquete de ping pong',
   caixaDeSom: 'caixa de som', copoDeVidro: 'copo de vidro', sabaoDeBolha: 'sabão de bolha', bolaDeFutebol: 'bola de futebol',
 };
 

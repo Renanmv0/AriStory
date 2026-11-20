@@ -186,6 +186,10 @@ export const MANCHETES: Readonly<Record<Fato, Manchete>> = {
   'picoles-barrados': { titulo: 'PICOLÉS DERRETEM NA CALÇADA', linha: 'O Tatá deu uma estrela pra portaria.', tom: 'ruim' },
   'tializ-barrada': { titulo: 'TIA LIZ E AS MENINAS FICAM DE FORA DO DIA DA ESCOLA', linha: 'A Sol pulou de tristeza.', tom: 'ruim', peso: 3 },
   'dogoes-entraram': { titulo: 'GATITOS × DOGÕES TERMINA NA PISCINA', linha: 'Ninguém sabe quem ganhou. Todo mundo se molhou.', tom: 'ruim', peso: 2 },
+  'jeanluc-d1-entrou': { titulo: 'TARTARUGA DE BICO AMARELO É VISTA NO DEQUE', linha: 'O casco era de papelão. A Josefina de verdade estava na estufa.', tom: 'ruim', peso: 2 },
+  'jeanluc-d3-entrou': { titulo: 'CONVIDADA DE 14 DE JULHO CANTA A MARSELHESA NA PISCINA', linha: 'A peruca de franja boiou sozinha por uma hora.', tom: 'ruim', peso: 2 },
+  'jeanluc-d4-entrou': { titulo: 'CROISSANTS ENTREGUES NUMA MESA DE PING PONG QUE NÃO EXISTE', linha: 'O entregador ficou esperando a mesa aparecer.', tom: 'ruim', peso: 2 },
+  'jeanluc-d5-entrou': { titulo: 'HIPOPÓTAMO DE BICO SACA NA PISCINA', linha: 'O travesseiro da barriga afundou. O Seu Hipólito de verdade ficou confuso.', tom: 'ruim', peso: 2 },
   'jeanluc-disfarcado-entrou': { titulo: 'DOIS NOÉIS NO CLUBE', linha: 'Um deles tinha bico amarelo e jogava ping pong.', tom: 'ruim', peso: 3 },
   // ---- as boas
   'hipolito-barrado': { titulo: 'SÓCIO MAIS ANTIGO PROMETE RENOVAR A CARTEIRINHA', linha: '"Desde o brejo, mas renovada", disse Seu Hipólito.', tom: 'bom' },
@@ -194,6 +198,10 @@ export const MANCHETES: Readonly<Record<Fato, Manchete>> = {
   'beto-pego': { titulo: 'GÊMEO PEGO PELO NÚMERO', linha: 'O Beto chutou "0127". O Bento é 0215.', tom: 'bom', peso: 2 },
   'mano-casquinha-recusada': { titulo: 'PORTEIRO RECUSA CASQUINHA: "REGRA É REGRA"', linha: 'O Mano respeitou e saiu dançando.', tom: 'bom' },
   'luna-achada': { titulo: 'PORTARIA ACHA A LUNA ATRÁS DA TIA LIZ', linha: 'A turma inteira entrou de mãos dadas.', tom: 'bom', peso: 2 },
+  'jeanluc-d1-pego': { titulo: 'O DISFARCE DO DIA: A TARTARUGA DE PAPELÃO', linha: 'O casco caiu na primeira olhada na foto.', tom: 'bom', peso: 2 },
+  'jeanluc-d3-pego': { titulo: 'O DISFARCE DO DIA: JEANNE, A CONVIDADA DO FERIADO', linha: 'Convite de 14 de julho não vale em novembro.', tom: 'bom', peso: 2 },
+  'jeanluc-d4-pego': { titulo: 'O DISFARCE DO DIA: A CROISSANT EXPRESS', linha: 'O clube não tem mesa de ping pong. "Ainda não", disse o entregador.', tom: 'bom', peso: 2 },
+  'jeanluc-d5-pego': { titulo: 'O DISFARCE DO DIA: O HIPOPÓTAMO ENCOLHIDO', linha: 'O travesseiro escorregou da barriga.', tom: 'bom', peso: 2 },
   'disfarce-descoberto': { titulo: 'BIGODE FALSO CAI NA PORTARIA', linha: 'Jean-Luc: "c\'est une catastrophe". O Noel de verdade agradece.', tom: 'bom', peso: 3 },
   'rocco-barrado': { titulo: 'DOGÕES BARRADOS NO DIA DA ESCOLA', linha: 'O Rocco uivou. O Flynn mandou um "toca aqui" pela grade.', tom: 'bom' },
 };

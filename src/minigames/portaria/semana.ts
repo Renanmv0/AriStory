@@ -131,6 +131,24 @@ export interface CenaDoDia {
 const roteiro = (montar: (q: Quadro) => Visitante | null): Entrada => ({ tipo: 'roteiro', montar });
 const figurante = (papel: PapelDoFigurante, defeito: DefeitoDoFigurante | 'sorteio' | null = null): Entrada => ({ tipo: 'figurante', papel, defeito });
 
+
+/**
+ * O JEAN-LUC DISFARÇADO, TODO DIA (pedido do Renan, 2026-11-20: "algum dos
+ * personagens deve voltar todos os dias com um disfarce diferente, só para ser
+ * engraçado"). Cada disfarce cai pela ferramenta que o dia ensina: a foto (seg),
+ * o escudo e a lista (ter), a data do convite (qua), o destino da entrega (qui),
+ * a foto de novo, de touca e boia (sex), e o bigode de Noel (sáb). Ele lembra
+ * de cada vez que foi pego — e acha que desta vez ninguém vai reconhecer.
+ */
+const PEGOS_DO_JEANLUC = ['jeanluc-d1-pego', 'jeanluc-barrado-paris', 'jeanluc-d3-pego', 'jeanluc-d4-pego', 'jeanluc-d5-pego'];
+const vezesPego = (q: Quadro): number => PEGOS_DO_JEANLUC.filter((f) => q.tem(f)).length;
+const lembranca = (q: Quadro): string => {
+  const n = vezesPego(q);
+  return n === 0 ? '(baixinho) Ninguém nunca vai desconfiar.'
+    : n === 1 ? '(baixinho) Ontem foi azar. Hoje o disfarce é PERFEITO.'
+      : `(baixinho) ${n} vezes. Mas hoje… hoje é arte.`;
+};
+
 // ------------------------------------------------------------------ dia 1
 const DIA_1: DiaDaPortaria = {
   numero: 1,
@@ -178,10 +196,25 @@ const DIA_1: DiaDaPortaria = {
       fatos: { barrado: ['alpacina-barrada-pelo-penteado'] },
     })),
     figurante('socio', 'vencida'),
+    roteiro((q) => ({
+      id: 'jeanlucD1', ficha: 'jeanluc', nome: 'Josefina', espera: 'hojeNao',
+      rosto: fotoDe('jeanluc', { enfeite: 'cascoDePapelao' }),
+      docs: [carteirinha('Josefina', fotoDe('josefina'))],
+      bordao: 'Bom dia, meus amores! (a voz fininha demais)',
+      chegada: ['(um casco de papelão amarrado nas costas, o bico de fora) Sou a Josefina. A tartaruga. Do jardim.', lembranca(q)],
+      respostas: { motivo: 'Regar as… plantas. Com… água. Como toda tartaruga.' },
+      desfecho: 'confessa',
+      pego: ['(o casco escorrega e cai) …Sacré bleu.'],
+      barrado: ['Amanhã eu volto. E ninguém vai me reconhecer.'],
+      fatos: { entrou: ['jeanluc-d1-entrou'], apontado: ['jeanluc-d1-pego'] },
+    })),
   ],
   figurantesExtras: 0,
   defeitos: ['vencida', 'fotoDeOutro'],
-  fatos: ['noel-barrado', 'josefina-barrada', 'hipolito-entrou-vencido', 'hipolito-barrado', 'capy-barrado', 'alpacina-barrada-pelo-penteado'],
+  fatos: [
+    'noel-barrado', 'josefina-barrada', 'hipolito-entrou-vencido', 'hipolito-barrado', 'capy-barrado', 'alpacina-barrada-pelo-penteado',
+    'jeanluc-d1-entrou', 'jeanluc-d1-pego',
+  ],
 };
 
 // ------------------------------------------------------------------ dia 2
@@ -201,15 +234,15 @@ const DIA_2: DiaDaPortaria = {
   roteiro: [
     figurante('socio'),
     roteiro((q) => ({
-      id: 'jeanluc', ficha: 'jeanluc', nome: 'Jean-Luc', rosto: fotoDe('jeanluc'), espera: 'hojeNao',
+      id: 'jeanluc', ficha: 'jeanluc', nome: 'Monsieur Canard', rosto: fotoDe('jeanluc', { enfeite: 'oculosComNariz' }), espera: 'hojeNao',
       docs: [{
-        tipo: 'carteirinha', nome: 'Jean-Luc', numero: 'PP-07', validade: VALIDA, foto: fotoDe('jeanluc'),
+        tipo: 'carteirinha', nome: 'Monsieur Canard', numero: 'PP-07', validade: VALIDA, foto: fotoDe('jeanluc', { enfeite: 'oculosComNariz' }),
         clube: 'Club de Ping-Pong de Paris',
       }],
-      chegada: q.tem('josefina-barrada')
-        ? ['Ouvi dizer que a portaria anda severa. Eu trouxe a minha MELHOR carteirinha.']
-        : ['Um pato tem que ter estilo. E carteirinha. Eu tenho os dois.'],
+      bordao: 'Bonjour. Monsieur Canard. Turista. Sócio. De Paris.',
+      chegada: ['(óculos de nariz de plástico e um bigodinho fino) Nunca vi esse tal de Jean-Luc na vida.', lembranca(q)],
       pego: ['C\'est la même chose! É um clube. Este é um clube. Voilà.'],
+      barrado: ['Amanhã… amanhã eu volto. Irreconhecível.'],
       fatos: { entrou: ['jeanluc-entrou-com-paris'], barrado: ['jeanluc-barrado-paris'] },
     })),
     figurante('socio', 'suspenso'),
@@ -337,12 +370,25 @@ const DIA_3: DiaDaPortaria = {
       fatos: { barrado: ['alpacina-barrada-pelo-penteado'] },
     })),
     figurante('convidado', 'convidadoTrocado'),
+    roteiro((q) => ({
+      id: 'jeanlucD3', ficha: 'jeanluc', nome: 'Jeanne', espera: 'hojeNao',
+      rosto: fotoDe('jeanluc', { enfeite: 'perucaDeFranja' }),
+      docs: [{ tipo: 'convite', convidado: 'Jeanne', socio: 'Dona Alpacina', numeroDoSocio: '0102', data: data(14, 7, 2026) }],
+      bordao: 'Bonjour, amores! Repara não: penteado novo!',
+      chegada: ['(uma peruca de franja ENORME, igual à da Dona Alpacina) Sou a Jeanne. A prima. Da outra prima.', lembranca(q)],
+      respostas: { motivo: 'Mostrar ESTE cabelo. E jogar um pouquinho de ping pong. Por acaso.' },
+      desfecho: 'confessa',
+      pego: ['Quatorze de julho é feriado lá em casa! …Tá bom, tá bom. (a peruca escorrega)'],
+      barrado: ['Amanhã eu volto. Com OUTRO cabelo.'],
+      fatos: { entrou: ['jeanluc-d3-entrou'], apontado: ['jeanluc-d3-pego'] },
+    })),
   ],
   figurantesExtras: 0,
   defeitos: ['conviteDeAmanha', 'socioSuspenso', 'convidadoTrocado', 'vencida', 'foraDaLista'],
   fatos: [
     'estella-barrada', 'mano-entrou-sem-convite', 'mano-casquinha-aceita', 'mano-casquinha-recusada', 'bento-barrado',
     'beto-convidado-barrado', 'hipolito-entrou-de-convidado', 'preguica-barrada', 'alpacina-barrada-pelo-penteado',
+    'jeanluc-d3-entrou', 'jeanluc-d3-pego',
   ],
 };
 
@@ -414,6 +460,20 @@ const DIA_4: DiaDaPortaria = {
       fatos: { entrou: ['tata-perdido-no-boliche'] },
     })),
     figurante('socio', 'vencida'),
+    roteiro((q) => ({
+      id: 'jeanlucD4', ficha: 'jeanluc', nome: 'Jean-Pierre', espera: 'hojeNao',
+      rosto: fotoDe('jeanluc', { enfeite: 'boneDeEntregador' }),
+      docs: [
+        { tipo: 'cracha', nome: 'Jean-Pierre', empresa: 'Croissant Express', funcao: 'Entregador', foto: fotoDe('jeanluc', { enfeite: 'boneDeEntregador' }) },
+        { tipo: 'ordem', empresa: 'Croissant Express', destino: 'Mesa de Ping Pong', itens: ['croissants', 'bolinhas de ping pong'] },
+      ],
+      bordao: 'Entrega! Assina! Rapidinho! (com sotaque)',
+      chegada: ['(de boné e uma caixa de croissants maior que ele) Croissant Express. Muito… express.', lembranca(q)],
+      desfecho: 'confessa',
+      pego: ['Não existe mesa de ping pong no clube?! …Ainda não. Era pra ser surpresa.'],
+      barrado: ['Fiquem com um croissant. Pela tentativa. (não deixa nenhum)'],
+      fatos: { entrou: ['jeanluc-d4-entrou'], apontado: ['jeanluc-d4-pego'] },
+    })),
     roteiro(() => ({
       id: 'alpacina', ficha: 'alpacina', nome: 'Dona Alpacina', rosto: fotoDe('alpacina', { cabelo: 'moicano' }), espera: 'entra',
       docs: [carteirinha('Dona Alpacina', fotoDe('alpacina'))],
@@ -424,7 +484,10 @@ const DIA_4: DiaDaPortaria = {
   figurantesExtras: 0,
   defeitos: ['empresaTrocada', 'destinoInexistente', 'vencida', 'conviteDeAmanha'],
   cenas: [{ id: 'walterEsperandoACarne', depois: 2, falas: ['(do lado de dentro do portão, o Walter espia a fila) Au? …Au?'] }],
-  fatos: ['adubo-barrado', 'gelo-barrado', 'carne-barrada', 'josefina-barrada', 'alpacona-entrou', 'tata-perdido-no-boliche', 'alpacina-barrada-pelo-penteado'],
+  fatos: [
+    'adubo-barrado', 'gelo-barrado', 'carne-barrada', 'josefina-barrada', 'alpacona-entrou', 'tata-perdido-no-boliche',
+    'alpacina-barrada-pelo-penteado', 'jeanluc-d4-entrou', 'jeanluc-d4-pego',
+  ],
 };
 
 // ------------------------------------------------------------------ dia 5
@@ -494,6 +557,19 @@ const DIA_5: DiaDaPortaria = {
       chegada: ['Picolé! Derretendo! Rápido!'],
       fatos: { barrado: ['picoles-barrados'] },
     })),
+    roteiro((q) => ({
+      id: 'jeanlucD5', ficha: 'jeanluc', nome: 'Seu Hipólito', espera: 'hojeNao', querPiscina: true,
+      rosto: fotoDe('jeanluc', { enfeite: 'toucaEBoia' }),
+      docs: [carteirinha('Seu Hipólito', fotoDe('hipolito')), exame('Seu Hipólito')],
+      sacola: ['raqueteDePingPong', 'toalha'],
+      bordao: 'Meu filho, eu sou sócio desde quando isso aqui era… lago? Brejo!',
+      chegada: ['(touca de natação, boia de patinho e um travesseiro na barriga) Sou o Seu Hipólito. Encolhi na lavagem.', lembranca(q)],
+      respostas: { motivo: 'Boiar. E sacar um pouquinho. Na piscina. Com a raquete.' },
+      desfecho: 'confessa',
+      pego: ['(o travesseiro escorrega da barriga) …Mon Dieu. O hipopótamo de verdade tem papada, né?'],
+      barrado: ['Amanhã eu volto. Amanhã é o disfarce DEFINITIVO.'],
+      fatos: { entrou: ['jeanluc-d5-entrou'], apontado: ['jeanluc-d5-pego'] },
+    })),
     roteiro(() => ({
       id: 'bento', ficha: 'bento', nome: 'Bento', rosto: fotoDe('bento'), espera: 'entra', querPiscina: true,
       docs: [carteirinha('Bento', fotoDe('bento')), exame('Bento')],
@@ -507,6 +583,7 @@ const DIA_5: DiaDaPortaria = {
   fatos: [
     'capy-barrado', 'hipolito-entrou-vencido', 'baile-do-hipopotamo', 'cookie-barrado', 'espuma-na-piscina', 'preguica-barrada',
     'picoles-barrados', 'bento-barrado', 'copo-quebrado', 'som-alto-na-piscina', 'bola-na-piscina',
+    'jeanluc-d5-entrou', 'jeanluc-d5-pego',
   ],
 };
 
@@ -613,9 +690,9 @@ const DIA_6: DiaDaPortaria = {
       bordao: 'GLUGLU! Bonjour… digo, BOM DIA, BEBITOS!',
       respostas: { motivo: 'ABRIR O BAR! Tô atrasado! Gluglu… é assim que fala, né?' },
       docs: [carteirinha('Noel', fotoDe('noel'))],
-      chegada: [q.tem('jeanluc-entrou-com-paris')
-        ? '(de bigode) GLUGLU. Sou o Noel. Bonjour. Digo… ESQUECI O GELO.'
-        : '(de bigode) GLUGLU! Sou o Noel! (baixinho) Isso é pela terça-feira.'],
+      chegada: ['(de bigode, com três caixas de laranja vazias) GLUGLU! Sou o Noel! ESQUECI O GELO!', vezesPego(q) >= 3
+        ? `(baixinho) ${vezesPego(q)} disfarces. ${vezesPego(q)}! Este é o último. E o melhor.`
+        : lembranca(q)],
       pego: ['(o bigode cai devagar) …C\'est une catastrophe.'],
       desfecho: 'confessa',
       fatos: { entrou: ['jeanluc-disfarcado-entrou'], apontado: ['disfarce-descoberto'] },
