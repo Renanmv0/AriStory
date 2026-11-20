@@ -58,18 +58,26 @@ export class Expediente {
   get contexto() { return this.montado.contexto; }
 
   // ------------------------------------------------------------ o relógio
+  get semRelogio(): boolean { return this.dia.segundos === null; }
+
   /** o expediente acabou (17h): ninguém NOVO é chamado */
-  get fechou(): boolean { return this.minutos >= RELOGIO.fecha - RELOGIO.abre; }
+  get fechou(): boolean { return !this.semRelogio && this.minutos >= RELOGIO.fecha - RELOGIO.abre; }
 
   /** a hora no relógio ("10:40") */
   get hora(): string {
+    if (this.semRelogio) return 'Sem limite';
     const t = Math.min(RELOGIO.fecha, RELOGIO.abre + Math.floor(this.minutos));
     return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
   }
 
   /** o relógio anda com o tempo de verdade (a cena chama só durante os atendimentos) */
   passar(segundos: number): void {
-    this.minutos += (segundos * (RELOGIO.fecha - RELOGIO.abre)) / this.dia.segundos;
+    if (this.dia.segundos === null) return;
+    this.gastarMinutos((segundos * (RELOGIO.fecha - RELOGIO.abre)) / this.dia.segundos);
+  }
+
+  private gastarMinutos(minutos: number): void {
+    if (!this.semRelogio) this.minutos += minutos;
   }
 
   /** quantos ainda esperam na fila (sem contar quem está na janela) */
@@ -98,8 +106,8 @@ export class Expediente {
     const ja = j.perguntas.includes(assunto);
     const r = perguntar(j.visitante, assunto, ja);
     j.perguntas.push(assunto);
-    this.minutos += ja ? RELOGIO.perguntaRepetida : RELOGIO.pergunta;
-    if (fichaDe(j.visitante).jeito === 'dorminhoco' && !ja) this.minutos += RELOGIO.cochilo;
+    this.gastarMinutos(ja ? RELOGIO.perguntaRepetida : RELOGIO.pergunta);
+    if (fichaDe(j.visitante).jeito === 'dorminhoco' && !ja) this.gastarMinutos(RELOGIO.cochilo);
     if (!ja) j.transcricao.push({ assunto, valor: r.valor, falas: r.falas });
     return r;
   }
@@ -108,7 +116,7 @@ export class Expediente {
     const j = this.exigir();
     const r = apontar(j.visitante, this.contexto, a, b, new Set(j.perguntas));
     j.apontados.push({ pistas: [a, b], diferenca: r.diferenca });
-    this.minutos += r.diferenca ? RELOGIO.apontar : RELOGIO.apontarAToa;
+    this.gastarMinutos(r.diferenca ? RELOGIO.apontar : RELOGIO.apontarAToa);
     if (r.diferenca?.aparente) j.corrigidas.add(r.diferenca.problema);
     return r;
   }
@@ -116,7 +124,7 @@ export class Expediente {
   /** tira um item da sacola: o proibido vai para os achados (`true`); o permitido volta (`false`) */
   confiscar(item: ItemDaSacola): boolean {
     const j = this.exigir();
-    this.minutos += MINUTOS_DE_CONFISCAR;
+    this.gastarMinutos(MINUTOS_DE_CONFISCAR);
     if (!proibidosNaSacola(j.visitante, this.contexto).includes(item)) return false;
     if (!j.confiscados.includes(item)) j.confiscados.push(item);
     return true;

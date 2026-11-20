@@ -234,7 +234,8 @@ dia, no relatório da Gina e no Boletim do Clube, e às vezes nos dias seguintes
 - **Em cima, o guichê**: quem está sendo atendido aparece de busto na janela,
   e atrás dele a FILA no portão (até quatro bichos, cada um esperando do seu
   jeito — a fila também é personagem: quem está bufando, quem dorme em pé).
-  O relógio corre das 9h às 17h, comprimido em ~3 minutos e meio.
+  No primeiro dia não há limite de tempo; nos demais, o relógio vai das 9h às 17h
+  em 10 a 20 minutos de atendimento, conforme o dia.
 - **Embaixo, a bancada**: os documentos chegam pela fresta do guichê e se
   espalham no tampo. Toca num documento para ver de perto (no celular ele
   abre grande no meio da tela); arrasta para pôr dois lado a lado.
@@ -616,9 +617,9 @@ As ESTRELAS do dia: quantos atendimentos certos (o principal), quanto da fila
 foi atendido antes das 17h, e se não houve erro "caro" (a Dona Preguiça, a
 carne do Mania).
 
-**O relógio** (decisão provisória, a remedir quando a cena existir): cada dia
-tem a sua duração (150 s na segunda, 300 s no sábado, que tem a fila maior), e
-o relógio corre SÓ durante os atendimentos — para enquanto a Gina ensina e no
+**O relógio**: o primeiro dia é de aprendizado, sem limite e sem cobrança de tempo
+pelas ferramentas. Os dias 2 a 6 têm, respectivamente, 10, 12, 12, 15 e 20 minutos.
+O relógio corre SÓ durante os atendimentos — para enquanto a Gina ensina e no
 fim. Perguntar gasta 8 minutos do relógio, apontar 5 (10 à toa), e a Dona
 Preguiça cochila 15. O `scripts/portaria.mjs` mede que a fila inteira cabe
 jogando certo (com folga) e também perguntando o nome de todo mundo.

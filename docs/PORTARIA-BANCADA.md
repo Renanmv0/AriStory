@@ -38,6 +38,11 @@ As ferramentas esperam o fim de entregas, movimentos e carimbadas. O relógio
 não cobra essas animações; observar e ler mantêm as regras de tempo do
 expediente. Decisões, pagamento, estrelas e fatos continuam no `Expediente`.
 
+O dia 1 mostra **Sem limite**: leitura e ferramentas não avançam o relógio,
+e a fila só termina por atendimento ou encerramento escolhido. Nos dias 2 a 6,
+os limites são 10, 12, 12, 15 e 20 minutos de atendimento. Não é preciso esperar
+o prazo: ao acabar a fila, o expediente pode ser fechado normalmente.
+
 A comparação visual inclui os disfarces do Jean-Luc, o capacete removível do
 Capy e os acompanhantes. O elevador conserva a altura do rosto principal,
 sem usar a altura dos acessórios ou do grupo. A Luna escondida fica atrás,

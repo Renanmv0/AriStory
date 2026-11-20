@@ -298,7 +298,7 @@ export function fecharODia(dia: DiaDaPortaria, atendimentos: readonly Atendiment
  * cabem no expediente.
  */
 export function estimarOTempo(dia: DiaDaPortaria, atendimentos: readonly Atendimento[]): number {
-  const porMinuto = dia.segundos / (RELOGIO.fecha - RELOGIO.abre);
+  const porMinuto = (dia.segundos ?? 0) / (RELOGIO.fecha - RELOGIO.abre);
   let minutos = 0;
   for (const a of atendimentos) {
     if (a.carimbo === null) continue;

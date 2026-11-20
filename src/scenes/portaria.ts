@@ -301,6 +301,7 @@ function montarAPortaria(w: WorldBuilder): void {
     return {
       dia: { numero: ex.dia.numero, nome: ex.dia.nome },
       hora: ex.hora,
+      semRelogio: ex.semRelogio,
       esperando: ex.esperando,
       ajudas: ex.ajudas,
       ferramentas: [...ex.contexto.ferramentas],
@@ -337,7 +338,7 @@ function montarAPortaria(w: WorldBuilder): void {
     ex.passar(dt);
     if (ex.hora !== horaMostrada) {
       horaMostrada = ex.hora;
-      painel.atualizarHora(ex.hora, ex.fechou);
+      painel.atualizarHora(ex.hora, ex.fechou, ex.semRelogio);
     }
   });
 

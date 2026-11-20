@@ -59,6 +59,7 @@ export interface JanelaDaMesa {
 export interface EstadoDaMesa {
   dia: { numero: number; nome: string };
   hora: string;
+  semRelogio?: boolean;
   esperando: number;
   ajudas: number;
   ferramentas: readonly Ferramenta[];
@@ -116,7 +117,7 @@ export interface PainelDaPortaria {
   abrir(acoes: AcoesDaMesa): void;
   desenhar(e: EstadoDaMesa): void;
   /** só o relógio (o tique do expediente NÃO redesenha a mesa: botão trocado no meio do toque perde o clique) */
-  atualizarHora(hora: string, fechou: boolean): void;
+  atualizarHora(hora: string, fechou: boolean, semRelogio?: boolean): void;
   /** o balão: uma fala por vez, toque para seguir; resolve quando a última fecha */
   falar(quem: string, falas: readonly string[], icone?: string): Promise<void>;
   /** o recadinho curto que some sozinho (a lupa achou, a sacola, o relógio) */
@@ -327,19 +328,19 @@ export class MesaDaPortaria implements PainelDaPortaria {
     pintarPapel(canvas.getContext('2d')!, doc);
   }
 
-  atualizarHora(hora: string, fechou: boolean): void {
+  atualizarHora(hora: string, fechou: boolean, semRelogio = false): void {
     const chip = this.topo.querySelector('.pt-hora');
     if (!chip) return;
-    chip.textContent = `🕘 ${hora}`;
+    chip.textContent = semRelogio ? '♾️ Sem limite' : `🕘 ${hora}`;
     chip.classList.toggle('fechou', fechou);
-    if (this.estado) this.estado = { ...this.estado, hora, fechou };
+    if (this.estado) this.estado = { ...this.estado, hora, fechou, semRelogio };
   }
 
   private pintarTopo(): void {
     const e = this.estado!;
     this.topo.innerHTML = `
       <span class="pt-dia">📅 Dia ${e.dia.numero} · ${escapar(e.dia.nome)}</span>
-      <span class="pt-hora${e.fechou ? ' fechou' : ''}">🕘 ${e.hora}</span>
+      <span class="pt-hora${e.fechou ? ' fechou' : ''}">${e.semRelogio ? '♾️ Sem limite' : `🕘 ${e.hora}`}</span>
       <button class="pt-sair" data-acao="sair" title="largar o dia">🚪</button>
       <span class="pt-fila">👥 ${e.esperando}</span>
       <span class="pt-dicas" title="dicas do parceiro">💡 ${e.ajudas}</span>`;

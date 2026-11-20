@@ -103,8 +103,8 @@ export interface DiaDaPortaria {
   novidade: string;
   regras: readonly Regra[];
   ferramentas: readonly Ferramenta[];
-  /** quantos segundos de verdade dura o expediente (das 9h às 17h) */
-  segundos: number;
+  /** Segundos de atendimento até as 17h; null é o dia de aprendizado sem relógio. */
+  segundos: number | null;
   gina: FalasDaGina;
   roteiro: readonly Entrada[];
   /** figurantes sorteados entre os do roteiro */
@@ -163,7 +163,7 @@ const lembranca = (q: Quadro): string => {
 const DIA_1: DiaDaPortaria = {
   numero: 1,
   nome: 'O primeiro dia',
-  segundos: 150,
+  segundos: null,
   novidade: 'A carteirinha: a validade e a foto.',
   regras: ['validade', 'foto'],
   ferramentas: ['olhar', 'apontar'],
@@ -231,7 +231,7 @@ const DIA_1: DiaDaPortaria = {
 const DIA_2: DiaDaPortaria = {
   numero: 2,
   nome: 'A lista de sócios',
-  segundos: 220,
+  segundos: 600,
   novidade: 'A prancheta: o número tem que estar na lista, e não pode estar riscado. E agora dá para perguntar.',
   regras: ['validade', 'foto', 'lista'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -316,7 +316,7 @@ const DIA_2: DiaDaPortaria = {
 const DIA_3: DiaDaPortaria = {
   numero: 3,
   nome: 'Dia de convidado',
-  segundos: 240,
+  segundos: 720,
   novidade: 'O convite: a data de hoje, e o sócio que convidou tem que estar na lista.',
   regras: ['validade', 'foto', 'lista', 'convite'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -407,7 +407,7 @@ const PAPITA = 'Papita Delivery';
 const DIA_4: DiaDaPortaria = {
   numero: 4,
   nome: 'Dia de entrega',
-  segundos: 220,
+  segundos: 720,
   novidade: 'O crachá e a ordem de entrega: a mesma empresa, e um lugar que existe no clube.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -505,7 +505,7 @@ const exame = (nome: string, validade: Data = VALIDA): Documento => ({ tipo: 'ex
 const DIA_5: DiaDaPortaria = {
   numero: 5,
   nome: 'Dia de piscina',
-  segundos: 240,
+  segundos: 900,
   novidade: 'O exame da piscina (vencido é 🟡 SÓ O CLUBE) e a sacola: o proibido vai para os achados.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega', 'exame', 'sacola'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
@@ -603,7 +603,7 @@ const coletivo = (): Documento => ({ tipo: 'conviteColetivo', socio: 'Gatito', n
 const DIA_6: DiaDaPortaria = {
   numero: 6,
   nome: 'O sábado cheio',
-  segundos: 300,
+  segundos: 1200,
   novidade: 'Tudo junto, a fila maior e o convite coletivo do Dia da Escola.',
   regras: ['validade', 'foto', 'lista', 'convite', 'entrega', 'exame', 'sacola', 'coletivo'],
   ferramentas: ['olhar', 'apontar', 'perguntar', 'lista'],
