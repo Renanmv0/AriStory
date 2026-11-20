@@ -190,6 +190,15 @@ coisa; ordem é outra.
 `voltarAPassear()`, ele fica parado para o resto da sessão — o teste do garçom
 mede exatamente isso, comparando a posição dele antes e depois de servir.
 
+## Entregar documentos na portaria
+
+`Bicho.membroDeEntrega` oferece o braço, asa, pata dianteira ou ponta da
+tromba que segura o papel. O adaptador `VisitanteDeVerdade` conserva e restaura
+a pose natural antes de cada `update`; o gesto só existe na portaria.
+`pontoDaEntrega()` fornece o ponto real para `MesaDaPortaria.receber/devolver`.
+A conferência continua no `Expediente`; não mudar espécie, marca ou cor para
+fazer uma carteirinha errada combinar. Ver `docs/PORTARIA-BANCADA.md`.
+
 ## Bicho dentro de peça de balcão
 
 Quem atende numa guarita, quiosque ou bilheteria some duas vezes: o telhado

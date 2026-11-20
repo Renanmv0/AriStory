@@ -54,6 +54,8 @@ export interface PoseNoCarrinho {
 const DE_ORELHA = new THREE.Euler();
 
 export class Cookie extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.tromba[this.tromba.length - 1] ?? null; }
+
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Cookie', cor: P.falaCookie };
 

@@ -7765,3 +7765,55 @@ body.portaria-aberta .prompt { display: none !important; }
   .portaria .pt-flutuante { left: 14px; right: 14px; bottom: 112px; }
   .portaria .pt-pop { max-width: none; }
 }
+
+/* A bancada é a vista de trabalho; o painel só entra para ler de perto. */
+.portaria .pt-vistas {
+  position: absolute; top: 54px; right: 14px; display: flex; gap: 8px;
+  max-width: calc(100vw - 28px); flex-wrap: wrap; justify-content: flex-end;
+}
+.portaria .pt-vistas button, .portaria .pt-atalhos button {
+  min-height: 44px; padding: 9px 15px; border: 1px solid #c3b18b; border-radius: 14px;
+  background: #fff8e8; color: #493a28; font: 800 14px 'Nunito', system-ui, sans-serif;
+  box-shadow: 0 3px 10px #20140826; cursor: pointer; touch-action: manipulation;
+}
+.portaria .pt-vistas button:disabled, .portaria .pt-atalhos button:disabled { opacity: .5; cursor: default; }
+.portaria[data-vista="bancada"] .pt-painel,
+.portaria[data-vista="visitante"] .pt-painel { visibility: hidden; pointer-events: none; }
+.portaria[data-vista="bancada"] .pt-painel *,
+.portaria[data-vista="visitante"] .pt-painel * { pointer-events: none; }
+.portaria .pt-atalhos {
+  position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: max-content; max-width: calc(100vw - 28px); flex-wrap: wrap;
+}
+.portaria .pt-atalhos span { padding: 7px 13px; border-radius: 12px; background: #fff8e8e8; color: #493a28; font-weight: 800; font-size: 13px; pointer-events: none; }
+.portaria .pt-comparacao {
+  position: absolute; bottom: 80px; left: 16px; width: 235px; max-width: 40vw;
+}
+.portaria .pt-comparacao[hidden] { display: none; }
+.portaria .pt-comparacao button {
+  padding: 7px; background: #fff8e8; border: 1px solid #c3b18b; border-radius: 13px; box-shadow: 0 5px 20px #20140840; cursor: pointer;
+}
+.portaria .pt-comparacao canvas { width: 100%; height: auto; display: block; border-radius: 7px; }
+.portaria .pt-comparacao span { display: block; font: 800 11px 'Nunito', system-ui, sans-serif; margin-top: 5px; color: #493a28; }
+@media (orientation: portrait) {
+  .portaria .pt-vistas { top: 84px; right: 10px; gap: 5px; }
+  .portaria .pt-vistas button { font-size: 12px; padding: 8px 11px; }
+  .portaria .pt-comparacao { bottom: 110px; left: 10px; max-width: 42vw; }
+  .portaria .pt-atalhos { bottom: max(10px, env(safe-area-inset-bottom)); }
+  .portaria .pt-atalhos span { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portaria .pt-painel { animation: none; }
+}
+
+.portaria .pt-pop { position: relative; }
+.portaria .pt-pop h4 { padding-right: 40px; min-height: 32px; }
+.portaria .pt-pop .pt-fechar-popover {
+  position: absolute; top: 3px; right: 3px; width: 44px; height: 44px;
+  padding: 0; text-align: center; font-size: 24px; background: transparent;
+}
+.portaria[data-vista="bancada"] .pt-flutuante,
+.portaria[data-vista="visitante"] .pt-flutuante { left: 14px; bottom: 100px; }
+
+.portaria .pt-painel[aria-busy="true"] { cursor: progress; }
+.portaria .pt-painel[aria-busy="true"] .pt-alvo { opacity: .5; pointer-events: none; }

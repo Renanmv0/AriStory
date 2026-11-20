@@ -74,7 +74,11 @@ export interface EstadoDaMesa {
   fechou: boolean;
 }
 
+export type VistaDaPortaria = 'bancada' | 'documento' | 'visitante';
+
 export interface AcoesDaMesa {
+  vistaMudou?(vista: VistaDaPortaria): void;
+  sacolaMudou?(aberta: boolean): void;
   chamar(): void;
   perguntar(a: Assunto): void;
   apontar(a: Pista, b: Pista): void;
@@ -103,6 +107,12 @@ export interface PainelDaPortaria {
   readonly aberta: boolean;
   /** o balão está aberto (o relógio para) */
   readonly falando: boolean;
+  readonly vista: VistaDaPortaria;
+  readonly usandoLupa: boolean;
+  mudarVista(vista: VistaDaPortaria): void;
+  selecionarPista(pista: Pista): void;
+  mostrarSacola(): void;
+  examinarItem(item: ItemDaSacola): void;
   abrir(acoes: AcoesDaMesa): void;
   desenhar(e: EstadoDaMesa): void;
   /** só o relógio (o tique do expediente NÃO redesenha a mesa: botão trocado no meio do toque perde o clique) */
@@ -138,6 +148,8 @@ const ROTULO_CURTO: Readonly<Record<Assunto, string>> = {
 export class MesaDaPortaria implements PainelDaPortaria {
   aberta = false;
   falando = false;
+  vista: VistaDaPortaria = 'bancada';
+  get usandoLupa(): boolean { return this.modoLupa; }
   som?: (nome: SomNome) => void;
   /** abriu ou fechou (o HUD do jogo esconde os botões de toque) */
   aoMudar?: () => void;
@@ -152,6 +164,9 @@ export class MesaDaPortaria implements PainelDaPortaria {
   private observador: ResizeObserver | null = null;
   private sairPedido = 0;
 
+  private readonly vistas: HTMLElement;
+  private readonly comparacao: HTMLElement;
+  private readonly atalhos: HTMLElement;
   private readonly topo: HTMLElement;
   private readonly abas: HTMLElement;
   private readonly folha: HTMLElement;
@@ -166,6 +181,9 @@ export class MesaDaPortaria implements PainelDaPortaria {
   constructor(private readonly raiz: HTMLElement) {
     raiz.innerHTML = `
       <div class="pt-topo"></div>
+      <div class="pt-vistas"></div>
+      <div class="pt-comparacao"></div>
+      <div class="pt-atalhos"></div>
       <div class="pt-painel">
         <div class="pt-abas"></div>
         <div class="pt-folha"></div>
@@ -180,6 +198,9 @@ export class MesaDaPortaria implements PainelDaPortaria {
       <div class="pt-flutuante"></div>
       <div class="pt-envelope"></div>`;
     const q = (s: string): HTMLElement => raiz.querySelector(s)!;
+    this.vistas = q('.pt-vistas');
+    this.comparacao = q('.pt-comparacao');
+    this.atalhos = q('.pt-atalhos');
     this.topo = q('.pt-topo');
     this.abas = q('.pt-abas');
     this.folha = q('.pt-folha');
@@ -203,6 +224,9 @@ export class MesaDaPortaria implements PainelDaPortaria {
 
   abrir(acoes: AcoesDaMesa): void {
     this.acoes = acoes;
+    this.vista = 'bancada';
+    this.modoLupa = false; this.primeira = null;
+    this.raiz.dataset.vista = this.vista;
     this.aberta = true;
     this.raiz.classList.add('show');
     document.body.classList.add('portaria-aberta');
@@ -213,6 +237,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
 
   fechar(): void {
     this.aberta = false;
+    this.acoes?.sacolaMudou?.(false);
     this.acoes = null;
     this.raiz.classList.remove('show');
     document.body.classList.remove('portaria-aberta');
@@ -230,6 +255,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
     // um visitante novo: a folha volta para o primeiro papel, a lupa e o popover fecham
     if (antes?.janela !== e.janela && (!antes?.janela || !e.janela || antes.janela.docs !== e.janela.docs)) {
       this.aba = { tipo: 'doc', indice: 0 };
+      this.modoLupa = false; this.acoes?.lupaMudou?.(false);
       this.primeira = null;
       this.popover = null;
     }
@@ -241,6 +267,61 @@ export class MesaDaPortaria implements PainelDaPortaria {
     this.pintarFerramentas();
     this.pintarFlutuante();
     this.raiz.classList.toggle('lupa', this.modoLupa);
+    this.pintarVistas();
+    this.raiz.querySelector('.pt-painel')?.setAttribute('aria-busy', String(e.ocupado));
+  }
+
+  /** Recolher preserva a folha, a rolagem, a lupa e o balão; só sair encerra o expediente. */
+  mudarVista(vista: VistaDaPortaria): void {
+    if (vista === this.vista) return;
+    this.vista = vista;
+    this.raiz.dataset.vista = vista;
+    this.raiz.classList.remove('ampliada');
+    this.acoes?.vistaMudou?.(vista);
+    this.pintarVistas();
+  }
+
+  selecionarPista(pista: Pista): void {
+    if (this.modoLupa && !this.estado?.ocupado && !this.falando) this.escolher(pista);
+  }
+
+  mostrarSacola(): void {
+    if (this.estado?.ocupado || this.falando || !this.estado?.janela) return;
+    const mostrar = this.popover !== 'sacola';
+    this.popover = this.vista === 'documento' && mostrar ? 'sacola' : null;
+    this.acoes?.sacolaMudou?.(mostrar);
+    this.pintarFlutuante();
+  }
+
+  examinarItem(item: ItemDaSacola): void {
+    if (this.estado?.ocupado || this.falando) return;
+    this.popover = 'sacola';
+    this.pintarFlutuante();
+    this.flutuante.querySelector<HTMLElement>(`[data-confiscar="${item}"]`)?.focus();
+    this.avisar(`🎒 ${NOME_DO_ITEM[item]}`);
+  }
+
+  private pintarVistas(): void {
+    const e = this.estado;
+    if (!e) return;
+    const ocupado = e.ocupado ? ' disabled' : '';
+    this.vistas.innerHTML = `<button data-vista="${this.vista === 'documento' ? 'bancada' : 'documento'}"${ocupado}>${this.vista === 'documento' ? '↓ Ver bancada' : '🪪 Ler documentos'}</button>
+      <button data-vista="${this.vista === 'visitante' ? 'bancada' : 'visitante'}"${!e.janela || e.ocupado ? ' disabled' : ''}>${this.vista === 'visitante' ? '↓ Ver bancada' : '👀 Ver visitante'}</button>`;
+    this.atalhos.innerHTML = this.vista === 'documento' ? '' : `<span>${e.ocupado ? 'Um instante…' : e.janela ? 'Toque nos papéis e objetos da bancada' : 'Toque na campainha para chamar'}</span>
+      ${!e.janela ? `<button data-acao="${e.fechou || !e.podeChamar ? 'terminar' : 'chamar'}"${ocupado}>${e.fechou || !e.podeChamar ? '✉️ Fechar expediente' : '🛎️ Próximo'}</button>` : ''}
+      ${e.janela?.sacola.length ? `<button data-acao="sacola"${ocupado}>🎒 Sacola</button>` : ''}
+      ${this.modoLupa ? `<button data-rosto${ocupado}>🔍 Marcar rosto</button>` : ''}`;
+    const docs = e.janela?.docs ?? [];
+    const doc = docs.find(d => d.tipo === 'carteirinha') ?? docs.find(d => d.tipo === 'cracha') ?? docs[0];
+    this.comparacao.hidden = this.vista !== 'visitante' || !doc;
+    if (!doc) { this.comparacao.replaceChildren(); return; }
+    if (this.comparacao.hidden) return;
+    // A miniatura é o documento apresentado, nunca um retrato corrigido automaticamente.
+    const referencia = doc.tipo === 'carteirinha' || doc.tipo === 'cracha' ? 'a foto' : 'o documento';
+    this.comparacao.innerHTML = `<button data-voltar-documento="${doc.tipo}" aria-label="Voltar à ${NOME_DO_PAPEL[doc.tipo]}"><canvas></canvas><span>Comparar com ${referencia} · toque para ler</span></button>`;
+    const canvas = this.comparacao.querySelector('canvas')!;
+    const { l, a } = tamanhoDoPapel(doc.tipo); canvas.width = l; canvas.height = a;
+    pintarPapel(canvas.getContext('2d')!, doc);
   }
 
   atualizarHora(hora: string, fechou: boolean): void {
@@ -446,6 +527,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   /** o popover das perguntas, da sacola ou do agrado */
   private pintarFlutuante(): void {
     const j = this.estado?.janela;
+    if (this.estado?.ocupado && this.popover === 'sacola') { this.flutuante.classList.remove('show'); return; }
     if (j?.oferta) {
       this.flutuante.innerHTML = `<div class="pt-pop oferta"><p>${escapar(j.oferta)}</p>
         <div><button data-acao="oferta:nao">🙅 Recusar</button><button data-acao="oferta:sim">🤲 Aceitar</button></div></div>`;
@@ -459,10 +541,10 @@ export class MesaDaPortaria implements PainelDaPortaria {
     }
     if (this.popover === 'perguntar') {
       const feitos = new Set(j.transcricao.map((t) => t.assunto));
-      this.flutuante.innerHTML = `<div class="pt-pop"><h4>💬 Perguntar</h4>${j.assuntos.map((a) =>
+      this.flutuante.innerHTML = `<div class="pt-pop"><button class="pt-fechar-popover" data-acao="fechar-popover" aria-label="Fechar perguntas">×</button><h4>💬 Perguntar</h4>${j.assuntos.map((a) =>
         `<button data-pergunta="${a}" class="${feitos.has(a) ? 'feita' : ''}">${escapar(ROTULO_DO_ASSUNTO(a))}</button>`).join('')}</div>`;
     } else {
-      this.flutuante.innerHTML = `<div class="pt-pop"><h4>🎒 A sacola</h4>${j.sacola.map((i) => {
+      this.flutuante.innerHTML = `<div class="pt-pop"><button class="pt-fechar-popover" data-acao="fechar-popover" aria-label="Fechar inspeção">×</button><h4>🎒 A sacola</h4>${j.sacola.map((i) => {
         const fora = j.confiscados.includes(i);
         return `<button data-confiscar="${i}"${fora ? ' disabled' : ''}>${escapar(NOME_DO_ITEM[i])}${fora ? ' · nos achados' : ' · tirar'}</button>`;
       }).join('')}</div>`;
@@ -476,6 +558,11 @@ export class MesaDaPortaria implements PainelDaPortaria {
     const alvo = (ev.target as HTMLElement).closest<HTMLElement>('button');
     if (!alvo || !this.acoes || !this.estado) return;
     const d = alvo.dataset;
+    if (alvo instanceof HTMLButtonElement && alvo.disabled) return;
+    if (d.vista) { this.mudarVista(d.vista as VistaDaPortaria); return; }
+    if (d.voltarDocumento) { this.abrirFolha(d.voltarDocumento as TipoDeDocumento); return; }
+    if ('rosto' in d) { this.selecionarPista('rosto'); return; }
+    if (this.estado.ocupado || this.falando) { if (d.acao !== 'sair') return; }
     if (d.pista && this.modoLupa) {
       this.escolher(d.pista);
       return;
@@ -501,10 +588,11 @@ export class MesaDaPortaria implements PainelDaPortaria {
       return;
     }
     switch (d.acao) {
+      case 'fechar-popover': this.popover = null; this.acoes.sacolaMudou?.(false); this.pintarFlutuante(); break;
       case 'ampliar': this.raiz.classList.toggle('ampliada'); this.desenhar(this.estado); break;
       case 'lupa': this.lupa(!this.modoLupa); break;
       case 'perguntar': this.popover = this.popover === 'perguntar' ? null : 'perguntar'; this.desenhar(this.estado); break;
-      case 'sacola': this.popover = this.popover === 'sacola' ? null : 'sacola'; this.desenhar(this.estado); break;
+      case 'sacola': this.mostrarSacola(); break;
       case 'ajuda': this.acoes.ajuda(); break;
       case 'chamar': this.acoes.chamar(); break;
       case 'terminar': this.acoes.terminar(); break;
@@ -565,6 +653,8 @@ export class MesaDaPortaria implements PainelDaPortaria {
       if (i < 0) return;
       this.aba = { tipo: 'doc', indice: i };
     }
+    if (tipo !== 'lista' && tipo !== 'manual' && tipo !== 'hoje') this.acoes?.abriuPapel?.(tipo);
+    this.mudarVista('documento');
     this.som?.('folhear');
     this.desenhar(this.estado);
   }

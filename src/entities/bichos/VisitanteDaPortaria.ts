@@ -91,6 +91,8 @@ export const ESPECIES_DA_PORTARIA = Object.keys(PLANOS);
 type Tique = 'abanar' | 'cabelo' | 'pe' | 'chiclete' | 'celular' | 'bocejo' | 'pedrinha' | 'teimoso' | 'cochilo' | 'esconder' | 'leque';
 
 export class VisitanteDaPortaria extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.bracos[0] ?? null; }
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly pernas: THREE.Group[] = [];

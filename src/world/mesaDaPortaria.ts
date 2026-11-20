@@ -32,6 +32,7 @@ import { GUARITA_DO_CLUBE as G } from './guaritaDoClube';
 import { macia, por, torneado, tubo } from './moveisDaBoutique';
 import { PapelPintado, pintarCalendario, pintarLista, pintarManual, pintarPapel, tamanhoDoPapel } from './papeisDaPortaria';
 import { veioDeMadeira } from './texturasDeCasa';
+import { novaTextura } from './texturasDeChao';
 
 /** as medidas da mesa no quadro da guarita (a cena e o teste usam) */
 export const MESA_DA_PORTARIA = {
@@ -39,7 +40,7 @@ export const MESA_DA_PORTARIA = {
   topo: G.piso + 0.89,
   x0: -0.77,
   x1: 0.77,
-  z0: 0.9,
+  z0: 0.35,
   /** encostada na parede da frente por dentro (1,55), sem tocar */
   z1: 1.54,
   /** o banco alto de quem trabalha (o assento) */
@@ -95,7 +96,7 @@ interface PapelNaMesa {
   doc: Documento | null;
   carimbo: Carimbo | null;
   /** o voo em curso (da calha à vaga, ou de volta) */
-  voo: { de: THREE.Vector3; meio?: THREE.Vector3; para: THREE.Vector3; giroDe: number; giroPara: number; t: number; dur: number; pronto?: () => void } | null;
+  voo: { de: THREE.Vector3; meio?: THREE.Vector3; para: THREE.Vector3; giroDe: number; giroPara: number; t: number; dur: number; pronto?: () => void; origem?: () => THREE.Vector3; voltando?: boolean } | null;
 }
 
 export class MesaDaPortaria {
@@ -124,6 +125,7 @@ export class MesaDaPortaria {
   constructor() {
     const g = this.group;
     g.name = 'mesa-da-portaria';
+    g.userData.peca = 'mesa-da-portaria';
     const madeira = toon(P.guaritaBalcao, { mapa: veioDeMadeira() });
     const madeiraEscura = toon(P.woodDark, { mapa: veioDeMadeira() });
     const creme = toon(P.guaritaParede);
@@ -185,6 +187,15 @@ export class MesaDaPortaria {
         por(c, macia(0.07, 0.012, 0.05, 0.004), toon(COR_DO_CARIMBO[qual]), 0, 0.006, 0);
         por(c, macia(0.074, 0.03, 0.054, 0.006), madeira, 0, 0.027, 0);
         por(c, torneado([[0, 0], [0.014, 0], [0.012, 0.03], [0.018, 0.055], [0.028, 0.075], [0.022, 0.095], [0, 0.1]], 16), madeiraEscura, 0, 0.042, 0);
+        const rotulo = novaTextura(`rotulo-carimbo:${qual}`, 1, (ctx, lado) => {
+          ctx.fillStyle = '#fff7df'; ctx.fillRect(0, 0, lado, lado);
+          ctx.fillStyle = `#${COR_DO_CARIMBO[qual].toString(16).padStart(6, '0')}`;
+          ctx.fillRect(0, 0, lado, lado * .12);
+          ctx.font = `900 ${lado * .19}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(qual === 'entra' ? 'ENTRA' : qual === 'soClube' ? 'SÓ CLUBE' : 'HOJE NÃO', lado / 2, lado * .53);
+        });
+        const etiqueta = new THREE.Mesh(new THREE.PlaneGeometry(.072, .024), pinturaAcesa(rotulo));
+        etiqueta.position.set(0, .028, -.030); etiqueta.rotation.y = Math.PI; c.add(etiqueta);
         // a plaquinha de cor no topo do cabo
         por(c, new THREE.CylinderGeometry(0.016, 0.016, 0.006, 14), toon(COR_DO_CARIMBO[qual]), 0, 0.143, 0);
         g.add(c);
@@ -380,7 +391,7 @@ export class MesaDaPortaria {
    * O VISITANTE PASSA OS PAPÉIS pela calha: cada um entra deslizando e deita
    * na vaga dele. Resolve quando o último deitou.
    */
-  receber(docs: readonly Documento[]): Promise<void> {
+  receber(docs: readonly Documento[], origem?: () => THREE.Vector3): Promise<void> {
     const promessas: Promise<void>[] = [];
     docs.slice(0, VAGAS.length).forEach((d, i) => {
       const p = this.papelDo(d.tipo);
@@ -388,35 +399,34 @@ export class MesaDaPortaria {
       p.carimbo = null;
       p.pintado.redesenhar((c) => pintarPapel(c, d));
       p.vaga = i;
-      p.folha.visible = true;
+      p.folha.visible = !origem;
       const vaga = VAGAS[i];
       const para = new THREE.Vector3(vaga.x, alturaNaVaga(p, i), vaga.z);
       p.folha.position.copy(MesaDaPortaria.NA_CALHA);
       p.folha.rotation.y = 0;
       promessas.push(new Promise<void>((pronto) => {
-        p.voo = { de: MesaDaPortaria.NA_CALHA.clone(), meio: MesaDaPortaria.NA_BEIRA.clone().setX(vaga.x * 0.4), para, giroDe: 0, giroPara: vaga.giro, t: -i * 0.18, dur: 0.75, pronto };
+        p.voo = { de: MesaDaPortaria.NA_CALHA.clone(), meio: MesaDaPortaria.NA_BEIRA.clone().setX(vaga.x * 0.4), para, giroDe: 0, giroPara: vaga.giro, t: -i * 0.24, dur: origem ? 1.45 : .75, pronto, origem };
       }));
     });
     return Promise.all(promessas).then(() => undefined);
   }
 
   /** traz um papel para a vaga da leitura (e manda o que estava lá para a vaga dele) */
-  trazerParaLeitura(tipo: TipoDeDocumento): void {
+  async trazerParaLeitura(tipo: TipoDeDocumento): Promise<void> {
     const p = this.papeis.get(tipo);
     if (!p || p.vaga < 0 || p.vaga === 0) return;
     const ocupante = [...this.papeis.values()].find((x) => x.vaga === 0);
     const vagaDele = p.vaga;
-    if (ocupante) this.mover(ocupante, vagaDele);
-    this.mover(p, 0);
+    await Promise.all([ocupante ? this.mover(ocupante, vagaDele) : Promise.resolve(), this.mover(p, 0)]);
   }
 
-  private mover(p: PapelNaMesa, vaga: number): void {
+  private mover(p: PapelNaMesa, vaga: number): Promise<void> {
     p.vaga = vaga;
     const v = VAGAS[vaga];
-    p.voo = {
+    return new Promise(pronto => { p.voo = {
       de: p.folha.position.clone(), para: new THREE.Vector3(v.x, alturaNaVaga(p, vaga), v.z),
-      giroDe: p.folha.rotation.y, giroPara: v.giro, t: 0, dur: 0.3,
-    };
+      giroDe: p.folha.rotation.y, giroPara: v.giro, t: 0, dur: 0.3, pronto,
+    }; });
   }
 
   /** o papel que está na leitura */
@@ -438,7 +448,7 @@ export class MesaDaPortaria {
   }
 
   /** os papéis voltam pela calha para o visitante; resolve quando sumiram */
-  devolver(): Promise<void> {
+  devolver(destino?: () => THREE.Vector3): Promise<void> {
     const promessas: Promise<void>[] = [];
     let i = 0;
     for (const p of this.papeis.values()) {
@@ -448,7 +458,7 @@ export class MesaDaPortaria {
       promessas.push(new Promise<void>((pronto) => {
         p.voo = {
           de: p.folha.position.clone(), meio: MesaDaPortaria.NA_BEIRA.clone().setX(p.folha.position.x * 0.4), para: MesaDaPortaria.NA_CALHA.clone(), giroDe: p.folha.rotation.y, giroPara: 0,
-          t: -atraso, dur: 0.45, pronto: () => { p.folha.visible = false; p.doc = null; pronto(); },
+          t: -atraso, dur: destino ? 1.1 : .45, origem: destino, voltando: true, pronto: () => { p.folha.visible = false; p.doc = null; pronto(); },
         };
       }));
     }
@@ -485,7 +495,24 @@ export class MesaDaPortaria {
       v.t += dt;
       const k = suave(v.t / v.dur);
       if (v.t < 0) continue;
-      if (v.meio) {
+      p.folha.visible = true;
+      if (v.origem) {
+        const t = Math.max(0, Math.min(1, v.t / v.dur));
+        const mao = v.origem();
+        if (!v.voltando) {
+          if (t < .22) { v.de.copy(mao); p.folha.position.copy(mao); }
+          else if (t < .5) p.folha.position.lerpVectors(v.de, MesaDaPortaria.NA_CALHA, suave((t - .22) / .28));
+          else if (t < .72) p.folha.position.lerpVectors(MesaDaPortaria.NA_CALHA, MesaDaPortaria.NA_BEIRA, suave((t - .5) / .22));
+          else p.folha.position.lerpVectors(MesaDaPortaria.NA_BEIRA, v.para, suave((t - .72) / .28));
+          p.folha.rotation.x = -.48 * (1 - suave(Math.min(1, t / .5)));
+        } else {
+          if (t < .4) p.folha.position.lerpVectors(v.de, MesaDaPortaria.NA_BEIRA, suave(t / .4));
+          else if (t < .7) p.folha.position.lerpVectors(MesaDaPortaria.NA_BEIRA, MesaDaPortaria.NA_CALHA, suave((t - .4) / .3));
+          else p.folha.position.lerpVectors(MesaDaPortaria.NA_CALHA, mao, suave((t - .7) / .3));
+          p.folha.rotation.x = -.48 * suave(Math.max(0, (t - .7) / .3));
+        }
+        p.folha.position.y += Math.sin(t * Math.PI) * .012;
+      } else if (v.meio) {
         // pela beira da bandejinha: o pedaço reto no balcão e a caída na mesa (o balcão é mais alto que o tampo)
         const entrando = v.de.z > v.para.z;
         const corte = 0.5;
@@ -500,6 +527,7 @@ export class MesaDaPortaria {
       p.folha.rotation.y = v.giroDe + (v.giroPara - v.giroDe) * k;
       if (v.t >= v.dur) {
         p.folha.position.copy(v.para);
+        p.folha.rotation.x = 0;
         p.voo = null;
         v.pronto?.();
       }
@@ -550,7 +578,8 @@ export class MesaDaPortaria {
   }
 
   dispose(): void {
-    for (const p of this.papeis.values()) p.pintado.dispose();
+    for (const p of this.papeis.values()) { p.voo?.pronto?.(); p.voo = null; p.pintado.dispose(); }
+    this.batida?.pronto(); this.batida = null;
     this.lista.dispose();
     this.folhaDoCalendario.dispose();
     this.capaDoManual.dispose();

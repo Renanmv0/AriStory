@@ -152,6 +152,9 @@ export abstract class Bicho {
     this.alvo.copy(this.group.position);
   }
 
+  /** Membro que segura os papéis na portaria; a cena assume só durante o gesto. */
+  get membroDeEntrega(): THREE.Object3D | null { return null; }
+
   /**
    * Monta o corpo. A subclasse chama isto no fim do proprio construtor — nao
    * daqui: um metodo abstrato chamado pelo construtor da base roda ANTES de os

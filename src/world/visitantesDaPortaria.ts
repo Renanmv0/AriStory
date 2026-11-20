@@ -8,10 +8,9 @@
  * alpacas, os gêmeos, o Tatá, a Dona Preguiça e os figurantes) pelo
  * `VisitanteDaPortaria`, montado pela foto do dia, cada um com o seu traço.
  *
- * O ROSTO QUE SE JULGA é o `Visitante.rosto` pintado na mesa (o mesmo pintor
- * e a mesma escala da foto); o 3D é o mesmo bicho, vivo. O disfarce do
- * Jean-Luc ainda aparece só no rosto da mesa, e quem vem em grupo só na foto
- * da janela (o netinho é a exceção: vem no colo da avó).
+ * A cena julga `Visitante.rosto`; a apresentação física acrescenta os
+ * disfarces, o capacete e os acompanhantes por `apresentacaoDoVisitante`.
+ * O adaptador também oferece a mão/pata/asa para entregar os documentos.
  */
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
@@ -43,6 +42,8 @@ export interface ModeloDeVisitante {
   irPara(x: number, z: number, velocidade?: number): Promise<void>;
   encarar(x: number, z: number): void;
   update(dt: number): void;
+  gesticular(duracao: number): void;
+  pontoDaEntrega(): THREE.Vector3;
   dispose(): void;
 }
 
@@ -76,9 +77,23 @@ export const temModelo = (ficha: string): boolean => ficha in CLASSES;
 class VisitanteDeVerdade implements ModeloDeVisitante {
   readonly deVerdade = true;
   readonly group: THREE.Group;
+  private gesto = 0;
+  private duracao = 1;
+  private readonly mao = new THREE.Object3D();
+  private baseDoMembro: THREE.Quaternion | null = null;
   constructor(private readonly bicho: Bicho) {
     this.group = bicho.group;
     bicho.entrarEmServico();
+    const membro = bicho.membroDeEntrega;
+    if (membro) {
+      membro.name ||= 'membro-do-guiche';
+      membro.updateWorldMatrix(true, true);
+      const caixa = new THREE.Box3().setFromObject(membro);
+      const ponta = new THREE.Vector3((caixa.min.x + caixa.max.x) / 2, caixa.min.y + .015, (caixa.min.z + caixa.max.z) / 2);
+      this.mao.position.copy(membro.worldToLocal(ponta));
+      membro.add(this.mao);
+    } else { this.mao.position.set(.15, .9, .25); this.group.add(this.mao); }
+    this.mao.name = 'mao-do-guiche';
   }
 
   irPara(x: number, z: number, velocidade?: number): Promise<void> {
@@ -90,8 +105,28 @@ class VisitanteDeVerdade implements ModeloDeVisitante {
     this.bicho.encarar(x, z);
   }
 
+  gesticular(duracao: number): void { this.duracao = duracao; this.gesto = duracao; }
+
+  pontoDaEntrega(): THREE.Vector3 {
+    const p = this.mao.getWorldPosition(new THREE.Vector3());
+    p.y = Math.max(p.y, 1.285);
+    return p;
+  }
+
   update(dt: number): void {
+    const membro = this.bicho.membroDeEntrega;
+    if (membro && this.baseDoMembro) membro.quaternion.copy(this.baseDoMembro);
     this.bicho.update(dt);
+    if (membro) {
+      this.baseDoMembro ??= new THREE.Quaternion();
+      this.baseDoMembro.copy(membro.quaternion);
+      if (this.gesto > 0) {
+        this.gesto = Math.max(0, this.gesto - dt);
+        const t = this.duracao - this.gesto;
+        const k = Math.min(1, t / .3, this.gesto / .32);
+        membro.rotateX(-1.6 * k * k * (3 - 2 * k));
+      }
+    }
   }
 
   dispose(): void {}
@@ -116,6 +151,7 @@ export const MEIO_DO_ROSTO = 1.74;
 
 /** a altura do elevador para um modelo: o que falta para o alto da cabeça chegar ao `ALTO_DO_ROSTO` */
 export function alturaDoElevador(modelo: THREE.Object3D): number {
+  if (typeof modelo.userData.alturaDeAtendimento === 'number') return modelo.userData.alturaDeAtendimento;
   // os visitantes novos dizem onde fica o rosto (o penteado da alpaca não pode empurrar a cara para baixo do balcão)
   const bicho = modelo.userData.bicho as { alturaDoRosto?: number } | undefined;
   if (bicho?.alturaDoRosto !== undefined) return Math.max(0, Math.min(1.45, MEIO_DO_ROSTO - bicho.alturaDoRosto));

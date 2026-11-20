@@ -168,6 +168,8 @@ export interface ClicavelDef {
    * lago inteiro clicável roubaria o manche de quem só queria andar na beira.
    */
   soMouse?: boolean;
+  /** Alvo autorizado pela cena enquanto o jogador está sentado/travado. Painéis e falas continuam bloqueando. */
+  duranteTrava?: boolean;
   /** clicou (ou tocou) e soltou em cima; `ponto` é onde o raio acertou, no mundo */
   aoClicar?(g: GameAPI, ponto: THREE.Vector3): void;
   /** o mouse entrou (`true`) ou saiu (`false`) de cima da peça */

@@ -86,9 +86,9 @@
   CARIMBOS no porta-carimbos (o carimbo sai, molha na almofada e DESCE no papel — a tinta fica nele), a
   campainha de balcão, a lupa de latão, a prancheta com a lista de sócios, o calendário de mesa, o manual de
   argola e a luminária de braço com a poça de luz pintada. Os papéis são um `PapelPintado` por TIPO, a cena
-  inteira (redesenhado a cada visitante). A mesa 3D é o que se VÊ (a campainha afunda, o carimbo desce, a lupa
-  sobe, o papel escolhido vem para a leitura); quem se TOCA é a mesa em tela — o motor não deixa clicar no
-  mundo com o jogador travado na cadeira, e no celular um carimbo de dois centímetros não serve de botão.
+  inteira (redesenhado a cada visitante). A bancada 3D recebe cliques nos papéis e ferramentas, mesmo com a dupla sentada,
+  por alvos explicitamente autorizados. O painel abre para leitura e pode ser recolhido; ver
+  `docs/PORTARIA-BANCADA.md` para o atendimento físico e a comparação com o visitante.
 - **O pintor dos papéis e dos retratos** (`src/world/papeisDaPortaria.ts`): um pintor, duas saídas — a
   textura na mesa e a folha grande na tela; os campos caem nos retângulos de `minigames/portaria/campos.ts`.
 - **A mesa em tela** (`src/ui/mesaDaPortaria.ts`, `GameAPI.mesaDaPortaria()`): o feltro verde com as abas
@@ -111,9 +111,9 @@
   nove, quem é chamado sobe no elevador, fala, passa os papéis; quem entra segue pela cancela, o barrado
   volta pelo portão; os chamados da fila chegam do portão; às 17h o portão fecha; o envelope paga a
   carteira, grava o dia e a dupla volta ao clube na frente da guarita.
-- **Ainda declarado**: o disfarce do Jean-Luc aparece no rosto da mesa, ainda não no corpo; quem vem em
-  GRUPO (as irmãs, os Dogões, o Pietro) aparece só na foto da janela, e no 3D vem só quem fala (o netinho é
-  a exceção: vem no colo da avó); e das cinco animações de cada ficha só o TIQUE existe (abaixo).
+- **Apresentação física**: a bancada interativa mostra o disfarce do Jean-Luc no corpo e os acompanhantes
+  de quem vem em GRUPO (as irmãs, os Dogões, o Pietro; o netinho vem no colo da avó). O gesto de entrega
+  acompanha os papéis, além do TIQUE de cada ficha. As demais animações específicas continuam planejadas.
 
 **Feito (2026-11-21), a CENA, parte 2a: os visitantes NOVOS de verdade, e as carteirinhas parecidas com os
 personagens** (pedido do Renan: "cada um precisa ter algum traço visual específico" e "revise todos e deixe

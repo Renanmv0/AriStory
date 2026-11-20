@@ -127,6 +127,8 @@ function moldarTubo(
 }
 
 export class Valentina extends Bicho {
+  override get membroDeEntrega(): THREE.Object3D | null { return this.asas[0] ?? null; }
+
   /** a voz dela na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Valentina', cor: P.falaValentina };
 

@@ -46,6 +46,22 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
 const espera = (ms) => page.waitForTimeout(ms);
 const sufixo = CEL ? '-cel' : '';
 
+// O Chromium sem placa só desenha nas capturas. O mundo e a câmera continuam
+// atualizando suas matrizes, mantendo o relógio e os cliques reais da cena.
+async function desenho(normal) {
+  await page.evaluate(normal => {
+    const r = window.jogo.renderer;
+    window.renderDoTeste ??= r.render.bind(r);
+    r.render = normal ? window.renderDoTeste : (s, c) => { s.updateMatrixWorld(); c.updateMatrixWorld(); };
+  }, normal);
+}
+async function foto(opcoes) {
+  await desenho(true);
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.screenshot(opcoes);
+  await desenho(false);
+}
+
 // ------------------------------------------------------------------ escondida
 if (!SO || SO === 'escondida') {
   await page.goto(`${BASE}/?semPortaria&cena=portaria`, { waitUntil: 'networkidle' });
@@ -62,8 +78,10 @@ if (!SO || SO === 'dia') {
   await espera(2000);
   await page.evaluate(() => localStorage.removeItem('aristory.save.v1.portaria'));
   await page.goto(`${BASE}/?portaria&cena=portaria&dia=${DIA}&semente=${SEMENTE}&depressa`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.portaria?.ex, undefined, { timeout: 90000 });
+  await desenho(false);
   await espera(3500);
-  await page.screenshot({ path: `${OUT}-abertura${sufixo}.png` });
+  await foto({ path: `${OUT}-abertura${sufixo}.png` });
   ok(await page.evaluate(() => !!window.portaria?.ex), 'a cena montou o expediente do dia');
   const saldoAntes = await page.evaluate(() => window.jogo.carteira());
 
@@ -73,7 +91,9 @@ if (!SO || SO === 'dia') {
     await espera(400);
   }
   ok(await page.evaluate(() => window.portaria.comecou()), 'o recado da Gina acabou e a mesa abriu');
-  ok(await page.isVisible('.portaria.show .pt-painel'), 'a mesa em tela está aberta');
+  ok(await page.evaluate(() => window.portaria.painel.vista === 'bancada'), 'o dia começa com a bancada 3D à vista');
+  await page.evaluate(() => window.portaria.painel.mudarVista('documento'));
+  ok(await page.isVisible('.portaria.show .pt-painel'), 'o painel pode abrir para a leitura');
 
   const fecharFalas = async () => {
     for (let i = 0; i < 30; i++) {
@@ -85,7 +105,7 @@ if (!SO || SO === 'dia') {
   const esperarLivre = async () => {
     for (let i = 0; i < 400; i++) {
       await fecharFalas();
-      if (!(await page.evaluate(() => window.portaria.ocupado()))) { await fecharFalas(); return true; }
+      if (!(await page.evaluate(() => window.portaria.ocupado()))) { await fecharFalas(); await page.evaluate(() => window.portaria.painel.mudarVista('documento')); return true; }
       await espera(150);
     }
     return false;
@@ -110,7 +130,7 @@ if (!SO || SO === 'dia') {
     } else if (pista === 'lista') await page.click('[data-aba="lista"]');
     else if (pista === 'calendario') await page.click('[data-aba="hoje"]');
     else if (pista.startsWith('manual:')) await page.click('[data-aba="manual"]');
-    await espera(120);
+    await esperarLivre();
     return `[data-pista="${pista}"]`;
   };
   const alvosRuins = [];
@@ -137,7 +157,7 @@ if (!SO || SO === 'dia') {
     if (!c) break;
     const feitas = { id: c.id, perguntas: [], apontados: [], confiscados: [], carimbo: c.carimbo };
     if (visita === 0) {
-      await page.screenshot({ path: `${OUT}-janela${sufixo}.png` });
+      await foto({ path: `${OUT}-janela${sufixo}.png` });
       // O RELÓGIO NÃO REDESENHA A MESA: um botão segurado por dois segundos (o relógio andando) continua o mesmo,
       // e a rolagem do manual fica onde estava
       const botao = await page.$('[data-acao="lupa"]');
@@ -174,7 +194,7 @@ if (!SO || SO === 'dia') {
       await espera(100);
       await clicarPista(d.pistas[0]);
       if (!fotoDaLupa) {
-        await page.screenshot({ path: `${OUT}-lupa${sufixo}.png` });
+        await foto({ path: `${OUT}-lupa${sufixo}.png` });
         fotoDaLupa = true;
       }
       await clicarPista(d.pistas[1]);
@@ -183,7 +203,7 @@ if (!SO || SO === 'dia') {
     }
     // o proibido da sacola vai para os achados
     for (const item of c.proibidos) {
-      await page.click('[data-acao="sacola"]');
+      if (!await page.locator(`[data-confiscar="${item}"]`).isVisible()) { await page.click('[data-acao="sacola"]'); await esperarLivre(); }
       await page.click(`[data-confiscar="${item}"]`);
       feitas.confiscados.push(item);
       await esperarLivre();
@@ -193,6 +213,7 @@ if (!SO || SO === 'dia') {
     await esperarLivre();
     tempos.push({ id: c.id, s: Math.round((Date.now() - t0) / 100) / 10 });
     decisoes.push(feitas);
+    console.log(`  atendimento ${visita + 1}: ${c.id}`);
   }
   ok(decisoes.length > 0, `o robô atendeu ${decisoes.length} visitantes pela tela`);
   ok(alvosRuins.length === 0, `todo alvo apontado é o elemento de cima no próprio centro${alvosRuins.length ? ': ' + alvosRuins.join(' | ') : ''}`);
@@ -224,7 +245,7 @@ if (!SO || SO === 'dia') {
     await espera(200);
   }
   ok(await page.isVisible('.pt-envelope.show'), 'o envelope da Gina aparece');
-  await page.screenshot({ path: `${OUT}-envelope${sufixo}.png` });
+  await foto({ path: `${OUT}-envelope${sufixo}.png` });
   const daCena = await page.evaluate(() => {
     const f = window.portaria.ex.terminar();
     return { total: f.total, estrelas: f.estrelas, linhas: f.linhas.length, fatos: f.fatos };
@@ -255,7 +276,7 @@ if (!SO || SO === 'dia') {
   const andou = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
   const travado = await page.evaluate(() => window.jogo.player?.locked ?? null);
   ok(travado === false && andou > 0.05, `de volta ao clube, a dupla anda (${andou.toFixed(2)} m, travado: ${travado})`);
-  await page.screenshot({ path: `${OUT}-volta${sufixo}.png` });
+  await foto({ path: `${OUT}-volta${sufixo}.png` });
 }
 
 ok(erros.length === 0, `nenhum erro de página${erros.length ? ': ' + erros.slice(0, 4).join(' | ') : ''}`);
