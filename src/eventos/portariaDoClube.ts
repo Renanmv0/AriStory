@@ -21,6 +21,7 @@
 import type { GameAPI } from '../core/types';
 import { ARI, RENAN } from '../characters/cast';
 import { CHAVE, TURNOS } from '../minigames/turnosDoMania';
+import { CHAVE as CHAVE_DA_PORTARIA, DIAS, diaAberto } from '../minigames/portaria';
 
 /** a última noite da escala do Walter */
 const ULTIMA_NOITE = TURNOS[TURNOS.length - 1].numero;
@@ -88,4 +89,59 @@ export async function conversaDaGuaritaNova(g: GameAPI): Promise<void> {
     icon: '🦒',
   });
   g.toast('Minigame desbloqueado: a Portaria do Clube!', '🦒');
+}
+
+/**
+ * O DIA DA PORTARIA QUE A CENA VAI JOGAR. A conversa com a Gina escolhe e
+ * guarda aqui antes do `goTo('portaria')` (a cena não recebe parâmetro);
+ * `?dia=n` força nos testes. Sem pedido: o primeiro dia aberto que ainda não
+ * foi jogado, ou o último aberto.
+ */
+let diaPedido: number | null = null;
+export function pedirODiaDaPortaria(n: number): void {
+  diaPedido = n;
+}
+export function diaDaPortariaPedido(g: GameAPI, busca: URLSearchParams): number {
+  const daUrl = Number(busca.get('dia'));
+  if (daUrl >= 1 && daUrl <= DIAS.length) return daUrl;
+  if (diaPedido !== null) {
+    const n = diaPedido;
+    diaPedido = null;
+    return n;
+  }
+  let ultimo = 1;
+  for (const d of DIAS) {
+    if (!diaAberto(g, d.numero)) break;
+    ultimo = d.numero;
+    if (g.stat(CHAVE_DA_PORTARIA.vezes(d.numero)) === 0) return d.numero;
+  }
+  return ultimo;
+}
+
+/** a Portaria já foi desbloqueada nesta página (a chave e a flag do save) */
+export function portariaLiberada(g: GameAPI): boolean {
+  return portariaNestaPagina() && g.flag(PORTARIA_LIBERADA);
+}
+
+/**
+ * O CONVITE DA GINA, depois do desbloqueio: escolher o dia e ir trabalhar
+ * (`'foi'`), ficar só na conversa de sempre (`'conversar'`) ou deixar para
+ * depois (`'depois'`). Os dias abrem um a um, terminando o anterior; o que já
+ * foi jogado mostra as melhores estrelas.
+ */
+export async function convidarParaAPortaria(g: GameAPI): Promise<'foi' | 'conversar' | 'depois'> {
+  const abertos = DIAS.filter((d) => diaAberto(g, d.numero));
+  const rotulos = abertos.map((d) => {
+    const estrelas = g.stat(CHAVE_DA_PORTARIA.estrelas(d.numero));
+    const marca = estrelas > 0 ? ` ${'⭐'.repeat(estrelas)}` : ' · novo';
+    return `🛎️ Dia ${d.numero}: ${d.nome}${marca}`;
+  });
+  const escolha = await g.ask('Bora trabalhar na portaria? A fila já tá se formando!', [...rotulos, '💬 Só conversar', 'Agora não'], 'Gina');
+  if (escolha < abertos.length) {
+    pedirODiaDaPortaria(abertos[escolha].numero);
+    g.som('apito');
+    g.goTo('portaria');
+    return 'foi';
+  }
+  return escolha === abertos.length ? 'conversar' : 'depois';
 }

@@ -11,6 +11,7 @@
  * tamanho: pequena na bancada, grande na tela.
  */
 import type { Assunto, Pista, TipoDeDocumento } from './tipos';
+import type { Regra } from './conferencia';
 
 export interface CampoDoPapel {
   pista: Pista;
@@ -118,3 +119,18 @@ export function rotuloDaPista(p: Pista): string {
   }
   return p;
 }
+
+/** O MANUAL DA PORTARIA: o texto de cada regra, na ordem em que os dias trazem */
+export const TEXTO_DA_REGRA: Readonly<Record<Regra, string>> = {
+  validade: 'A carteirinha tem que estar na validade: confira com o calendário de hoje.',
+  foto: 'A foto tem que ser de quem está na janela — a mesma espécie, a mesma cor e a mesma marca. Penteado e enfeite não contam.',
+  lista: 'O número da carteirinha tem que estar na lista de sócios, com o mesmo nome, e sem risco.',
+  convite: 'Convidado entra com convite: com a data de hoje, e quem convidou tem que estar na lista.',
+  entrega: 'Entregador entra com o crachá e a ordem de entrega da MESMA empresa, para um lugar que existe no clube.',
+  exame: 'A piscina pede o exame em dia. Exame vencido: 🟡 SÓ O CLUBE.',
+  sacola: 'O que não pode entrar vai para os achados (tire da sacola antes de carimbar).',
+  coletivo: 'O convite coletivo vale para a turma toda: conte quem veio e confira os nomes.',
+};
+
+/** o escudo do clube, do jeito que o manual descreve */
+export const TEXTO_DO_ESCUDO = 'A carteirinha do clube tem a faixa verde e o escudo dourado com a girafinha. Carteirinha de outro clube não vale aqui.';

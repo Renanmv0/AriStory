@@ -79,9 +79,49 @@
 - Um ajuste no arco do Hipólito: barrado na segunda, ele já chega RENOVADO na sexta (com a caixa de som na
   sacola) e de novo no sábado; deixado entrar, continua vencido a semana inteira.
 
-**Falta**: a cena (etapas 3 a 8 do §14). O DESENHO está abaixo, com as decisões do
-Renan de 2026-11-20 já incorporadas (§1). Nada dele é código ainda. Para
-construir, comece pelo §14 (a ordem das etapas) e leia a seção do pedaço.
+**Feito (2026-11-20), a CENA, parte 1: a guarita por dentro, em primeira pessoa, e o dia jogável**
+(`src/scenes/portaria.ts`, atrás da mesma chave; `?portaria&cena=portaria&dia=n` abre direto):
+- **A mesa do meio** (`src/world/mesaDaPortaria.ts`): o tampo de madeira com veio na altura das bancadas, o
+  gaveteiro, a bandejinha de inox no balcão (o papel do visitante escorrega por ela e cai na mesa), os três
+  CARIMBOS no porta-carimbos (o carimbo sai, molha na almofada e DESCE no papel — a tinta fica nele), a
+  campainha de balcão, a lupa de latão, a prancheta com a lista de sócios, o calendário de mesa, o manual de
+  argola e a luminária de braço com a poça de luz pintada. Os papéis são um `PapelPintado` por TIPO, a cena
+  inteira (redesenhado a cada visitante), e tudo se toca na mesa 3D também (`w.clicavel`).
+- **O pintor dos papéis e dos retratos** (`src/world/papeisDaPortaria.ts`): um pintor, duas saídas — a
+  textura na mesa e a folha grande na tela; os campos caem nos retângulos de `minigames/portaria/campos.ts`.
+- **A mesa em tela** (`src/ui/mesaDaPortaria.ts`, `GameAPI.mesaDaPortaria()`): o feltro verde com as abas
+  dos papéis, a lista, o calendário e o manual; a folha aberta grande; o ROSTO de quem está na janela (o
+  mesmo pintor da foto) e a TRANSCRIÇÃO; a 🔍 lupa (cada campo, o rosto, cada resposta, a lista, o
+  calendário, as seções do manual e a "bancada vazia" são alvos), o 💬, a 🎒 sacola, a 💡 dica, os carimbos,
+  a 🛎️ campainha e o 🏁 fim do dia; o balão de quem fala (o relógio para enquanto ele está aberto) e o
+  ENVELOPE da Gina com as estrelas e o Boletim do Clube. No computador a mesa fica à esquerda (a câmera vira
+  um tico para a cena cair à direita); no celular em pé, embaixo (a câmera olha o guichê).
+- **A cena**: a guarita de verdade, o portão e o muro à direita da tela (de onde vem a fila), a cancela à
+  esquerda (por onde quem entra segue), a Gina na bancada do monitor e o parceiro sentado na do fichário; a
+  TOMADA DE ABERTURA de fora mostra os três lá dentro no recado da Gina, e aí a câmera entra nos olhos de quem
+  joga. O balcão é de girafa (1,25 m, a altura da cabeça da dupla), então na frente dele há o **ELEVADOR DO
+  BALCÃO** (`ElevadorDoBalcao`, em `world/visitantesDaPortaria.ts`): o disco de madeira num pistão de três
+  gomos sobe cada visitante até o rosto ficar no meio do guichê.
+- **O dia**: a Gina escolhe o dia na conversa (os dias abertos, com as estrelas), a fila já está formada às
+  nove, quem é chamado sobe no elevador, fala, passa os papéis; quem entra segue pela cancela, o barrado
+  volta pelo portão; os chamados da fila chegam do portão; às 17h o portão fecha; o envelope paga a
+  carteira, grava o dia e a dupla volta ao clube na frente da guarita.
+- **SUBSTITUTOS DECLARADOS (a parte 2 troca)**: quem já tem modelo no jogo (a Josefina, o Noel, o Capy, o
+  Jean-Luc, a Estella, o Mano, o Cookie, o Gatito, a Tia Liz, as irmãs, o Flynn, o Rocco, a Valentina e o
+  Pietro) vem com o modelo de verdade; os NOVOS (o Seu Hipólito, as alpacas, o Bento e o Beto, o Tatá, a
+  Dona Preguiça, os figurantes) ainda são um RECORTE DE PAPELÃO pintado com o retrato, de pé numa base. O
+  disfarce do Jean-Luc aparece no rosto da mesa, ainda não no corpo; e as animações de cada ficha (a
+  chegada, o tique, o entra, o barrado, o apontado) ainda não existem — eles só andam, viram e falam.
+- **O teste**: `node scripts/portariaCena.mjs` — escondida sem a chave; e um DIA INTEIRO jogado pela tela
+  por um robô guiado pela conferência de verdade (pergunta, aponta cada diferença CLICANDO os alvos — cada
+  um conferido como o elemento de cima no próprio centro —, tira da sacola, recusa o agrado, carimba), o
+  envelope da cena igual ao do mesmo dia jogado só pelo `Expediente`, a carteira, o save e a volta ao
+  clube. `CEL=1` no celular em pé; `DIA=n` escolhe o dia.
+
+**Falta**: a parte 2 (os modelos dos visitantes novos e a ANIMAÇÃO de cada ficha, o disfarce do Jean-Luc
+no corpo, a Gina apertando o botão do elevador) e a parte 3 (os prêmios das três estrelas, a memória, os
+sons próprios — o carimbo, a campainha, o elevador —, as falas do Renan). O DESENHO está abaixo, com as
+decisões do Renan de 2026-11-20 já incorporadas (§1).
 
 ---
 

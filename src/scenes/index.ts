@@ -12,6 +12,7 @@ import { frenteDaCasa } from './frenteDaCasa';
 import { viagemDeCarro } from './viagemDeCarro';
 import { laboratorio } from './laboratorio';
 import { maniaDeChurrasco } from './maniaDeChurrasco';
+import { portaria } from './portaria';
 import { quarto } from './quarto';
 import { villaLobos } from './villaLobos';
 
@@ -52,6 +53,9 @@ export const SCENES: Record<string, SceneDef> = {
   // a estrada entre a casa do Ari e o Villa Lobos (o Bebito Mobile): só se chega
   // saindo de carro, e o carro só existe com a chave dele (`eventos/BebitoMobile.ts`)
   [viagemDeCarro.id]: viagemDeCarro,
+  // a Portaria do Clube (o minigame da guarita da Gina, docs/PORTARIA-DO-CLUBE.md): primeira pessoa,
+  // atrás da chave `PORTARIA_NO_JOGO` (eventos/portariaDoClube.ts); fora dela, a cena devolve ao clube
+  [portaria.id]: portaria,
 };
 
 export const CENA_INICIAL = casa.id;

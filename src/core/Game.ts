@@ -60,6 +60,7 @@ import { ARI, RENAN } from '../characters/cast';
 import { retratoDaDecoracao } from '../world/decoracoes';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
+import type { PainelDaPortaria } from '../ui/mesaDaPortaria';
 import { CARDAPIO } from '../world/cardapioData';
 import { INSCRITOS } from '../world/adversariosData';
 import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, comprarMelhoria, turnoAberto } from '../minigames/turnosDoMania';
@@ -2268,6 +2269,10 @@ export class Game implements GameAPI {
    * O SOM ENTRA AQUI, e nao na tela: a mesa avisa "peca", "captura" ou "fala" e
    * quem conhece o motor de audio e o Game.
    */
+  mesaDaPortaria(): PainelDaPortaria {
+    return this.ui.mesaDaPortaria();
+  }
+
   abrirXadrez(motor: ChessEngine, convite: ConviteDeXadrez): Promise<FimDeXadrez> {
     return this.ui.abrirXadrez(motor, {
       ...convite,

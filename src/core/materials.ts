@@ -474,6 +474,17 @@ export function pinturaAcesa(mapa: THREE.Texture): THREE.MeshBasicMaterial {
 }
 
 /**
+ * O RECORTE PINTADO: um desenho de canvas com fundo transparente, recortado
+ * pelo alfa, sem luz (o visitante de papelão da portaria). É o ÚNICO material
+ * do kit que NÃO é cacheado: cada recorte tem o desenho dele e vive só
+ * enquanto o visitante está na cena — quem cria chama `dispose()` no material
+ * e na textura quando o recorte sai.
+ */
+export function recortePintado(mapa: THREE.Texture): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({ map: mapa, fog: false, transparent: true, alphaTest: 0.4, side: THREE.DoubleSide });
+}
+
+/**
  * O FLASH DA FOTO (a foto de todos no salão da abóbora): o quadrado branco
  * que a cena põe colado na frente da câmera de cena e apaga em meio segundo.
  * Sem luz, sem névoa, por cima de tudo (não testa profundidade). É UM só no

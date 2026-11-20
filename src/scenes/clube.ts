@@ -27,7 +27,7 @@ import {
 } from '../eventos/bebitoMobile/noClube';
 import { Gina } from '../entities/bichos/Gina';
 import { GUARITA_DO_CLUBE, GuaritaDoClube } from '../world/guaritaDoClube';
-import { conversaDaGuaritaNova, guaritaNovaNoClube, guaritaNovaPorVer } from '../eventos/portariaDoClube';
+import { conversaDaGuaritaNova, convidarParaAPortaria, guaritaNovaNoClube, guaritaNovaPorVer, portariaLiberada } from '../eventos/portariaDoClube';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Josefina } from '../entities/bichos/Josefina';
@@ -187,6 +187,8 @@ export const clube: SceneDef = {
   spawn: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
   entries: {
     portaria: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
+    // quem volta de um dia de trabalho na guarita nova sai na frente do balcão, olhando para ela
+    'da-guarita': { x: -19.35, z: 5.1, facing: Math.PI },
     beira: { x: 0, z: 3.5, facing: Math.PI },
     'do-estacionamento': DESCIDA_NO_CLUBE,
     // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
@@ -466,6 +468,11 @@ export const clube: SceneDef = {
           }
           await conversaDaGuaritaNova(api);
           return;
+        }
+        // DEPOIS DO DESBLOQUEIO, a Gina convida para trabalhar (e quem só quer conversar ouve a conversa de sempre)
+        if (guaritaNova && portariaLiberada(api)) {
+          const r = await convidarParaAPortaria(api);
+          if (r !== 'conversar') return;
         }
         // O NOME É DO ARI, e as falas são as mesmas de antes: o Renan pediu
         // para batizá-la sem mexer nelas. O nome entra por uma linha nova, dela

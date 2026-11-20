@@ -116,7 +116,7 @@ export function pintarRetrato(c: CanvasRenderingContext2D, x: number, y: number,
   c.fillStyle = css(ombro);
   elipse(c, cx, y + a * 1.02, s * 0.46, s * 0.3);
   c.fill(); c.stroke();
-  if (r.marca === 'peitoBranco' || r.especie === 'pinguim') { c.fillStyle = '#f7f4ee'; elipse(c, cx, y + a * 1.0, s * 0.2, s * 0.22); c.fill(); }
+  if (r.marca === 'peitoBranco' || r.especie === 'pinguim') { c.fillStyle = css(P.peloBranco); elipse(c, cx, y + a * 1.0, s * 0.2, s * 0.22); c.fill(); }
   if (r.marca === 'uniformeVermelho') { c.fillStyle = '#c94040'; elipse(c, cx, y + a * 1.02, s * 0.46, s * 0.3); c.fill(); }
   if (r.marca === 'faixaNoPeito' || r.especie === 'tamandua') {
     c.fillStyle = '#2b2622';
@@ -203,7 +203,7 @@ export function pintarRetrato(c: CanvasRenderingContext2D, x: number, y: number,
     c.fillStyle = 'rgba(70,50,40,0.75)';
     for (const lado of [-1, 1]) { elipse(c, cx + lado * rx * 0.36, cy - ry * 0.02, rx * 0.26, ry * 0.15, lado * 0.45); c.fill(); }
   }
-  if (r.especie === 'pinguim') { c.fillStyle = '#f7f4ee'; elipse(c, cx, cy + ry * 0.12, rx * 0.72, ry * 0.7); c.fill(); }
+  if (r.especie === 'pinguim') { c.fillStyle = css(P.peloBranco); elipse(c, cx, cy + ry * 0.12, rx * 0.72, ry * 0.7); c.fill(); }
   if (r.especie === 'gato') {
     // o Gatito de pelúcia: as costuras
     c.strokeStyle = 'rgba(30,30,60,0.45)'; c.setLineDash([s * 0.015, s * 0.012]);
@@ -265,9 +265,11 @@ export function pintarRetrato(c: CanvasRenderingContext2D, x: number, y: number,
   // ---- a marca que distingue
   const marca = r.marca;
   c.fillStyle = '#3d2c26';
-  if (marca === 'pintaNoFocinho') { elipse(c, cx + rx * 0.24, fy + ry * 0.05, rx * 0.06, rx * 0.06); c.fill(); }
+  // AS MARCAS QUE DENUNCIAM (a Alpacona, o Beto): grandes o bastante para se ver na foto do tamanho do celular
+  if (marca === 'pintaNoFocinho') { c.fillStyle = '#6b4a3a'; elipse(c, cx + rx * 0.3, fy - ry * 0.02, rx * 0.12, rx * 0.1, 0.3); c.fill(); }
   if (marca === 'pintasNoFocinho') for (const [dx, dy] of [[-0.3, 0.12], [-0.18, 0.2], [0.26, 0.15]]) { elipse(c, cx + dx * rx, fy + dy * ry, rx * 0.035, rx * 0.035); c.fill(); }
-  if (marca === 'pintaNaOrelhaEsquerda') { elipse(c, cx + rx * 0.82, cy - ry * 0.55, rx * 0.07, rx * 0.07); c.fill(); }
+  // (a orelha ESQUERDA do bicho fica à direita de quem olha a foto)
+  if (marca === 'pintaNaOrelhaEsquerda') { c.fillStyle = '#7a3f4a'; elipse(c, cx + rx * 1.0, cy - ry * 0.4, rx * 0.12, ry * 0.15, -0.35); c.fill(); }
   if (marca === 'manchaNoPeito') { c.fillStyle = '#f2ead8'; elipse(c, cx, y + a * 0.92, s * 0.1, s * 0.07); c.fill(); }
   if (marca === 'bigodeBranco') { c.strokeStyle = '#ffffff'; for (const lado of [-1, 1]) for (const k of [-1, 1]) { c.beginPath(); c.moveTo(cx + lado * rx * 0.2, fy + k * ry * 0.04); c.lineTo(cx + lado * rx * 0.75, fy + k * ry * 0.12); c.stroke(); } c.strokeStyle = 'rgba(40,30,30,0.55)'; }
   if (marca === 'brincoNaOrelha') { c.fillStyle = '#e8c24a'; elipse(c, cx - rx * 1.05, cy - ry * 0.25, rx * 0.06, rx * 0.06); c.fill(); }
@@ -369,7 +371,7 @@ const campo = (tipo: Documento['tipo'], pista: string, l: number, a: number): { 
 };
 
 /** um rótulo pequeno em cima e o valor grande embaixo, dentro do retângulo do campo */
-function escreverCampo(c: CanvasRenderingContext2D, r: { x: number; y: number; l: number; a: number }, rotulo: string, valor: string, cor = '#2e3440', fonte = LETRA): void {
+function escreverCampo(c: CanvasRenderingContext2D, r: { x: number; y: number; l: number; a: number }, rotulo: string, valor: string, cor: string = css(P.tintaDaPortaria), fonte = LETRA): void {
   c.fillStyle = 'rgba(70,80,90,0.75)';
   c.font = `700 ${Math.round(r.a * 0.26)}px ${LETRA}`;
   c.textAlign = 'left';
@@ -431,7 +433,7 @@ export function pintarPapel(c: CanvasRenderingContext2D, d: Documento, carimbo: 
       c.fillText('CLUBE · CARTEIRA DE SÓCIO', e.x + e.a * 1.15, e.y + e.a / 2);
     } else {
       const t = e.l / 3;
-      ['#2f56b0', '#f7f4ee', '#d4423c'].forEach((cor, k) => { c.fillStyle = cor; c.fillRect(e.x + k * t, e.y, t, e.a); });
+      ['#2f56b0', css(P.peloBranco), '#d4423c'].forEach((cor, k) => { c.fillStyle = cor; c.fillRect(e.x + k * t, e.y, t, e.a); });
       c.fillStyle = '#1f2a55'; c.font = `800 ${Math.round(e.a * 0.36)}px ${LETRA}`; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.fillText(d.clube.toUpperCase(), e.x + e.l / 2, e.y + e.a / 2);
     }
@@ -483,7 +485,7 @@ export function pintarPapel(c: CanvasRenderingContext2D, d: Documento, carimbo: 
     c.fillStyle = cor; c.fillRect(f.x - 5, f.y - 5, f.l + 10, f.a + 10);
     pintarRetrato(c, f.x, f.y, f.l, f.a, d.foto);
     const nm = R('doc:cracha:nome');
-    c.fillStyle = '#2e3440'; c.font = `800 ${Math.round(nm.a * 0.55)}px ${LETRA}`; c.textAlign = 'center';
+    c.fillStyle = css(P.tintaDaPortaria); c.font = `800 ${Math.round(nm.a * 0.55)}px ${LETRA}`; c.textAlign = 'center';
     c.fillText(d.nome, nm.x + nm.l / 2, nm.y + nm.a * 0.45);
     c.fillStyle = 'rgba(70,80,90,0.8)'; c.font = `700 ${Math.round(nm.a * 0.32)}px ${LETRA}`;
     c.fillText(d.funcao.toUpperCase(), nm.x + nm.l / 2, nm.y + nm.a * 1.05);
@@ -498,7 +500,7 @@ export function pintarPapel(c: CanvasRenderingContext2D, d: Documento, carimbo: 
     const it = R('doc:ordem:itens');
     c.fillStyle = 'rgba(70,80,90,0.75)'; c.font = `700 ${Math.round(it.a * 0.09)}px ${LETRA}`; c.textAlign = 'left'; c.textBaseline = 'top';
     c.fillText('ITENS', it.x + 4, it.y);
-    c.fillStyle = '#2e3440'; c.font = `600 ${Math.round(it.a * 0.13)}px ${MAO}`;
+    c.fillStyle = css(P.tintaDaPortaria); c.font = `600 ${Math.round(it.a * 0.13)}px ${MAO}`;
     d.itens.forEach((x, k) => c.fillText(`☐ ${x}`, it.x + 10, it.y + it.a * (0.18 + k * 0.2)));
     c.strokeStyle = 'rgba(70,80,90,0.3)'; for (let k = 0; k < 4; k++) { c.beginPath(); c.moveTo(it.x, it.y + it.a * (0.36 + k * 0.2)); c.lineTo(it.x + it.l, it.y + it.a * (0.36 + k * 0.2)); c.stroke(); }
   } else if (d.tipo === 'exame') {
@@ -512,7 +514,7 @@ export function pintarPapel(c: CanvasRenderingContext2D, d: Documento, carimbo: 
     for (let x = 0; x <= l; x += 8) c.lineTo(x, a * 0.27 + Math.sin(x / 18) * 4); c.stroke(); c.lineWidth = 1;
     escreverCampo(c, R('doc:exame:nome'), 'Nome', d.nome);
     escreverCampo(c, R('doc:exame:validade'), 'Apto(a) até', escrever(d.validade));
-    c.fillStyle = '#2e9a5b'; c.font = `800 ${Math.round(a * 0.06)}px ${MAO}`; c.textAlign = 'center';
+    c.fillStyle = css(P.carimboEntra); c.font = `800 ${Math.round(a * 0.06)}px ${MAO}`; c.textAlign = 'center';
     c.fillText('APTO ✓', l * 0.72, a * 0.85);
   }
   if (carimbo) pintarCarimbo(c, l, a, carimbo);
@@ -557,14 +559,14 @@ export function pintarLista(c: CanvasRenderingContext2D, l: number, a: number, l
     const y = a * 0.1 + k * passo;
     c.strokeStyle = 'rgba(120,160,190,0.45)'; c.beginPath(); c.moveTo(l * 0.04, y + passo); c.lineTo(l * 0.96, y + passo); c.stroke();
     const yNome = s.suspenso ? y + passo * 0.36 : y + passo * 0.55;
-    c.fillStyle = '#2e3440'; c.font = `800 ${Math.round(passo * 0.36)}px ${LETRA}`; c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillStyle = css(P.tintaDaPortaria); c.font = `800 ${Math.round(passo * 0.36)}px ${LETRA}`; c.textAlign = 'left'; c.textBaseline = 'middle';
     c.fillText(s.numero, l * 0.05, yNome);
     c.font = `700 ${Math.round(passo * 0.46)}px ${MAO}`;
     c.fillText(s.nome, l * 0.25, yNome);
     if (s.suspenso) {
       const fim = l * 0.25 + c.measureText(s.nome).width + 8;
-      c.strokeStyle = '#d8423a'; c.lineWidth = 3; c.beginPath(); c.moveTo(l * 0.04, yNome + 1); c.lineTo(fim, yNome - 2); c.stroke(); c.lineWidth = 1;
-      c.fillStyle = '#c23a33'; c.font = `600 ${Math.round(passo * 0.3)}px ${MAO}`;
+      c.strokeStyle = css(P.carimboHojeNao); c.lineWidth = 3; c.beginPath(); c.moveTo(l * 0.04, yNome + 1); c.lineTo(fim, yNome - 2); c.stroke(); c.lineWidth = 1;
+      c.fillStyle = css(P.carimboHojeNao); c.font = `600 ${Math.round(passo * 0.3)}px ${MAO}`;
       c.fillText(`suspenso: ${s.suspenso}`, l * 0.25, y + passo * 0.78, l * 0.72);
     }
   });
@@ -577,14 +579,37 @@ export const diaDaSemana = (d: Data): string => DIAS_DA_SEMANA[new Date(d.a, d.m
 
 export function pintarCalendario(c: CanvasRenderingContext2D, l: number, a: number, hoje: Data): void {
   folha(c, l, a, '#fbfaf5', 14);
-  c.fillStyle = '#d8423a'; c.beginPath(); c.roundRect(2, 2, l - 4, a * 0.28, [14, 14, 0, 0]); c.fill();
+  c.fillStyle = css(P.carimboHojeNao); c.beginPath(); c.roundRect(2, 2, l - 4, a * 0.28, [14, 14, 0, 0]); c.fill();
   c.fillStyle = '#ffffff'; c.font = `800 ${Math.round(a * 0.15)}px ${LETRA}`; c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText(diaDaSemana(hoje).toUpperCase(), l / 2, a * 0.15, l * 0.9);
-  c.fillStyle = '#2e3440'; c.font = `900 ${Math.round(a * 0.42)}px ${LETRA}`;
+  c.fillStyle = css(P.tintaDaPortaria); c.font = `900 ${Math.round(a * 0.42)}px ${LETRA}`;
   c.fillText(String(hoje.d), l / 2, a * 0.58);
   const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   c.font = `700 ${Math.round(a * 0.12)}px ${LETRA}`; c.fillStyle = '#7a8088';
   c.fillText(`${MES[hoje.m - 1]} · ${hoje.a}`, l / 2, a * 0.86);
+}
+
+/** a capa do manual de argola: o verde do clube, o escudo e o título */
+export function pintarManual(c: CanvasRenderingContext2D, l: number, a: number): void {
+  c.clearRect(0, 0, l, a);
+  c.fillStyle = css(P.guaritaFaixa);
+  c.fillRect(0, 0, l, a);
+  // a lombada mais escura e as costuras
+  c.fillStyle = 'rgba(0,0,0,0.18)';
+  c.fillRect(l - l * 0.12, 0, l * 0.12, a);
+  c.strokeStyle = 'rgba(255,240,200,0.5)';
+  c.setLineDash([6, 5]);
+  c.lineWidth = 2;
+  c.strokeRect(l * 0.06, a * 0.05, l * 0.78, a * 0.9);
+  c.setLineDash([]);
+  escudo(c, l * 0.45, a * 0.36, l * 0.2);
+  c.fillStyle = css(P.gold);
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.font = `900 ${Math.round(l * 0.1)}px ${LETRA}`;
+  c.fillText('MANUAL', l * 0.45, a * 0.66);
+  c.font = `800 ${Math.round(l * 0.065)}px ${LETRA}`;
+  c.fillText('DA PORTARIA', l * 0.45, a * 0.75);
 }
 
 /** o nome de um item da sacola (para a mesa) */

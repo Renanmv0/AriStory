@@ -4,6 +4,7 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
+import type { PainelDaPortaria } from '../ui/mesaDaPortaria';
 import type { VigiaDaOclusao } from './Oclusao';
 import type { EfeitosDeTela } from './posProcessamento';
 import type {
@@ -1002,6 +1003,12 @@ export interface GameAPI {
    * xadrez em si mora em `entities/ChessEngine.ts`, e nem a cena nem a tela
    * conhecem uma regra sequer: as duas so perguntam a ele.
    */
+  /**
+   * A MESA DA PORTARIA DO CLUBE (`ui/mesaDaPortaria.ts`): o HUD do dia de
+   * trabalho na guarita da Gina, em primeira pessoa. A cena abre com as
+   * ações, redesenha o estado inteiro a cada mudança e fecha no fim do dia.
+   */
+  mesaDaPortaria(): PainelDaPortaria;
   abrirXadrez(motor: ChessEngine, convite: ConviteDeXadrez): Promise<FimDeXadrez>;
   /**
    * Um motor de xadrez novo para uma partida.

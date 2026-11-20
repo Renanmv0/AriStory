@@ -17,6 +17,7 @@ import type {
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
+import { MesaDaPortaria, type PainelDaPortaria } from './mesaDaPortaria';
 import type { SecaoDoCardapio } from '../world/cardapioData';
 import { retratoDoGrupo, type DesafianteDoQuadro } from '../world/adversariosData';
 import { PREMIOS_DA_ARENA, ehFantasia } from '../world/itens';
@@ -154,6 +155,8 @@ export class Ui {
    * entrada (o `abrirXadrez` esta logo abaixo); quem guarda o tabuleiro e ela.
    */
   private readonly mesaDeXadrez: MesaDeXadrez;
+  /** a mesa da Portaria do Clube (`mesaDaPortaria.ts`): o HUD do dia inteiro na guarita */
+  private readonly mesaPortaria: MesaDaPortaria;
   private readonly telaDeCartas: TelaDeCartas;
   private readonly livroDeCartas: LivroDeCartas;
   private readonly arsenal: Arsenal;
@@ -411,6 +414,7 @@ export class Ui {
       </div>
       <div class="escala-do-walter"></div>
       <div class="xadrez"></div>
+      <div class="portaria"></div>
       <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
       <div class="painel-jardim"><span class="onda">Onda <b>1</b><small>/5</small></span><span class="tanque" title="água no regador"><i class="agua"></i><i class="marcas"></i><em>💧 <b>12</b></em></span><span class="canteiros" title="canteiros de pé">🌱 <b>8</b><small>/8</small></span></div>
       <button class="ajuda-do-par" aria-label="chamar o par para ajudar"><span class="anel" aria-hidden="true"></span><span class="rosto" aria-hidden="true">💦</span><span class="rotulo"><b class="nome"></b><small class="estado"></small></span><kbd>F</kbd></button>
@@ -502,6 +506,9 @@ export class Ui {
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
     this.cardDoCampeao = ui.querySelector('.quadro-de-inscricoes .campeao')!;
     this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
+    this.mesaPortaria = new MesaDaPortaria(ui.querySelector('.portaria')!);
+    this.mesaPortaria.som = (nome) => this.som?.(nome);
+    this.mesaPortaria.aoMudar = () => this.marcarTelaAberta();
     this.telaDeCartas = new TelaDeCartas(ui.querySelector('.cartas-do-jardim')!);
     this.telaDeCartas.som = (nome) => this.som?.(nome);
     this.livroDeCartas = new LivroDeCartas(ui.querySelector('.livro-de-cartas')!);
@@ -780,7 +787,7 @@ export class Ui {
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
       this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
-      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen || this.quintalOpen,
+      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen || this.quintalOpen || this.mesaPortaria.aberta,
     );
   }
 
@@ -1949,6 +1956,13 @@ export class Ui {
       if (premios.resgatar(id)) redesenhar();
     });
     return caixa;
+  }
+
+  // ---------------------------------------------------------------- a portaria
+
+  /** a mesa da Portaria do Clube; a cena abre, desenha e fecha (ver `mesaDaPortaria.ts`) */
+  mesaDaPortaria(): PainelDaPortaria {
+    return this.mesaPortaria;
   }
 
   // ---------------------------------------------------------------- xadrez

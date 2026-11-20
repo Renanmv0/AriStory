@@ -7367,3 +7367,380 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 }
 .pular-estacionamento[hidden] { display: none; }
 .pular-estacionamento:focus-visible { outline: 3px solid #59451f; outline-offset: 3px; }
+
+/* =====================================================================
+ * A MESA DA PORTARIA (`mesaDaPortaria.ts`): o HUD do dia de trabalho na
+ * guarita da Gina. A cena em primeira pessoa fica por baixo; a mesa ocupa a
+ * ESQUERDA no computador (a câmera vira um tico para a cena cair à direita) e
+ * a METADE DE BAIXO no celular em pé (a câmera sobe para o guichê).
+ * ===================================================================== */
+.portaria {
+  position: absolute;
+  inset: 0;
+  display: none;
+  z-index: 6;
+  --pt-largura: min(46vw, 620px);
+  --pt-feltro: #2f5d50;
+  --pt-feltro-borda: #1f4238;
+  --pt-papel: #fbf7ec;
+  --pt-tinta: #2e3440;
+}
+.portaria.show { display: block; }
+.portaria.show > * { pointer-events: auto; }
+body.portaria-aberta .hints,
+body.portaria-aberta .prompt { display: none !important; }
+
+/* ---- o alto: o dia, o relógio, a fila e as dicas */
+.portaria .pt-topo {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100vw - 90px);
+  pointer-events: none !important;
+}
+.portaria .pt-topo span {
+  background: rgba(255, 250, 242, 0.94);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 3px 10px rgba(30, 20, 10, 0.18);
+}
+.portaria .pt-hora.fechou { background: #ffd8cf; color: #8a2a1e; }
+
+/* ---- a mesa: o feltro verde de escrivaninha */
+.portaria .pt-painel {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  bottom: 10px;
+  width: var(--pt-largura);
+  display: grid;
+  grid-template-columns: 1fr 156px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: "abas abas" "folha lado" "ferr ferr";
+  gap: 8px;
+  padding: 10px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.07), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.035) 0 2px, transparent 2px 5px),
+    var(--pt-feltro);
+  border: 6px solid #8a5a2b;
+  box-shadow: inset 0 0 0 2px var(--pt-feltro-borda), 0 12px 30px rgba(20, 14, 8, 0.35);
+}
+.portaria .pt-abas {
+  grid-area: abas;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.portaria .pt-aba {
+  flex: none;
+  border: 0;
+  border-radius: 12px 12px 6px 6px;
+  padding: 7px 12px;
+  font: 800 14px var(--fonte, 'Nunito'), system-ui, sans-serif;
+  background: #e9dfc8;
+  color: var(--pt-tinta);
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+}
+.portaria .pt-aba.ativa { background: var(--pt-papel); transform: translateY(-2px); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2); }
+.portaria .pt-aba.pt-ampliar { display: none; margin-left: auto; }
+.portaria .pt-aba.pt-vazia { background: transparent; color: #f6efdf; border: 2px dashed rgba(246, 239, 223, 0.75); }
+.portaria .pt-folha {
+  grid-area: folha;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+.portaria .pt-papel {
+  position: relative;
+  transform: rotate(-0.6deg);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+}
+.portaria .pt-papel canvas { display: block; }
+.portaria .pt-vazio { color: #f6efdf; font-weight: 800; text-align: center; padding: 20px; opacity: 0.85; }
+
+/* ---- os alvos da lupa: invisíveis até a lupa ligar */
+.portaria .pt-alvo {
+  position: absolute;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-radius: 8px;
+  cursor: default;
+  pointer-events: none;
+}
+.portaria.lupa .pt-alvo {
+  pointer-events: auto;
+  cursor: zoom-in;
+  outline: 2px dashed rgba(240, 160, 40, 0.75);
+  outline-offset: -2px;
+  background: rgba(255, 220, 120, 0.12);
+}
+.portaria.lupa .pt-alvo:hover { background: rgba(255, 220, 120, 0.3); }
+.portaria .pt-alvo.escolhida,
+.portaria .pt-linha.escolhida,
+.portaria .pt-aba.escolhida {
+  outline: 3px solid #f0a028 !important;
+  background: rgba(255, 200, 80, 0.35) !important;
+}
+
+/* ---- o manual */
+.portaria .pt-manual {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.portaria .pt-secao {
+  position: relative;
+  background: var(--pt-papel);
+  color: var(--pt-tinta);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.portaria .pt-secao[data-secao="escudo"] { display: flex; gap: 10px; align-items: center; }
+/* (o `#ui` na frente vence o `#app canvas { width: 100%; height: 100% }` do canvas do jogo) */
+#ui .portaria .pt-secao canvas.pt-escudo { width: 48px; height: 64px; flex: none; border-radius: 4px; }
+.portaria .pt-secao h4 { margin: 0 0 4px; font-size: 14px; color: #2f7d6b; }
+.portaria .pt-secao ol, .portaria .pt-secao ul { margin: 0; padding-left: 20px; }
+.portaria .pt-secao p { margin: 0; }
+.portaria .pt-proibidos { margin-top: 6px !important; color: #a33b30; font-weight: 700; }
+.portaria .pt-secao .pt-alvo { inset: 0; }
+
+/* ---- o lado: o rosto e a transcrição */
+.portaria .pt-lado {
+  grid-area: lado;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+.portaria .pt-polaroid {
+  position: relative;
+  background: #fffdf8;
+  padding: 7px 7px 22px;
+  border-radius: 4px;
+  transform: rotate(1.4deg);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+#ui .portaria .pt-polaroid canvas { display: block; width: 100%; height: auto; aspect-ratio: 120 / 140; border-radius: 2px; }
+.portaria .pt-polaroid span { position: absolute; left: 0; right: 0; bottom: 3px; font: 700 12px 'Kalam', cursive; color: #6a6382; }
+.portaria .pt-polaroid.vazia { min-height: 120px; display: grid; place-items: center; }
+.portaria .pt-polaroid.vazia span { position: static; }
+.portaria .pt-polaroid .pt-alvo { inset: 7px 7px 22px; width: auto !important; height: auto !important; }
+.portaria .pt-transcricao {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background:
+    repeating-linear-gradient(#fbf7ec 0 23px, #bfd5e3 23px 24px);
+  border-radius: 6px;
+  padding: 4px 6px;
+  box-shadow: inset 4px 0 0 rgba(216, 66, 58, 0.45);
+}
+.portaria .pt-linha {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font: 700 13px 'Nunito', system-ui;
+  color: var(--pt-tinta);
+  cursor: default;
+}
+.portaria .pt-linha b { display: block; font-size: 11px; color: #6a6382; text-transform: uppercase; }
+.portaria .pt-linha span { font: 400 16px 'Kalam', cursive; }
+.portaria.lupa .pt-linha { cursor: zoom-in; outline: 2px dashed rgba(240, 160, 40, 0.7); outline-offset: -2px; }
+.portaria .pt-dica-vazia { margin: 6px 2px; font: 400 14px 'Kalam', cursive; color: #6a6382; }
+
+/* ---- as ferramentas e os carimbos */
+.portaria .pt-ferramentas { grid-area: ferr; display: grid; gap: 6px; }
+.portaria .pt-linha-ferr { display: flex; gap: 6px; flex-wrap: wrap; }
+.portaria .pt-ferr {
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 12px;
+  padding: 9px 10px;
+  font: 800 15px 'Nunito', system-ui;
+  background: #f6efdf;
+  color: var(--pt-tinta);
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+.portaria .pt-ferr i { font-style: normal; background: #e2557c; color: #fff; border-radius: 999px; padding: 0 6px; font-size: 12px; }
+.portaria .pt-ferr:disabled { opacity: 0.45; cursor: default; }
+.portaria .pt-ferr.ligada { background: #ffc94d; }
+.portaria .pt-ferr:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
+.portaria .pt-carimbo { color: #fff; letter-spacing: 0.02em; }
+.portaria .pt-carimbo.entra { background: #2e9a5b; }
+.portaria .pt-carimbo.so-clube { background: #e0a21e; }
+.portaria .pt-carimbo.hoje-nao { background: #d8423a; }
+.portaria .pt-grande { background: #ffc94d; font-size: 17px; padding: 12px; }
+
+/* ---- o balão de quem fala, por cima da cena */
+.portaria .pt-balao {
+  position: absolute;
+  top: 58px;
+  left: calc(var(--pt-largura) + 40px);
+  right: 24px;
+  max-width: 560px;
+  margin: 0 auto;
+  display: none;
+  background: var(--pt-papel);
+  color: var(--pt-tinta);
+  border-radius: 18px;
+  padding: 10px 34px 12px 16px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.portaria .pt-balao.show { display: block; animation: pt-entra 0.18s ease-out; }
+.portaria .pt-balao b { color: #2f7d6b; font-size: 14px; }
+.portaria .pt-balao p { margin: 2px 0 0; font-size: 17px; line-height: 1.3; }
+.portaria .pt-balao i { position: absolute; right: 12px; bottom: 10px; font-style: normal; color: #e2557c; animation: pt-pisca 1s infinite; }
+.portaria .pt-aviso {
+  position: absolute;
+  bottom: 24px;
+  left: calc(var(--pt-largura) + 40px);
+  right: 24px;
+  margin: 0 auto;
+  max-width: 420px;
+  text-align: center;
+  background: rgba(46, 52, 64, 0.88);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 800;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none !important;
+}
+.portaria .pt-aviso.show { opacity: 1; }
+
+/* ---- o popover: perguntar, a sacola, o agrado */
+.portaria .pt-flutuante {
+  position: absolute;
+  left: calc(var(--pt-largura) + 30px);
+  bottom: 24px;
+  display: none;
+}
+.portaria .pt-flutuante.show { display: block; }
+.portaria .pt-pop {
+  background: var(--pt-papel);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 6px;
+  min-width: 230px;
+  max-width: 320px;
+}
+.portaria .pt-pop h4 { margin: 0 4px; color: #2f7d6b; }
+.portaria .pt-pop p { margin: 0 4px; font-weight: 700; }
+.portaria .pt-pop button {
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  text-align: left;
+  font: 700 15px 'Nunito', system-ui;
+  background: #efe5cf;
+  color: var(--pt-tinta);
+  cursor: pointer;
+}
+.portaria .pt-pop button.feita { opacity: 0.6; }
+.portaria .pt-pop.oferta div { display: flex; gap: 6px; }
+.portaria .pt-pop.oferta button { flex: 1; text-align: center; }
+
+/* ---- o envelope da Gina */
+.portaria .pt-envelope {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: rgba(28, 20, 14, 0.5);
+  backdrop-filter: blur(2px);
+}
+.portaria .pt-envelope.show { display: grid; }
+.portaria .pt-env {
+  width: min(92vw, 460px);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #fff6e4;
+  border-radius: 20px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  color: var(--pt-tinta);
+  border-top: 10px solid #2f7d6b;
+}
+.portaria .pt-env h3 { margin: 0; text-align: center; }
+.portaria .pt-estrelas { text-align: center; font-size: 28px; margin: 4px 0; }
+.portaria .pt-env ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 3px; }
+.portaria .pt-env li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; border-bottom: 1px dashed #e0d2b5; padding: 3px 0; }
+.portaria .pt-env li.mais b { color: #2e9a5b; }
+.portaria .pt-env li.menos b { color: #d8423a; }
+.portaria .pt-total { text-align: right; font-size: 18px; margin: 6px 0; }
+.portaria .pt-total em { color: #e2557c; }
+.portaria .pt-premio, .portaria .pt-abriu { text-align: center; font-weight: 800; margin: 6px 0; }
+.portaria .pt-boletim { display: grid; gap: 6px; margin-bottom: 10px; }
+.portaria .pt-boletim article { background: #fffdf8; border-radius: 10px; padding: 6px 10px; border-left: 5px solid #2e9a5b; }
+.portaria .pt-boletim article.ruim { border-left-color: #d8423a; }
+.portaria .pt-boletim h5 { margin: 0; font-size: 14px; }
+.portaria .pt-boletim p { margin: 0; font-size: 13px; }
+.portaria .pt-env .pt-grande { width: 100%; border: 0; border-radius: 14px; font-weight: 900; cursor: pointer; }
+
+@keyframes pt-entra { from { transform: translateY(-6px); opacity: 0; } }
+@keyframes pt-pisca { 50% { opacity: 0.2; } }
+
+/* ---- o celular em pé: a mesa embaixo, a cena em cima */
+@media (orientation: portrait) {
+  .portaria .pt-painel {
+    top: auto;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    width: auto;
+    height: 60vh;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) 104px auto;
+    grid-template-areas: "abas" "folha" "lado" "ferr";
+    padding: 7px;
+    gap: 6px;
+    border-width: 4px;
+  }
+  .portaria .pt-aba.pt-ampliar { display: block; }
+  .portaria.ampliada .pt-painel { height: calc(100vh - 92px); }
+  .portaria .pt-lado { flex-direction: row; }
+  .portaria .pt-polaroid { width: 80px; flex: none; padding: 4px 4px 16px; align-self: start; }
+  .portaria .pt-polaroid span { font-size: 10px; bottom: 1px; }
+  .portaria .pt-polaroid .pt-alvo { inset: 4px 4px 16px; }
+  .portaria .pt-polaroid.vazia { min-height: 96px; }
+  .portaria .pt-transcricao { height: 100%; }
+  .portaria .pt-aba { padding: 6px 9px; font-size: 13px; }
+  .portaria .pt-ferr { padding: 8px 7px; font-size: 13px; }
+  .portaria .pt-ferr span { display: none; }
+  .portaria .pt-carimbo span, .portaria .pt-grande span { display: inline; }
+  .portaria .pt-linha span { font-size: 14px; }
+  .portaria .pt-balao { left: 10px; right: 10px; top: 50px; }
+  .portaria .pt-aviso { left: 10px; right: 10px; bottom: calc(60vh + 16px); }
+  .portaria .pt-flutuante { left: 10px; right: 10px; bottom: calc(60vh + 12px); }
+  .portaria .pt-pop { max-width: none; }
+}

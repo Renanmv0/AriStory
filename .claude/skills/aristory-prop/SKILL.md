@@ -1367,6 +1367,37 @@ ENTRA:
   no plano da de cima, o teclado atravessando o telefone) achado com a caixa
   envolvente de cada malha no quadro da peça, com `?semFundir`.
 
+## A mesa da portaria e o elevador do balcão (`world/mesaDaPortaria.ts`, `world/visitantesDaPortaria.ts`)
+
+As peças da cena do minigame da Portaria (`scenes/portaria.ts`), vistas de
+PERTO, em primeira pessoa, por quem está sentado no meio da guarita:
+
+- **Mesa que se lê de perto**: papel de verdade em cima da mesa é
+  `pinturaAcesa` (sem luz) — o miolo da guarita fica na sombra do telhado, e
+  papel de ler não pode escurecer. UM `PapelPintado` POR TIPO de papel, a cena
+  inteira, redesenhado a cada visitante (`toon({mapa})` e `pinturaAcesa`
+  cacheiam pela textura e nunca soltam: textura nova por visitante vazaria um
+  material por vez).
+- **Deitado e de frente para quem senta**: quem olha o guichê (`+Z`) tem a
+  direita da tela no `−X`. O plano do papel deita com `rotation.set(−π/2, 0,
+  π)`: o alto da folha para o guichê, a esquerda da folha na esquerda da tela.
+- **O que mora embaixo do balcão de fora**: o tampo de madeira do balcão entra
+  30 cm pela parede (z de 1,45 a 1,75, a 1,18–1,25 de altura) — peça alta da
+  mesa (o carimbo, o calendário, a luminária) fica antes de `z = 1,4`.
+- **O carimbo que bate de verdade**: as etapas são pontos (casa, almofada,
+  papel, de volta) e a tinta entra no papel no quadro do contato
+  (`redesenhar` com o carimbo).
+- **O ELEVADOR DO BALCÃO**: a guarita é de girafa (balcão a 1,25, a altura da
+  cabeça da dupla) e quase todo visitante é menor; o disco num pistão de três
+  gomos sobe cada um até o alto da cabeça chegar a 1,95
+  (`alturaDoElevador(modelo)` mede pela caixa das malhas). O `Bicho` não
+  escreve o próprio `y`, então a cena só copia a altura do disco nele.
+- **O recorte de papelão** (o substituto dos visitantes novos até a parte 2):
+  o retrato da ficha num corpo pintado, com a borda branca de adesivo (a
+  figura desenhada 16 vezes em volta, em branco, por baixo), num
+  `recortePintado` — o único material NÃO cacheado do kit, que o recorte
+  descarta quando sai.
+
 ## O carrinho de golfe da Gina (`world/carrinhoDeGolfeDaGina.ts`)
 
 O primeiro veículo novo do CLUBE (`docs/CARRINHO-DE-GOLFE-DA-GINA.md`), e o

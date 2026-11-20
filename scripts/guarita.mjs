@@ -19,8 +19,9 @@
  * - o DESBLOQUEIO da Portaria do Clube (`eventos/portariaDoClube.ts`): sem a
  *   chave, nada muda e o save não ganha flag; com `?portaria`, a primeira
  *   conversa (de quem já conhecia a Gina) é a da guarita nova — a flag, a
- *   memória "A guarita nova" e o aviso do minigame — e a segunda volta a ser
- *   a de sempre; e num save do zero, a apresentação vem antes da reforma;
+ *   memória "A guarita nova" e o aviso do minigame — e a segunda já CONVIDA
+ *   para trabalhar (os dias abertos na escolha; o "Só conversar" leva à
+ *   conversa de sempre); e num save do zero, a apresentação vem antes da reforma;
  * - a ORDEM do jogo: num save do zero o clube tem a guarita de ANTES (sem o
  *   `teto`), e ela só vira a nova depois da última noite do Mania jogada.
  *   O posto, a cabeça e as conversas são medidos na nova (`?guaritaNova`).
@@ -132,7 +133,7 @@ for (let i = 0; i < 60 && apitosDepois === apitosAntes; i++) {
 
 // ------------------------------------------------- 3. falar com o porteiro
 /** uma conversa inteira com a Gina: as falas, na ordem */
-const conversar = async (foto) => {
+const conversar = async (foto, escolher = null) => {
   await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, Math.PI), [inicio.girafa[0], inicio.girafa[2] + 2.3]);
   await page.waitForTimeout(1200);
   const rotulo = await page.locator('.prompt .label').textContent().catch(() => '');
@@ -145,6 +146,16 @@ const conversar = async (foto) => {
     const quem = await page.locator('.dialogue .who').textContent().catch(() => '');
     if (t) ditas.push(`${quem ?? ''}: ${t}`);
     if (foto && i === 2) await page.screenshot({ path: `${OUT}-${foto}-conversa.png` });
+    // a pergunta com botões (o convite da portaria): escolhe pelo texto
+    if (escolher) {
+      const botao = page.locator('.escolhas button', { hasText: escolher });
+      if (await botao.count()) {
+        ditas.push(`[escolhas] ${(await page.locator('.escolhas').textContent()) ?? ''}`);
+        await botao.first().click();
+        await page.waitForTimeout(700);
+        continue;
+      }
+    }
     if (!(await page.locator('.dialogue.show').count())) break;
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(700);
@@ -172,7 +183,8 @@ const reforma = await conversar('reforma');
 const depoisDaReforma = await salvo(TESTE);
 // (o `?portaria` joga num save à parte: o de verdade não pode ter ganho nada)
 const deVerdadeIntacto = await salvo();
-const outraVez = await conversar(null);
+// depois do desbloqueio, a Gina convida para trabalhar; o "Só conversar" leva à conversa de sempre
+const outraVez = await conversar(null, /Só conversar/);
 // e num save do zero: a apresentação vem antes
 await page.evaluate((k) => { localStorage.removeItem('aristory.save.v1'); localStorage.removeItem(k); }, TESTE);
 await page.reload({ waitUntil: 'networkidle' });
@@ -204,7 +216,7 @@ console.log('4. memória no diário:', noDiario, '· flags sem a chave:', JSON.s
 console.log('5. guarita nova · teto', inicio?.teto, '· porta', inicio?.porta, '· medidas', JSON.stringify(inicio?.medidas));
 for (const f of reforma.ditas) console.log('   reforma', f);
 console.log('   depois:', JSON.stringify(depoisDaReforma), '· o de verdade:', JSON.stringify(deVerdadeIntacto));
-console.log('   outra vez:', outraVez.ditas.length, 'falas;', outraVez.ditas[0]);
+console.log('   outra vez:', outraVez.ditas.length, 'falas;', outraVez.ditas.find((f) => f.startsWith('[escolhas]')), '·', outraVez.ditas.at(-1));
 console.log('6. ordem · nova no começo:', novaNoComeco, '· antes do Mania:', novaAntesDoMania, '· depois da sexta noite:', novaDepoisDoMania,
   '· a Gina em', JSON.stringify(ginaNaNova?.girafa));
 console.log('   do zero:', doZero.ditas.slice(0, 3).join(' | '), '…', JSON.stringify(depoisDoZero));
@@ -248,8 +260,9 @@ if (deVerdadeIntacto.flags.includes('portaria:liberada') || deVerdadeIntacto.mem
   problemas.push('o ?portaria gravou o desbloqueio no save de verdade');
 }
 if (outraVez.ditas.some((f) => /guarita nova/i.test(f)) || !outraVez.ditas.some((f) => /aproveit/i.test(f))) {
-  problemas.push('a segunda conversa não voltou a ser a de sempre');
+  problemas.push('a segunda conversa ("Só conversar") não voltou a ser a de sempre');
 }
+if (!outraVez.ditas.some((f) => /\[escolhas\].*Dia 1/.test(f))) problemas.push('depois do desbloqueio, a Gina não convidou para trabalhar (o Dia 1 na escolha)');
 if (!/Sou a Gina/.test(doZero.ditas.join(' ')) || !/guarita nova/i.test(doZero.ditas.join(' '))) {
   problemas.push('no save do zero, a apresentação e a reforma não vieram juntas');
 }
