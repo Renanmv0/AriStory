@@ -223,7 +223,7 @@ export class VisitanteDaPortaria extends Bicho {
     const troncoY = Pl.quadril + ty * 0.85;
     this.esfera(this.corpo, this.pelo, tx, ty, tz, 0, troncoY, 0, 20);
     // a barriga clara (o tamanduá tem a faixa preta no lugar)
-    if (especie !== 'tamandua') this.esfera(this.corpo, especie === 'pandaVermelho' ? 0x3a2622 : this.claro, tx * 0.62, ty * 0.7, tz * 0.4, 0, troncoY - ty * 0.08, tz * 0.68, 16);
+    if (!roupa && especie !== 'tamandua') this.esfera(this.corpo, especie === 'pandaVermelho' ? 0x3a2622 : this.claro, tx * 0.62, ty * 0.7, tz * 0.4, 0, troncoY - ty * 0.08, tz * 0.68, 16);
     if (roupa) this.vestir(roupa, troncoY);
 
     // ---- o pescoço e a cabeça
@@ -274,17 +274,35 @@ export class VisitanteDaPortaria extends Bicho {
   /** a roupa por cima do tronco: a casca maior que ele, a gola e os detalhes */
   private vestir(roupa: Roupa, troncoY: number): void {
     const [tx, ty, tz] = this.plano.tronco;
-    const casca = this.esfera(this.corpo, roupa.cor, tx * 1.07, ty * 0.78, tz * 1.08, 0, troncoY - ty * 0.08, 0, 20);
+    const gemeo = this.ficha === 'bento' || this.ficha === 'beto';
+    const centroY = troncoY + ty * (gemeo ? .04 : -.08);
+    const raioY = ty * (gemeo ? 1.08 : .78);
+    const casca = this.esfera(this.corpo, roupa.cor, tx * 1.07, raioY, tz * 1.08, 0, centroY, 0, 20);
     casca.name = 'roupa';
     if (roupa.camisa) {
-      // a gola em V da camisa por baixo do colete (o Bento)
-      const gola = new THREE.Mesh(new THREE.ConeGeometry(tx * 0.42, ty * 0.55, 3), this.mat(roupa.camisa));
-      gola.rotation.set(Math.PI, 0, 0);
-      gola.scale.z = 0.25;
-      gola.position.set(0, troncoY + ty * 0.38, tz * 0.98);
-      this.corpo.add(gola);
-      // os botões do colete
-      for (let k = 0; k < 3; k++) this.esfera(this.corpo, 0xe7dcc0, 0.009, 0.009, 0.005, 0, troncoY - ty * 0.05 - k * 0.045, tz * 1.07, 8);
+      const frente = (x: number, y: number): number => tz * 1.08 * Math.sqrt(Math.max(0,
+        1 - (x / (tx * 1.07)) ** 2 - ((y - centroY) / raioY) ** 2));
+      // A camisa em V acompanha a curva do colete, sem atravessar nem flutuar.
+      const pontos: number[] = [], indices: number[] = [];
+      const linhas = 6, colunas = 8;
+      for (let i = 0; i <= linhas; i++) for (let j = 0; j <= colunas; j++) {
+        const t = i / linhas, y = troncoY + ty * (.8 - .4 * t);
+        const x = tx * .34 * (1 - t) * (2 * j / colunas - 1);
+        pontos.push(x, y, frente(x, y) + .003);
+      }
+      for (let i = 0; i < linhas; i++) for (let j = 0; j < colunas; j++) {
+        const a = i * (colunas + 1) + j, b = a + colunas + 1;
+        indices.push(a, b, a + 1, a + 1, b, b + 1);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pontos, 3));
+      geo.setIndex(indices); geo.computeVertexNormals();
+      this.corpo.add(new THREE.Mesh(geo, this.mat(roupa.camisa)));
+      // Os botões também pousam na superfície, em vez de uma profundidade fixa.
+      for (let k = 0; k < 3; k++) {
+        const y = troncoY + ty * .28 - k * .045;
+        this.esfera(this.corpo, 0xe7dcc0, .009, .009, .005, 0, y, frente(0, y) + .005, 8);
+      }
     }
   }
 
