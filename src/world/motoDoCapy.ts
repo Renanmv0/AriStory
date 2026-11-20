@@ -179,7 +179,7 @@ function detalhesDaMoto(lata: THREE.Group, por: Por, tubo: Tubo): void {
  * e a jugular passando por baixo do queixo com a fivela. O grupo vai na
  * cabeca dele, entao vira junto quando ele olha para o lado.
  */
-function capaceteDoCapy(): THREE.Group {
+export function capaceteDoCapy(viseiraAbaixada = false): THREE.Group {
   const capacete = new THREE.Group(); capacete.name = 'capacete-do-capy';
   const casco = new THREE.Group(); casco.position.y = .045; casco.rotation.x = -.3; capacete.add(casco);
   const R = { x: .164, y: .15, z: .17 }, BORDA = 1.4;
@@ -213,6 +213,29 @@ function capaceteDoCapy(): THREE.Group {
     const { p, q } = naCasca(new THREE.Vector3(lado * .82, .5, -.12), new THREE.Vector3(lado, 0, 0), .003);
     for (const [a, l] of [[.05, .015], [.015, .05]]) {
       const braco = new THREE.Mesh(quina(.006, a, l, .002), toon(P.salvaVidasBranco)); braco.position.copy(p); braco.quaternion.copy(q); casco.add(braco);
+    }
+  }
+  // Na portaria a viseira fica abaixada até ele tirar o capacete. A casca
+  // acompanha a cabeça real; a viseira curva cobre os olhos, deixando o focinho livre.
+  if (viseiraAbaixada) {
+    const vidro = new THREE.Mesh(new THREE.SphereGeometry(1, 36, 12, .2, Math.PI - .4, 1.03, .8), toon(P.escolaVidroFora, { doubleSide: true }));
+    vidro.scale.set(.179, .18, .222); vidro.position.y = .025; capacete.add(vidro);
+    const ponto = (phi: number, theta: number, folga = 1): THREE.Vector3 => new THREE.Vector3(
+      -.179 * Math.cos(phi) * Math.sin(theta) * folga,
+      .025 + .18 * Math.cos(theta) * folga,
+      .222 * Math.sin(phi) * Math.sin(theta) * folga,
+    );
+    for (const theta of [1.03, 1.83]) {
+      const curva = new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, i) => ponto(.2 + (Math.PI - .4) * i / 24, theta, 1.006)));
+      capacete.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 36, .003, 6), toon(P.pneu)));
+    }
+    for (const lado of [-1, 1]) {
+      const pivo = new THREE.Mesh(new THREE.CylinderGeometry(.013, .013, .006, 16), toon(P.churrascoInox));
+      pivo.rotation.z = Math.PI / 2; pivo.position.set(lado * .174, .068, .033); capacete.add(pivo);
+    }
+    for (const inicio of [.67, .84]) {
+      const reflexo = new THREE.CatmullRomCurve3(Array.from({ length: 8 }, (_, i) => ponto(inicio + i * .018, 1.17 + i * .012, 1.012)));
+      capacete.add(new THREE.Mesh(new THREE.TubeGeometry(reflexo, 12, .002, 5), toon(P.escolaVidroBrilho)));
     }
   }
   // a jugular: de um lado da borda, por baixo do queixo, ate o outro
