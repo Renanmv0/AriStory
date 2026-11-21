@@ -737,11 +737,25 @@ export class MesaDaPortaria implements PainelDaPortaria {
     const linhas = fim.linhas.map((l) => `<li class="${l.valor < 0 ? 'menos' : l.valor > 0 ? 'mais' : ''}">
       <span>${escapar(l.texto)}</span><b>${l.valor > 0 ? '+' : ''}${l.valor === 0 ? '' : `R$ ${l.valor}`}</b></li>`).join('');
     const boletim = fim.boletim.map((m) => `<article class="${m.tom}"><h5>${escapar(m.titulo)}</h5><p>${escapar(m.linha)}</p></article>`).join('');
+    const revisoes = fim.revisoes.map(r => `<article data-revisao>
+      <h5>${escapar(r.visitante)}</h5>
+      <p class="pt-rev-decisao">${escapar(r.feito)} <strong>${escapar(r.esperado)}</strong></p>
+      <p>${escapar(r.motivo)}</p>
+      <p class="pt-rev-dica"><b>Na próxima:</b> ${escapar(r.conferir)}</p>
+    </article>`).join('');
+    const recado = fim.resumo.atendidos > 0
+      ? 'Nenhum erro nos atendimentos feitos. Boa conferência, bebitos!'
+      : 'Hoje não houve atendimentos concluídos para revisar. Quando vocês atenderem, a gente confere junto!';
     this.envelopeEl.innerHTML = `<div class="pt-env">
       <h3>✉️ O envelope da Gina</h3>
       <div class="pt-estrelas">${estrelas}</div>
-      <ul>${linhas}</ul>
       <p class="pt-total">Para a carteira: <b>R$ ${fim.total}</b>${extras.recorde ? ' <em>recorde!</em>' : ''}</p>
+      <section class="pt-revisoes" aria-labelledby="pt-rev-titulo">
+        <h4 id="pt-rev-titulo">🦒 ${revisoes ? 'Vamos conferir juntos?' : 'Recado da Gina'}</h4>
+        ${revisoes || `<p class="pt-rev-bom">${recado}</p>`}
+      </section>
+      <h4 class="pt-env-valores">Valores do expediente</h4>
+      <ul>${linhas}</ul>
       ${extras.premio ? `<p class="pt-premio">${extras.premio.icone} ${escapar(extras.premio.nome)} para os dois!</p>` : ''}
       ${extras.abriu ? `<p class="pt-abriu">Amanhã: o dia ${extras.abriu} abriu na escala da Gina.</p>` : ''}
       ${boletim ? `<h4>📰 Boletim do Clube</h4><div class="pt-boletim">${boletim}</div>` : ''}

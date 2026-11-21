@@ -11,6 +11,8 @@ import { carimboCerto, diferencas, fichaDe, proibidosNaSacola, type ContextoDoDi
 import { DIAS, diaPorNumero, type DiaDaPortaria } from './semana';
 import { guardarEncontrosDoDia, lembrarAtendimento, type ArmazemDosEncontros, type EncontroDaPortaria } from './memoria';
 import { NOME_DO_ITEM, RELOGIO, VALOR, type Assunto, type Carimbo, type Fato, type ItemDaSacola, type Pista } from './tipos';
+import { quemNoEnvelope, revisoesDaGina, type RevisaoDaGina } from './revisao';
+export { quemNoEnvelope } from './revisao';
 
 // ================================================================ um atendimento
 
@@ -45,18 +47,6 @@ export interface AvaliacaoDoAtendimento {
   fatos: Fato[];
   /** apontou uma diferença de verdade (a confissão, o achado) */
   achou: boolean;
-}
-
-/**
- * QUEM É, NO ENVELOPE: o nome de VERDADE (o da ficha, para os personagens com
- * nome), e não o que ele disse na janela — o Beto que dizia ser o Bento aparece
- * como "Beto (dizendo ser Bento)". O figurante não tem ficha com nome: vale o dele.
- */
-export function quemNoEnvelope(v: Visitante): string {
-  const ficha = fichaDe(v);
-  const figurante = ficha.nome === ficha.nome.toLowerCase();
-  if (figurante) return v.nome;
-  return ficha.nome === v.nome ? ficha.nome : `${ficha.nome} (dizendo ser ${v.nome})`;
 }
 
 /** o fato que um proibido grava quando passa, se o visitante não tem um próprio */
@@ -233,6 +223,7 @@ export interface ResumoDoDia {
 }
 
 export interface FimDoDia {
+  revisoes: RevisaoDaGina[];
   encontros: EncontroDaPortaria[];
   resumo: ResumoDoDia;
   /** o envelope da Gina, linha por linha */
@@ -287,6 +278,7 @@ export function fecharODia(dia: DiaDaPortaria, atendimentos: readonly Atendiment
     .slice(0, 3);
   return {
     resumo, linhas, total: Math.max(0, soma), estrelas, fatos, boletim,
+    revisoes: revisoesDaGina(atendimentos, avs, ctx),
     encontros: atendimentos.flatMap(a => { const e = a.carimbo === null ? null : lembrarAtendimento(dia.numero, a.visitante, a.carimbo); return e ? [e] : []; }),
     falaDaGina: estrelas === 3 ? dia.gina.fimBom : dia.gina.fimRuim,
   };

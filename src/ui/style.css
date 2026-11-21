@@ -7728,6 +7728,20 @@ body.portaria-aberta .prompt { display: none !important; }
 .portaria .pt-env li.menos b { color: #d8423a; }
 .portaria .pt-total { text-align: right; font-size: 18px; margin: 6px 0; }
 .portaria .pt-total em { color: #e2557c; }
+.portaria .pt-revisoes { margin: 12px 0 16px; }
+.portaria .pt-revisoes h4 { margin: 0 0 8px; color: #376750; font-size: 17px; }
+.portaria .pt-revisoes article {
+  margin: 8px 0; padding: 12px 13px; background: #fffdf7;
+  border: 1px solid #e3d9bd; border-left: 4px solid #91b59b; border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.portaria .pt-revisoes h5 { margin: 0 0 6px; font-size: 15px; color: #365446; }
+.portaria .pt-revisoes p { margin: 6px 0; font-size: 14px; line-height: 1.5; }
+.portaria .pt-rev-decisao { color: #6c6150; }
+.portaria .pt-rev-decisao strong { display: block; color: #365c46; }
+.portaria .pt-revisoes .pt-rev-dica { border-top: 1px dashed #ded7c4; padding-top: 7px; margin-top: 9px; }
+.portaria .pt-rev-bom { background: #edf4e7; border-radius: 10px; padding: 11px 13px; }
+.portaria .pt-env-valores { font-size: 15px; margin: 10px 0 6px; }
 .portaria .pt-premio, .portaria .pt-abriu { text-align: center; font-weight: 800; margin: 6px 0; }
 .portaria .pt-boletim { display: grid; gap: 6px; margin-bottom: 10px; }
 .portaria .pt-boletim article { background: #fffdf8; border-radius: 10px; padding: 6px 10px; border-left: 5px solid #2e9a5b; }

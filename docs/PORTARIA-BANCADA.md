@@ -105,10 +105,21 @@ a abertura for pulada no meio da animação. O exemplo não altera decisões,
 memória, pagamento nem a fila. Movimento reduzido remove os acenos e a
 interpolação dos enquadramentos.
 
-## Próximo passo
+## Retorno dos erros no envelope
 
-Melhorar o retorno dos erros no envelope da Gina, explicando um ou dois
-casos concretos do expediente. Ainda não implementado nesta etapa.
+O envelope traz até dois casos concretos, escolhidos entre os atendimentos
+com erro: decisão da dupla, decisão correta, motivo e quais pistas comparar
+na próxima vez. Casos caros têm prioridade, sem repetir o mesmo assunto ou
+o mesmo visitante. Os valores e as manchetes continuam visíveis abaixo.
+
+As explicações usam a conferência e a avaliação do dia, sem alterar nota,
+pagamento, memória ou fatos. Exame vencido restringe a piscina, item proibido
+vai para os achados e não muda o carimbo, e aparências corrigíveis não viram
+irregularidade de identidade. Perguntas não feitas são descritas como uma
+conferência possível, sem afirmar que a dupla ouviu a resposta.
+
+Sem erros, o recado elogia somente os atendimentos feitos. Sem atendimentos,
+não inventa um acerto ou um caso para revisar.
 
 ## Publicação e validação
 
@@ -119,6 +130,10 @@ com save separado; não se liga o minigame no fluxo normal do jogo.
 - `node scripts/portaria.mjs`: regras e consequências sem navegador.
 - `node scripts/portariaMemoria.mjs`: persistência, replays, retornos e seis
   dias em 40 sementes, nas políticas de atender certo, barrar e deixar entrar.
+- `node scripts/portariaRevisao.mjs`: explicações dos erros dos seis dias,
+  identidade, perguntas não feitas e casos que não geram erro.
+- `node scripts/portariaRevisaoCena.mjs /tmp/revisao`: erros pela interface,
+  leitura do envelope em computador/celular, valores e estados sem revisão.
 - `node scripts/portariaAbertura.mjs /tmp/abertura`: os seis recados,
   exemplos 3D, câmera do banco, celular, movimento reduzido e pulo durante
   voos/carimbadas, sem cobrar tempo ou deixar exemplos na mesa.
