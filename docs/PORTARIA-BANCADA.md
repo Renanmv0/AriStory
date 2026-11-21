@@ -65,11 +65,29 @@ atendimento, passando pelo jeito de falar do personagem. Uma resposta
 específica do roteiro tem prioridade. Mesmo sem ordem, o crachá dá a empresa
 da entrega. Os figurantes dos últimos dias esclarecem se pretendem usar a piscina.
 
-## Próxima etapa anotada
+## Lembranças entre dias
 
-Reconhecimento após encontros anteriores para os personagens novos da
-portaria. Os personagens que já existiam no jogo partem do vínculo que
-já têm com a dupla. Essa memória ainda não foi implementada nesta etapa.
+Ao fechar o expediente, os atendimentos concluídos dos personagens novos
+ficam guardados em `portaria:encontros:v1`, no armazenamento já existente do
+save de teste. Quem não foi atendido não ganha uma lembrança inventada.
+O próximo dia usa somente visitas anteriores: entrou, ficou só no clube ou
+foi barrado. A saudação segue a personalidade, junto das falas do roteiro.
+
+Barrados sem presença prevista ganham prioridade nas vagas dos figurantes,
+com documentos válidos para tentar novamente. Mantêm identidade, aparência
+e matrícula; entregadores preservam empresa e carga. Os retornos respeitam
+as regras disponíveis, a mistura da fila e o espaço existente; quem não couber
+pode voltar nos dias seguintes. Personagens já previstos não são duplicados.
+
+O histórico distingue o Beto do Bento mesmo quando um usa o nome do irmão.
+Refazer um dia substitui apenas os registros daquele dia, e não faz uma fase
+anterior lembrar de encontros futuros. Saves antigos continuam funcionando;
+as novas lembranças são registradas a partir dos expedientes concluídos com
+esta atualização. Os fatos de história anteriores continuam valendo.
+
+Os personagens que já existiam no jogo partem do vínculo que já têm com a
+dupla. O Jean-Luc conserva seu roteiro de seis disfarces e sua memória de
+quando foi pego; esta camada não acrescenta falas de apresentação a ele.
 
 ## Publicação e validação
 
@@ -78,6 +96,8 @@ com save separado; não se liga o minigame no fluxo normal do jogo.
 
 - `npm run build`
 - `node scripts/portaria.mjs`: regras e consequências sem navegador.
+- `node scripts/portariaMemoria.mjs`: persistência, replays, retornos e seis
+  dias em 40 sementes, nas políticas de atender certo, barrar e deixar entrar.
 - `node scripts/portariaBancada.mjs /tmp/bancada`: cliques no canvas,
   computador/celular, entrega, leitura, comparação, carimbo e save isolado.
 - `SACOLA=1 DIA=5 node scripts/portariaBancada.mjs /tmp/sacola`: inspeção física.

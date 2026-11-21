@@ -10,11 +10,12 @@
  * atrás do falso) é um CHAMADO da fila (`Visitante.chama`) para uma reserva.
  */
 import type { ContextoDoDia, Ferramenta, Regra, Visitante } from './conferencia';
+import { identidadeDaPortaria, recordarChegada, ultimosEncontros, type EncontroDaPortaria } from './memoria';
 import {
   ESPECIES_FIGURANTES, FICHAS, NOMES_DOS_FIGURANTES, VARIACOES_DOS_FIGURANTES, type EspecieFigurante,
 } from './personagens';
 import {
-  NOME_DO_CLUBE, data, type Carimbo, type Carteirinha, type Data, type Documento, type Fato, type ItemDaSacola,
+  DESTINOS_DO_CLUBE, NOME_DO_CLUBE, data, type Carimbo, type Carteirinha, type Data, type Documento, type Fato, type ItemDaSacola,
   type LinhaDaLista, type Retrato,
 } from './tipos';
 
@@ -760,25 +761,28 @@ interface Sorteado {
  */
 function montarFigurante(
   rnd: () => number, n: number, i: number, papel: PapelDoFigurante, defeito: DefeitoDoFigurante | null,
-  usados: Set<string>, numeros: Set<string>, especiesUsadas: Map<EspecieFigurante, number>,
+  usados: Set<string>, numeros: Set<string>, especiesUsadas: Map<string, number>,
+  retorno?: EncontroDaPortaria, encontros: readonly EncontroDaPortaria[] = [],
 ): Sorteado {
   const hoje = HOJE[n - 1];
   // a fila variada: a espécie que menos apareceu hoje (empate, sorteio), e só as que ainda têm nome livre
   const livresDe = (e: EspecieFigurante): string[] => NOMES_DOS_FIGURANTES[e].filter((x) => !usados.has(x) && !NOMES_RESERVADOS.has(x));
   const comNome = ESPECIES_FIGURANTES.filter((e) => livresDe(e).length);
   const menos = Math.min(...comNome.map((e) => especiesUsadas.get(e) ?? 0));
-  const especie: EspecieFigurante = escolher(rnd, comNome.filter((e) => (especiesUsadas.get(e) ?? 0) === menos));
+  const especie = retorno?.rosto.especie ?? escolher(rnd, comNome.filter((e) => (especiesUsadas.get(e) ?? 0) === menos));
   especiesUsadas.set(especie, (especiesUsadas.get(especie) ?? 0) + 1);
-  const nome = escolher(rnd, livresDe(especie));
+  const nome = retorno?.nome ?? escolher(rnd, livresDe(especie as EspecieFigurante));
   usados.add(nome);
-  const variacoes = VARIACOES_DOS_FIGURANTES[especie];
-  const rosto: Retrato = { especie, cor: escolher(rnd, variacoes.cores), marca: escolher(rnd, variacoes.marcas) };
-  let numero = '';
-  do numero = String(600 + Math.floor(rnd() * 380)).padStart(4, '0'); while (numeros.has(numero));
+  const pessoa = retorno ?? encontros.find(e => e.ficha === especie && e.nome === nome);
+  const variacoes = VARIACOES_DOS_FIGURANTES[especie as EspecieFigurante];
+  const rosto: Retrato = pessoa ? { ...pessoa.rosto } : { especie, cor: escolher(rnd, variacoes.cores), marca: escolher(rnd, variacoes.marcas) };
+  const socioConhecido = [...SOCIOS, ...(n >= 6 ? [BETO_SOCIO] : [])].find(s => s.nome === nome);
+  let numero = socioConhecido?.numero ?? pessoa?.numero ?? '';
+  if (!numero) do numero = String(600 + Math.floor(rnd() * 380)).padStart(4, '0'); while (numeros.has(numero));
   numeros.add(numero);
   const id = `figurante-${i}`;
   const lista: LinhaDaLista[] = [];
-  const v: Visitante = { id, ficha: especie, nome, rosto, docs: [], espera: 'entra' };
+  const v: Visitante = { id, ficha: pessoa?.ficha ?? especie, nome, rosto, docs: [], espera: 'entra' };
   const docs: Documento[] = [];
 
   /** a foto "de outro": a mesma espécie com a cor ou a marca trocada */
@@ -790,7 +794,7 @@ function montarFigurante(
 
   if (papel === 'socio') {
     const c: Carteirinha = { tipo: 'carteirinha', nome, numero, validade: VALIDA, foto: { ...rosto }, clube: NOME_DO_CLUBE };
-    lista.push({ nome, numero });
+    if (!socioConhecido) lista.push({ nome, numero });
     if (defeito === 'vencida') c.validade = VENCIDA;
     if (defeito === 'fotoDeOutro') c.foto = fotoDeOutro();
     if (defeito === 'foraDaLista') lista.length = 0;
@@ -817,7 +821,7 @@ function montarFigurante(
       v.sacola = [...new Set(sacola)];
     }
   } else if (papel === 'convidado') {
-    const socios = SOCIOS.filter((s) => !s.suspenso);
+    const socios = SOCIOS.filter((s) => !s.suspenso && s.nome !== nome);
     const anfitriao = defeito === 'socioSuspenso' ? escolher(rnd, SOCIOS.filter((s) => s.suspenso)) : escolher(rnd, socios);
     docs.push({
       tipo: 'convite', convidado: nome, socio: anfitriao.nome, numeroDoSocio: anfitriao.numero,
@@ -825,12 +829,12 @@ function montarFigurante(
     });
     if (defeito === 'convidadoTrocado') {
       // o nome que ele DIZ não é o do convite (o convite é de outro)
-      const outro = NOMES_DOS_FIGURANTES[especie].find((x) => x !== nome && !usados.has(x)) ?? `${nome} Júnior`;
+      const outro = (NOMES_DOS_FIGURANTES[especie as EspecieFigurante] ?? []).find((x) => x !== nome && !usados.has(x)) ?? `${nome} Júnior`;
       (docs[0] as { convidado: string }).convidado = outro;
     }
   } else {
     const empresas = ['Papita Delivery', 'Floricultura Primavera', 'Padaria Pão Quentinho', 'Lavanderia Bolha'];
-    const empresa = escolher(rnd, empresas);
+    const empresa = retorno?.entrega?.empresa ?? escolher(rnd, empresas);
     const destinos = ['Mania de Churrasco', 'Bar do Noel', 'Estufa da Josefina', 'Vestiário'];
     const itens: Record<string, string[]> = {
       'Papita Delivery': ['batata', 'refrigerante'], 'Floricultura Primavera': ['mudas', 'vasos'],
@@ -840,8 +844,9 @@ function montarFigurante(
     docs.push({
       tipo: 'ordem',
       empresa: defeito === 'empresaTrocada' ? escolher(rnd, empresas.filter((e) => e !== empresa)) : empresa,
-      destino: defeito === 'destinoInexistente' ? escolher(rnd, ['Sala de Boliche', 'Pista de Kart', 'Cinema do Clube']) : escolher(rnd, destinos),
-      itens: itens[empresa],
+      destino: defeito === 'destinoInexistente' ? escolher(rnd, ['Sala de Boliche', 'Pista de Kart', 'Cinema do Clube'])
+        : retorno?.entrega && DESTINOS_DO_CLUBE.includes(retorno.entrega.destino) ? retorno.entrega.destino : escolher(rnd, destinos),
+      itens: retorno?.entrega?.itens ?? itens[empresa],
     });
   }
   v.docs = docs;
@@ -877,21 +882,45 @@ export interface DiaMontado {
  * MONTA UM DIA: o roteiro (com os fatos da semana), os figurantes sorteados
  * pela semente e a prancheta de hoje. A mesma semente dá o mesmo dia.
  */
-export function montarDia(n: number, semente: number, fatosDaSemana: ReadonlySet<Fato>): DiaMontado {
+export function montarDia(n: number, semente: number, fatosDaSemana: ReadonlySet<Fato>, historico: readonly EncontroDaPortaria[] = []): DiaMontado {
   const dia = diaPorNumero(n);
   if (!dia) throw new Error(`não existe o dia ${n}`);
   const rnd = sorteio(semente * 131 + n * 7919);
   const q: Quadro = { n, hoje: HOJE[n - 1], tem: (f) => fatosDaSemana.has(f) };
-  const usados = new Set<string>();
-  const especiesUsadas = new Map<EspecieFigurante, number>();
-  const numeros = new Set<string>(SOCIOS.map((s) => s.numero));
+  const encontros = ultimosEncontros(historico, n);
+  const roteiroDoDia = dia.roteiro.map(e => e.tipo === 'roteiro' ? { tipo: 'pronto' as const, visitante: e.montar(q) } : e);
+  const reservas: Record<string, Visitante> = {};
+  for (const [id, montar] of Object.entries(dia.reservas ?? {})) reservas[id] = montar(q);
+  const previstos = [...roteiroDoDia.flatMap(e => e.tipo === 'pronto' && e.visitante ? [e.visitante] : []), ...Object.values(reservas)];
+  const programados = new Set(previstos.map(identidadeDaPortaria));
+  const usados = new Set(previstos.map(v => v.nome));
+  const especiesUsadas = new Map<string, number>();
+  const numeros = new Set<string>([...SOCIOS.map(s => s.numero), ...encontros.flatMap(e => e.numero ? [e.numero] : [])]);
   const lista: LinhaDaLista[] = [...SOCIOS];
   if (n >= 6) lista.push(BETO_SOCIO);
 
   const fila: Visitante[] = [];
+  const cotas: Record<PapelDoFigurante, number> = { socio: 0, convidado: 0, entregador: 0 };
+  for (const e of roteiroDoDia) {
+    if (e.tipo === 'figurante') cotas[e.papel]++;
+    else if (e.visitante) {
+      const docs = e.visitante.docs;
+      if (docs.some(d => d.tipo === 'ordem' || d.tipo === 'cracha')) cotas.entregador++;
+      else if (docs.some(d => d.tipo === 'carteirinha')) cotas.socio++;
+      else if (docs.some(d => d.tipo === 'convite') && !e.visitante.querPiscina) cotas.convidado++;
+    }
+  }
+  const papelDeRetorno = (e: EncontroDaPortaria): PapelDoFigurante => e.papel === 'socio'
+    && !(ESPECIES_FIGURANTES as readonly string[]).includes(e.ficha) && !lista.some(s => s.nome === e.nome) ? 'convidado' : e.papel;
+  const retornos = encontros.filter(e => e.carimbo === 'hojeNao' && !programados.has(identidadeDaPortaria(e)))
+    .sort((a, b) => b.dia - a.dia);
   let i = 0;
   const comFigurante = (papel: PapelDoFigurante, defeito: DefeitoDoFigurante | null): void => {
-    const s = montarFigurante(rnd, n, i++, papel, defeito, usados, numeros, especiesUsadas);
+    const retorno = retornos.find(e => !usados.has(e.nome) && (papelDeRetorno(e) === papel || cotas[papel] > 1)
+      && (n >= 3 || papelDeRetorno(e) === 'socio') && (n >= 4 || papelDeRetorno(e) !== 'entregador'));
+    const papelNovo = retorno ? papelDeRetorno(retorno) : papel;
+    if (retorno && papelNovo !== papel) { cotas[papel]--; cotas[papelNovo]++; }
+    const s = montarFigurante(rnd, n, i++, papelNovo, retorno ? null : defeito, usados, numeros, especiesUsadas, retorno, encontros);
     fila.push(s.visitante);
     lista.push(...s.lista);
   };
@@ -900,9 +929,9 @@ export function montarDia(n: number, semente: number, fatosDaSemana: ReadonlySet
     // um terço com defeito (§13)
     return cabem.length && rnd() < 0.34 ? escolher(rnd, cabem) : null;
   };
-  for (const e of dia.roteiro) {
-    if (e.tipo === 'roteiro') {
-      const v = e.montar(q);
+  for (const e of roteiroDoDia) {
+    if (e.tipo === 'pronto') {
+      const v = e.visitante;
       if (v) fila.push(v);
     } else {
       comFigurante(e.papel, e.defeito === 'sorteio' ? sortearDefeito(e.papel) : e.defeito);
@@ -912,12 +941,12 @@ export function montarDia(n: number, semente: number, fatosDaSemana: ReadonlySet
   for (let k = 0; k < dia.figurantesExtras; k++) {
     const papel: PapelDoFigurante = n >= 4 && rnd() < 0.3 ? 'entregador' : n >= 3 && rnd() < 0.35 ? 'convidado' : 'socio';
     const antesDe = fila.length;
+    cotas[papel]++;
     comFigurante(papel, sortearDefeito(papel));
     const v = fila.pop()!;
     fila.splice(1 + Math.floor(rnd() * (antesDe - 1)), 0, v);
   }
-  const reservas: Record<string, Visitante> = {};
-  for (const [id, montar] of Object.entries(dia.reservas ?? {})) reservas[id] = montar(q);
+  for (const v of [...fila, ...Object.values(reservas)]) recordarChegada(v, encontros, n);
 
   const contexto: ContextoDoDia = {
     hoje: HOJE[n - 1],

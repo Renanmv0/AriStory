@@ -4,7 +4,7 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import { PALETTE as P } from '../palette';
 import { diaDaPortariaPedido, portariaNestaPagina } from '../eventos/portariaDoClube';
 import {
-  Expediente, FICHAS, NOME_DO_ITEM, PERGUNTA, carimboCerto, diferencas, falaDaSaida, fatosAntesDoDia, fichaDe, proibidosNaSacola, registrarODia, rotuloDaPista,
+  Expediente, FICHAS, NOME_DO_ITEM, PERGUNTA, carimboCerto, diferencas, encontrosAntesDoDia, falaDaSaida, fatosAntesDoDia, fichaDe, proibidosNaSacola, registrarODia, rotuloDaPista,
   type Assunto, type Carimbo, type ItemDaSacola, type Pista, type Retrato, type Visitante,
 } from '../minigames/portaria';
 import type { EstadoDaMesa, VistaDaPortaria } from '../ui/mesaDaPortaria';
@@ -229,7 +229,7 @@ function montarAPortaria(w: WorldBuilder): void {
   const pressa = busca.has('depressa') ? 4 : 1;
   const n = diaDaPortariaPedido(g, busca);
   const semente = Number(busca.get('semente') ?? Math.floor(Math.random() * 1e6));
-  const ex = new Expediente(n, semente, fatosAntesDoDia(g, n));
+  const ex = new Expediente(n, semente, fatosAntesDoDia(g, n), encontrosAntesDoDia(g, n));
   const painel = g.mesaDaPortaria();
   const sacola = new SacolaDaPortaria(); w.add(sacola.group);
   w.onUpdate(dt => sacola.update(dt * pressa));
@@ -591,7 +591,7 @@ function montarAPortaria(w: WorldBuilder): void {
       if (!j) return null;
       return { diferencas: diferencas(j.visitante, ex.contexto), carimbo: carimboCerto(j.visitante, ex.contexto), proibidos: proibidosNaSacola(j.visitante, ex.contexto), id: j.visitante.id };
     },
-    expedienteLimpo: () => new Expediente(n, semente, fatosAntesDoDia(g, n)),
+    expedienteLimpo: () => new Expediente(n, semente, fatosAntesDoDia(g, n), encontrosAntesDoDia(g, n)),
     diferencas, carimboCerto, proibidosNaSacola,
   };
 }
