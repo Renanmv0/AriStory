@@ -89,11 +89,19 @@ const esqueleto = () =>
  * Amplitude e cadência da caminhada, medidas no corpo.
  *
  * Anda para a frente segurando W e amostra a rotação da perna e do braço. Em
- * headless o jogo roda a ~7 fps com o dt travado, então a cadência sai em
- * ciclos por segundo de RELÓGIO — o que importa é ela ser a mesma nas duas
- * medições, não o valor absoluto.
+ * headless o desenho é suspenso durante a medida para amostrar a passada
+ * inteira. A cadência sai em ciclos por segundo de RELÓGIO — o que importa
+ * é ela ser a mesma nas duas medições, não o valor absoluto.
  */
 const andar = async () => {
+  // A amostragem precisa enxergar ciclos inteiros. Com desenho por software,
+  // cinco segundos às vezes contêm menos de uma passada e perdem o pico.
+  // Só suspende o desenho durante a medida; mundo, animação e teclado seguem.
+  await page.evaluate(() => {
+    const r = window.jogo.renderer;
+    window.desenhoDaMedida = r.render.bind(r);
+    r.render = (s, c) => { s.updateMatrixWorld(); c.updateMatrixWorld(); };
+  });
   await page.keyboard.down('KeyW');
   const dados = await page.evaluate(
     () =>
@@ -113,6 +121,7 @@ const andar = async () => {
       }),
   );
   await page.keyboard.up('KeyW');
+  await page.evaluate(() => { window.jogo.renderer.render = window.desenhoDaMedida; });
   await page.waitForTimeout(400);
 
   const medir = (vals) => {
