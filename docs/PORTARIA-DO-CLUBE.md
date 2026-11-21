@@ -9,6 +9,17 @@
 
 ## COMECE AQUI
 
+**Primeira versão liberada no link oficial em 2026-11-21, a pedido do Renan.**
+Depois da última noite do Mania, conversar com a Gina na guarita reformada
+libera os seis primeiros dias. Inclui regras cumulativas, bancada 3D,
+aberturas, retornos dos visitantes, revisão dos erros, roupas de três estrelas
+e agradecimento da primeira semana. A saída pede confirmação e pausa o relógio.
+`PORTARIA_NO_JOGO = true`; `?portaria` permanece com save de teste separado.
+O estado atual e os comandos de validação estão em `PORTARIA-BANCADA.md`.
+
+As etapas abaixo registram a construção e o planejamento; os prêmios da
+semana (selo/plaquinha) e as memórias restantes continuam para atualizações futuras.
+
 **Feito (2026-11-20), a etapa 0: a guarita nova e o desbloqueio.**
 
 - **A guarita nova** (`src/world/guaritaDoClube.ts`, `GuaritaDoClube`, medidas em
@@ -46,7 +57,7 @@
   aviso "Minigame desbloqueado". Quem ainda não conhecia a Gina ouve a
   apresentação de sempre antes. Depois disso, a conversa volta a ser a de
   sempre. **As falas são provisórias** (o Renan ainda não escreveu as dele).
-- **A chave**: `PORTARIA_NO_JOGO = false`. Desligada, a conversa com a Gina é a
+- **A chave (na etapa inicial, antes do lançamento)**: `PORTARIA_NO_JOGO = false`. Desligada, a conversa com a Gina é a
   de sempre e o save não ganha flag — para a "primeira vez" do Ari não ser
   gasta antes de o minigame existir. `?portaria` liga para testar, num save à parte
   (`aristory.save.v1.portaria`, cópia do de verdade);

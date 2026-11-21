@@ -5,11 +5,10 @@
  *
  * Esta é só a primeira etapa: a guarita foi reformada (`world/guaritaDoClube.ts`),
  * e a PRIMEIRA conversa com a Gina na guarita nova desbloqueia o minigame —
- * ela mostra a reforma e convida a dupla para trabalhar com ela. Como o
- * minigame ainda não existe, o desbloqueio fica atrás de uma CHAVE (o molde do
- * Bebito Mobile): sem ela, a conversa com a Gina é a de sempre e o save não
- * ganha flag nenhuma — assim a "primeira vez" do Ari não é gasta antes de
- * haver o que jogar. `?portaria` liga na marra, para testar, num SAVE À PARTE
+ * ela mostra a reforma e convida a dupla para trabalhar com ela. A primeira
+ * versão foi liberada pelo Renan em 2026-11-21. A CHAVE continua permitindo
+ * desligar o minigame; `?semPortaria` força a conversa anterior. `?portaria`
+ * continua sendo o acesso de teste, num SAVE À PARTE
  * (`aristory.save.v1.portaria`, que nasce como cópia do de verdade).
  *
  * A GUARITA NOVA SÓ APARECE DEPOIS DO MANIA (pedido do Renan, 2026-11-20: "só
@@ -38,8 +37,8 @@ export function guaritaNovaNoClube(g: GameAPI): boolean {
   return g.stat(CHAVE.vezes(ULTIMA_NOITE)) > 0;
 }
 
-/** a chave: `true` quando o Renan mandar ligar o desbloqueio no link principal */
-export const PORTARIA_NO_JOGO = false;
+/** Primeira versão liberada pelo Renan em 2026-11-21; ?portaria mantém o save de teste. */
+export const PORTARIA_NO_JOGO = true;
 
 /** a flag do save: o minigame da portaria está desbloqueado */
 export const PORTARIA_LIBERADA = 'portaria:liberada';

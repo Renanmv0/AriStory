@@ -175,15 +175,40 @@ portaria. O marco é fixo nos dias 1–6, para continuar correto quando a escala
 ganhar dias novos. Notas, prêmios e histórico dos visitantes são preservados.
 
 Preview direto: `?portaria&cena=portaria&dia=6&homenagem`. Esse atalho mostra a
-cena sem concluir dias ou consumir a flag da homenagem. A portaria permanece
-no modo de teste. Selo, plaquinha e memória da semana continuam planejados.
+cena sem concluir dias ou consumir a flag da homenagem. O atalho usa o save
+separado de teste. Selo, plaquinha e memória da semana continuam planejados.
+
+## Sair no meio de um expediente
+
+A porta no alto da tela abre uma confirmação: **Continuar jogando** é a
+escolha inicial; **Sair do expediente** abandona só o dia atual. Escape
+também continua a partida. Enquanto a pergunta está aberta, o relógio para
+e os cliques da bancada ficam bloqueados. Cancelar mantém visitante,
+documentos, perguntas e decisões. Confirmar não paga nem grava o dia
+incompleto; as conquistas dos dias anteriores continuam guardadas.
+Depois que o fechamento registra o dia, a saída fica bloqueada durante o
+recado final e o envelope; nessa etapa, o dia já foi salvo e deve ser fechado
+pelo botão do próprio envelope.
 
 ## Publicação e validação
 
-`PORTARIA_NO_JOGO` continua **false**. O acesso permanece por `?portaria`,
-com save separado; não se liga o minigame no fluxo normal do jogo.
+**Primeira versão publicada em 2026-11-21, com autorização do Renan.**
+`PORTARIA_NO_JOGO = true`: depois de concluir a última noite da escala do
+Mania, conversar com a Gina na guarita reformada apresenta e libera a
+portaria. Falar com ela novamente abre os dias disponíveis. O primeiro dia
+fica sem relógio; os outros preservam o tempo ampliado e as regras cumulativas.
+
+O fluxo normal usa o save principal existente. `?portaria` continua em um
+save separado, sem transferir progresso de testes; `?semPortaria` desliga o
+minigame para conferir a conversa anterior. A publicação não zera saves.
 
 - `npm run build`
+- `node scripts/portariaIntegracao.mjs /tmp/lancamento`: no preview local,
+  sem atalhos da portaria na URL, respeita o Mania, libera pela Gina, joga
+  um dia completo, preserva progresso/roupas anteriores, entrega o crachá,
+  recarrega, testa retornos de visitantes, abandona sem pagamento e confere
+  saves antigos e a confirmação em computador/celular. Usa fixtures
+  representativas; não é o save pessoal do aparelho do casal.
 - `node scripts/portaria.mjs`: regras e consequências sem navegador.
 - `node scripts/portariaMemoria.mjs`: persistência, replays, retornos e seis
   dias em 40 sementes, nas políticas de atender certo, barrar e deixar entrar.
