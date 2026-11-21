@@ -14,6 +14,7 @@ import { Gina } from '../entities/bichos/Gina';
 import { SacolaDaPortaria } from '../world/sacolaDaPortaria';
 import { alvosDaBancada } from '../eventos/portaria/alvosDaBancada';
 import { apresentacaoDoVisitante } from '../eventos/portaria/apresentacaoDoVisitante';
+import { AberturaDaGina } from '../eventos/portaria/aberturaDaGina';
 import { MESA_DA_PORTARIA, MesaDaPortaria } from '../world/mesaDaPortaria';
 import { alturaDoElevador, ElevadorDoBalcao, modeloDoVisitante, type ModeloDeVisitante } from '../world/visitantesDaPortaria';
 import { arvore } from '../world/arvores';
@@ -43,9 +44,6 @@ import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeCh
 const OLHO = { de: new THREE.Vector3(0, 1.7, 0.44), para: new THREE.Vector3(1.3, 0.95, 2.9), lente: 62 };
 /** no celular em pé a mesa de papel cobre a metade de baixo: o olho sobe para o guichê */
 const OLHO_EM_PE = { de: new THREE.Vector3(0, 1.7, 0.44), para: new THREE.Vector3(0, 0.92, 2.9), lente: 74 };
-
-/** a tomada de abertura do dia: de fora do guichê, um tico à esquerda da tela, os três lá dentro */
-const ABERTURA = { de: new THREE.Vector3(1.1, 2.05, 4.9), para: new THREE.Vector3(-0.15, 1.5, 0.6), lente: 44, lenteEmPe: 70 };
 
 /** o muro e o portão do clube, no quadro da guarita (no clube: `x = −25`, `z = 7`) */
 const PORTAO = { x: -5.65, z: 5.05, vao: 7 };
@@ -153,8 +151,9 @@ function montarAPortaria(w: WorldBuilder): void {
   let cameraPronta = false;
   let lenteAtual = 66;
   const reduzirMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let focoDeAbertura: { para: THREE.Vector3; lente: number } | null = null;
   const olhar = (dt = 1): void => {
-    const o = vista === 'visitante'
+    const o = focoDeAbertura ? { de: OLHO.de, ...focoDeAbertura } : vista === 'visitante'
       ? { de: new THREE.Vector3(0, 1.72, .45), para: new THREE.Vector3(0, 1.74, 2.72), lente: emPe() ? (temTurmaNaJanela ? 90 : 52) : (temTurmaNaJanela ? 60 : 42) }
       : vista === 'bancada'
         ? { de: new THREE.Vector3(0, emPe() ? 2.8 : 1.85, emPe() ? .5 : .2), para: new THREE.Vector3(0, emPe() ? 1.02 : 1.1, emPe() ? 1.45 : 1.65), lente: emPe() ? 90 : 66 }
@@ -165,28 +164,15 @@ function montarAPortaria(w: WorldBuilder): void {
     g.setCameraOmbro(olhoAtual, alvoAtual, Number(busca.get('lente') ?? lenteAtual));
   };
   // (no quadro da montagem o motor ainda põe a isométrica de chegada: o olho entra no primeiro quadro da cena)
-  let eraEmPe: boolean | null = null;
-  /** a primeira pessoa liga depois da tomada de abertura (o bloco de medida liga na hora) */
-  let primeiraPessoa = !!busca.get('bloco');
+  let sentados = false;
   w.onUpdate((dt) => {
-    if (eraEmPe === null) {
+    if (!sentados) {
       sentarOsDois();
-      if (!primeiraPessoa) {
-        // A TOMADA DE ABERTURA: de fora, pelo guichê, os três lá dentro — a Gina, quem joga e o parceiro
-        g.mostrarCabeca('jogador', true);
-        g.setCameraOmbro(ABERTURA.de, ABERTURA.para, emPe() ? ABERTURA.lenteEmPe : ABERTURA.lente);
-      }
+      g.setPlayerVisible(false);
+      sentados = true;
     }
-    if (primeiraPessoa) { eraEmPe = emPe(); olhar(dt); }
-    else if (eraEmPe === null) eraEmPe = emPe();
+    olhar(dt);
   });
-  const entrarNaPrimeiraPessoa = (): void => {
-    primeiraPessoa = true;
-    eraEmPe = null;
-    g.mostrarCabeca('jogador', false);
-    g.setPlayerVisible(false);
-    cameraPronta = false; olhar();
-  };
   w.aoDesmontar(() => {
     g.setCameraOmbro(null);
     g.mostrarCabeca('jogador', true);
@@ -552,7 +538,7 @@ function montarAPortaria(w: WorldBuilder): void {
   });
   w.onUpdate(() => alvos.visitante(noElevador?.group ?? null));
 
-  // ---- o começo do dia: a mesa abre, a Gina dá o recado e a fila se forma
+  // ---- o começo do dia: a Gina demonstra a novidade do lado de dentro da guarita
   const abrirAMesa = (): void => painel.abrir({
     vistaMudou: v => { vista = v; },
     sacolaMudou: aberta => { if (aberta) void abrirSacola(); },
@@ -570,13 +556,13 @@ function montarAPortaria(w: WorldBuilder): void {
   });
   w.aoDesmontar(() => painel.fechar());
   andarAFila(true);
+  const abertura = new AberturaDaGina(n, ex.contexto.hoje, mesa, gina,
+    (para, lente = 68) => { focoDeAbertura = para ? { para, lente } : null; }, qual => g.som(qual));
+  w.onUpdate(dt => abertura.update(dt));
+  w.aoDesmontar(() => abertura.fechar());
   void (async () => {
-    // o recado da Gina na tomada de abertura, com a caixa de fala de sempre; depois, a mesa e a primeira pessoa
-    await g.wait(0.8);
-    g.som('apito');
-    await g.say([`Bom dia, porteiros! Dia ${ex.dia.numero}: ${ex.dia.nome}.`, ex.dia.novidade], 'Gina');
-    await g.say(['Quando estiverem prontos, é só tocar a campainha.'], 'Gina');
-    entrarNaPrimeiraPessoa();
+    await abertura.pronta;
+    if (!ativa) return;
     abrirAMesa();
     desenhar();
     comecou = true;
@@ -585,7 +571,7 @@ function montarAPortaria(w: WorldBuilder): void {
   })();
   // o que o teste (`scripts/portariaCena.mjs`) lê: o expediente, a conferência e uma cópia limpa para jogar sem cena
   (window as unknown as { portaria?: unknown }).portaria = {
-    ex, mesa, painel, elevador, modelos, sacola, alvos, n, semente, ocupado: () => ocupado, comecou: () => comecou, acabou: () => acabou,
+    ex, mesa, painel, elevador, modelos, sacola, alvos, abertura, n, semente, ocupado: () => ocupado, comecou: () => comecou, acabou: () => acabou,
     conferir: () => {
       const j = ex.janela;
       if (!j) return null;

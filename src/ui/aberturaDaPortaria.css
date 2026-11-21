@@ -1,0 +1,43 @@
+.pt-abertura {
+  position: fixed; inset: 0; z-index: 12; pointer-events: auto;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: linear-gradient(0deg, #18372b66, transparent 38%);
+  color: #35453c;
+}
+.pt-abertura header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.pt-ab-dia, .pt-ab-pular { border-radius: 22px; background: #fff9ecf5; box-shadow: 0 3px 12px #18372b22; }
+.pt-ab-dia { padding: 11px 17px; font-weight: 800; }
+.pt-abertura button { font: inherit; cursor: pointer; touch-action: manipulation; min-height: 44px; }
+.pt-ab-pular { border: 1px solid #dfd5b6; color: #57675b; padding: 10px 16px; font-size: 14px !important; }
+.pt-ab-cartao {
+  width: min(590px, 100%); align-self: center; border: 1px solid #e1d5b2;
+  border-radius: 23px; padding: 17px 23px 15px; background: #fffaf0fa;
+  box-shadow: 0 8px 28px #18372b30;
+}
+.pt-ab-etiqueta { display: flex; justify-content: space-between; color: #46765d; font-size: 14px; font-weight: 800; }
+.pt-ab-etiqueta span { color: #8a816a; font-size: 12px; }
+.pt-ab-cartao h2 { margin: 7px 0 5px; font-size: 20px; line-height: 1.2; }
+.pt-ab-fala p { margin: 8px 0 13px; line-height: 1.45; font-size: 16px; }
+.pt-ab-cartao footer { display: flex; justify-content: flex-end; }
+.pt-ab-proximo { border: 0; background: #397659; color: #fffaf0; border-radius: 15px; padding: 10px 18px; font-weight: 800 !important; }
+.pt-ab-proximo:disabled { opacity: .55; cursor: wait; }
+.pt-abertura button:focus-visible { outline: 3px solid #e6b951; outline-offset: 3px; }
+.pt-abertura[data-exemplo="sim"] .pt-ab-dia::after { content: ' · Exemplo'; color: #88753c; }
+body.portaria-em-abertura .hints, body.portaria-em-abertura .prompt,
+body.portaria-em-abertura .hud, body.portaria-em-abertura .side-actions,
+body.portaria-em-abertura .menu-btn { display: none !important; }
+body.portaria-em-abertura #ui { visibility: hidden; }
+@media (max-width: 600px) {
+  .pt-abertura { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+  .pt-ab-dia { padding: 10px 12px; font-size: 12px; }
+  .pt-ab-pular { padding: 8px 11px; font-size: 12px !important; }
+  .pt-ab-cartao { padding: 14px 17px 12px; border-radius: 20px; }
+  .pt-ab-cartao h2 { font-size: 19px; }
+  .pt-ab-fala p { font-size: 15px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .pt-ab-cartao { align-self: flex-start; max-width: 46%; padding: 10px 16px; }
+  .pt-ab-cartao h2 { font-size: 17px; }
+  .pt-ab-fala p { font-size: 13px; margin: 5px 0; }
+}
