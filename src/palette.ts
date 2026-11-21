@@ -46,6 +46,16 @@ export const PALETTE = {
   fabricBlue: 0x4a7fe0,
   mesaVerde: 0x2f6f57,
 
+  // Prêmios da Gina: sarja verde, creme, latão e um carinho rosa nos detalhes.
+  portariaVerde: 0x386e59,
+  portariaVerdeEscuro: 0x294d40,
+  portariaMenta: 0xa3c8ac,
+  portariaCreme: 0xfff0d3,
+  portariaOuro: 0xe8bd62,
+  portariaOuroSombra: 0xa87538,
+  portariaRosa: 0xeea9b5,
+  portariaRefletivo: 0xe7efc8,
+
   // interiores
   cortica: 0xd7a76a,
   corticaEscura: 0xb9884f,

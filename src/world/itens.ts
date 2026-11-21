@@ -55,6 +55,10 @@ import {
 } from './fantasias';
 import { coroaDeRainha, coroaDeRei } from './coroasDoConcurso';
 import {
+  crachaDaPortaria, apitoDaPortaria, quepeDaPortaria, coleteDaPortaria, pulseiraVipDaPortaria,
+  camisaDaPortaria, mangaDaPortaria, calcaDaPortaria, cosDaPortaria, tenisDaPortaria,
+} from './roupasDaPortaria';
+import {
   chapeuDeAbobora, macacaoDeAbobora, mangaDeAbobora, meiaCalcaVerde, botinhaVerde, luvinhasVerdes, golaDeFolhas,
   tricornio, camisaDePirata, mangaDePirata, calcaBufante, botasDePirata, luvasDePirata, papagaio,
   orelhasDeGato, moletomDeGato, mangaDeGato, leggingPreta, patinhasDeGato, luvasDePatinha, raboDeGato,
@@ -393,6 +397,59 @@ export const ITENS = {
     // O avental vai por cima e não mexe no que está embaixo
     nota: 'da Josefina, pelas vinte levas',
     extra: aventalDaJosefina,
+  },
+  /*
+   * Presentes da Gina pelas três estrelas de cada dia. São roupas permanentes
+   * dos dois, sem preço; a entrega usa `PREMIOS_DA_PORTARIA` lá embaixo.
+   */
+  crachaDaPortaria: {
+    id: 'cracha-da-portaria', nome: 'Crachá da portaria', icone: '🪪',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', amostra: P.portariaCreme,
+    nota: 'da Gina · dia 1 com três estrelas · cordão costurado, girafinha e três estrelinhas',
+    extra: crachaDaPortaria,
+  },
+  apitoDaPortaria: {
+    id: 'apito-da-portaria', nome: 'Apito dourado da Gina', icone: '📯',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', amostra: P.portariaOuro,
+    nota: 'da Gina · dia 2 com três estrelas · latão polido, cordão menta e coraçãozinho',
+    extra: apitoDaPortaria,
+  },
+  quepeDaPortaria: {
+    id: 'quepe-da-portaria', nome: 'Quepe da portaria', icone: '🧢',
+    tipo: 'vestivel', slot: 'cabeca', amostra: P.portariaVerde,
+    nota: 'da Gina · dia 3 com três estrelas · copa creme, aba verde e escudo esmaltado',
+    extra: quepeDaPortaria,
+  },
+  coleteDaPortaria: {
+    id: 'colete-da-portaria', nome: 'Colete refletivo da portaria', icone: '🦺',
+    tipo: 'vestivel', slot: 'tronco', cor: P.portariaCreme, corDetalhe: P.portariaCreme,
+    nota: 'da Gina · dia 4 com três estrelas · sarja verde, bolsos e faixas refletivas',
+    extra: coleteDaPortaria,
+  },
+  pulseiraVipDaPortaria: {
+    id: 'pulseira-vip-da-portaria', nome: 'Pulseira VIP do clube', icone: '🎟️',
+    tipo: 'vestivel', slot: 'maos', amostra: P.portariaMenta, praia: true,
+    nota: 'da Gina · dia 5 com três estrelas · no pulso esquerdo, com estrelinhas e coração',
+    extra: pulseiraVipDaPortaria,
+  },
+  camisaDaPortaria: {
+    id: 'camisa-da-portaria', nome: 'Camisa do uniforme da portaria', icone: '👔',
+    tipo: 'vestivel', slot: 'tronco', cor: P.portariaVerde, corDetalhe: P.portariaCreme,
+    nota: 'da Gina · dia 6 com três estrelas · gola creme, botões dourados e bordado nas costas',
+    extra: camisaDaPortaria, extraBraco: mangaDaPortaria,
+  },
+  calcaDaPortaria: {
+    id: 'calca-da-portaria', nome: 'Calça do uniforme da portaria', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas', cor: P.portariaVerdeEscuro, corDetalhe: P.portariaMenta,
+    nota: 'da Gina · dia 6 com três estrelas · bolso lateral, filetes e barra dobrada',
+    extra: calcaDaPortaria, extraQuadril: cosDaPortaria,
+  },
+  tenisDaPortaria: {
+    id: 'tenis-da-portaria', nome: 'Tênis do uniforme da portaria', icone: '👟',
+    tipo: 'vestivel', slot: 'pes', cor: P.portariaCreme, corDetalhe: P.portariaVerde,
+    substituiPe: true,
+    nota: 'da Gina · dia 6 com três estrelas · sola em camadas, cadarço menta e forrinho rosa',
+    extra: tenisDaPortaria,
   },
   /*
    * OS PRÊMIOS DA TEMPORADA DE TURNOS DO MANIA (`PREMIOS_DO_MANIA`, lá
@@ -2193,6 +2250,16 @@ export const PREMIOS_DO_MANIA: Readonly<Record<number, readonly ItemDef[]>> = {
   4: [ITENS.coleteDeGarcom],
   5: [ITENS.bandanaDeChurrasqueiro],
   6: [ITENS.dolmaDeCozinheiro, ITENS.chapeuDeCozinheiro],
+};
+
+/** Os três pontos de cada dia dão peças permanentes para os DOIS guarda-roupas. */
+export const PREMIOS_DA_PORTARIA: Readonly<Record<number, readonly ItemDef[]>> = {
+  1: [ITENS.crachaDaPortaria],
+  2: [ITENS.apitoDaPortaria],
+  3: [ITENS.quepeDaPortaria],
+  4: [ITENS.coleteDaPortaria],
+  5: [ITENS.pulseiraVipDaPortaria],
+  6: [ITENS.camisaDaPortaria, ITENS.calcaDaPortaria, ITENS.tenisDaPortaria],
 };
 
 /**

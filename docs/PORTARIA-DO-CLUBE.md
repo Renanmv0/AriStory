@@ -151,7 +151,7 @@ mais parecidos com os personagens mesmo"):
   da mesa e sem perder a rolagem do manual. `CEL=1` no celular em pé; `DIA=n` escolhe o dia.
 
 **Falta**: o resto da parte 2 (as outras quatro ANIMAÇÕES de cada ficha — a chegada, o entra, o barrado e o
-apontado —, o disfarce do Jean-Luc no corpo, o grupo no elevador, a Gina apertando o botão do elevador) e a parte 3 (os prêmios das três estrelas, a memória, os
+apontado —, o disfarce do Jean-Luc no corpo, o grupo no elevador, a Gina apertando o botão do elevador) e a parte 3 (as memórias restantes, os prêmios da semana, os
 sons próprios — o carimbo, a campainha, o elevador —, as falas do Renan). O DESENHO está abaixo, com as
 decisões do Renan de 2026-11-20 já incorporadas (§1).
 
@@ -605,10 +605,12 @@ acessório), o jeito vem com a espécie.
 ## §12 Prêmios
 
 - **Reais** todo dia, no envelope (a carteira do casal).
-- **Três estrelas em cada dia**, uma peça para os dois: o crachá da portaria
+- **Três estrelas em cada dia**, presentes para os dois, **implementados**: o crachá da portaria
   (1), o apito dourado (2), o quepe de porteiro (3), o colete refletivo (4), a
-  pulseira VIP (5) e o uniforme completo (6).
-- **A semana terminada**: o selo "Equipe do clube" no Bebito (a vaga do
+  pulseira VIP (5) e o uniforme completo (6, camisa + calça + tênis).
+  A Gina apresenta uma prova 3D; as peças ficam nos dois guarda-roupas,
+  inclusive para melhores notas antigas. Ver `PORTARIA-BANCADA.md`.
+- **A semana terminada (planejado)**: o selo "Equipe do clube" no Bebito (a vaga do
   para-brisa já existe) e a plaquinha de "Porteiros do mês" na guarita.
 - **Memórias** nas histórias: o primeiro dia, a semana inteira, e o disfarce
   do Jean-Luc.

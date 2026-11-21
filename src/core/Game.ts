@@ -37,7 +37,7 @@ import {
   type Vaga,
 } from './types';
 import {
-  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PECAS_DE_SEMPRE, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, UNIFORMES_DA_ESCOLA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
+  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PECAS_DE_SEMPRE, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, PREMIOS_DA_PORTARIA, UNIFORMES_DA_ESCOLA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
 } from '../world/itens';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -1531,6 +1531,11 @@ export class Game implements GameAPI {
    * espelho do mezanino da Estella, que abrem o mesmo painel.
    */
   private reporPremios(): void {
+    // Quem já tinha três estrelas antes dos presentes ganha as peças ao abrir qualquer armário.
+    for (const [dia, pecas] of Object.entries(PREMIOS_DA_PORTARIA)) {
+      if (this.save.stat(`portaria:dia:${dia}:estrelas`) < 3) continue;
+      for (const p of pecas) this.save.registrarPremio(p.id);
+    }
     // O prêmio de lição da apostila vale para quem já tinha concluído a lição
     // antes de ele existir: a lição com estrela conta como prêmio entregue
     for (const [licao, pecas] of Object.entries(PREMIOS_DA_APOSTILA)) {

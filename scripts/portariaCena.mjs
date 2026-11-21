@@ -95,6 +95,7 @@ if (!SO || SO === 'dia') {
   ok(await page.isVisible('.portaria.show .pt-painel'), 'o painel pode abrir para a leitura');
 
   const fecharFalas = async () => {
+    if (await page.locator('.pg-continuar').isVisible()) await page.locator('.pg-continuar').click();
     for (let i = 0; i < 30; i++) {
       if (!(await page.evaluate(() => window.portaria.painel.falando))) return;
       await page.click('.pt-balao');
@@ -251,6 +252,13 @@ if (!SO || SO === 'dia') {
   });
   ok(JSON.stringify(daCena) === JSON.stringify(limpo), `o envelope da cena é o do expediente sem cena (${JSON.stringify(daCena)} × ${JSON.stringify(limpo)})`);
   ok(daCena.estrelas === 3, `jogando certo, três estrelas (${daCena.estrelas})`);
+  const premio = await page.evaluate(n => {
+    const ids = n === 6 ? ['camisa-da-portaria', 'calca-da-portaria', 'tenis-da-portaria']
+      : ['cracha-da-portaria', 'apito-da-portaria', 'quepe-da-portaria', 'colete-da-portaria', 'pulseira-vip-da-portaria'].slice(n - 1, n);
+    return window.jogo.flag(`portaria:premio:dia:${n}`) && ['ari', 'renan'].every(quem =>
+      ids.every(id => window.jogo.wardrobeItems(quem).some(p => p.id === id)));
+  }, DIA);
+  ok(premio, 'o prêmio das três estrelas foi entregue e salvo para os dois');
   const peso = await page.evaluate(() => window.jogo.renderer.info.render);
   console.log(`  peso da primeira pessoa no fim: ${peso.calls} desenhos, ${peso.triangles} triângulos`);
   await page.click('[data-env="ok"]');
