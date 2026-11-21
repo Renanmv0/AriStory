@@ -15,6 +15,8 @@ import { SacolaDaPortaria } from '../world/sacolaDaPortaria';
 import { alvosDaBancada } from '../eventos/portaria/alvosDaBancada';
 import { apresentacaoDoVisitante } from '../eventos/portaria/apresentacaoDoVisitante';
 import { AberturaDaGina } from '../eventos/portaria/aberturaDaGina';
+import { concederPremiosDaGina } from '../eventos/portaria/premiosDaGina';
+import { PresenteDaGina } from '../ui/presenteDaGina';
 import { MESA_DA_PORTARIA, MesaDaPortaria } from '../world/mesaDaPortaria';
 import { alturaDoElevador, ElevadorDoBalcao, modeloDoVisitante, type ModeloDeVisitante } from '../world/visitantesDaPortaria';
 import { arvore } from '../world/arvores';
@@ -220,6 +222,15 @@ function montarAPortaria(w: WorldBuilder): void {
   const sacola = new SacolaDaPortaria(); w.add(sacola.group);
   w.onUpdate(dt => sacola.update(dt * pressa));
   let ativa = true;
+  let presente: PresenteDaGina | null = null;
+  const mostrarPresentes = async (dias: readonly number[]): Promise<void> => {
+    if (!dias.length || !ativa) return;
+    presente = new PresenteDaGina(dias, n);
+    await presente.pronta;
+    presente = null;
+  };
+  w.onUpdate(dt => presente?.update(dt));
+  w.aoDesmontar(() => presente?.fechar());
   w.aoDesmontar(() => { ativa = false; sacola.dispose(); });
   mesa.mostrarLista(ex.contexto.lista);
   mesa.mostrarHoje(ex.contexto.hoje);
@@ -477,8 +488,11 @@ function montarAPortaria(w: WorldBuilder): void {
     const fim = ex.terminar();
     const reg = registrarODia(g, n, fim);
     if (fim.total > 0) g.ganhar(fim.total);
+    const novosPremios = concederPremiosDaGina(g);
     desenhar();
     await painel.falar('Gina', fim.falaDaGina, '🦒');
+    await mostrarPresentes(novosPremios);
+    if (!ativa) return;
     await painel.envelope(fim, { abriu: reg.abriu, recorde: reg.recorde });
     acabou = true;
     voltarAoClube();
@@ -563,6 +577,8 @@ function montarAPortaria(w: WorldBuilder): void {
   void (async () => {
     await abertura.pronta;
     if (!ativa) return;
+    await mostrarPresentes(concederPremiosDaGina(g));
+    if (!ativa) return;
     abrirAMesa();
     desenhar();
     comecou = true;
@@ -571,7 +587,7 @@ function montarAPortaria(w: WorldBuilder): void {
   })();
   // o que o teste (`scripts/portariaCena.mjs`) lê: o expediente, a conferência e uma cópia limpa para jogar sem cena
   (window as unknown as { portaria?: unknown }).portaria = {
-    ex, mesa, painel, elevador, modelos, sacola, alvos, abertura, n, semente, ocupado: () => ocupado, comecou: () => comecou, acabou: () => acabou,
+    ex, mesa, painel, elevador, modelos, sacola, alvos, abertura, premiosDaGina: () => presente, n, semente, ocupado: () => ocupado, comecou: () => comecou, acabou: () => acabou,
     conferir: () => {
       const j = ex.janela;
       if (!j) return null;

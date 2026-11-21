@@ -121,6 +121,37 @@ conferência possível, sem afirmar que a dupla ouviu a resposta.
 Sem erros, o recado elogia somente os atendimentos feitos. Sem atendimentos,
 não inventa um acerto ou um caso para revisar.
 
+## Presentes pelas três estrelas
+
+Cada dia tem um presente de roupa permanente para **Ari e Renan**:
+
+| Dia | Presente | Acabamento |
+| --- | --- | --- |
+| 1 | Crachá da portaria | Cordão costurado, moldura dourada, girafinha e coração |
+| 2 | Apito dourado | Cordão menta, tambor de latão e pingente de coração |
+| 3 | Quepe de porteiro | Copa creme, aba curva verde, escudo e botões de coração |
+| 4 | Colete refletivo | Gola creme, bolsos, faixas refletivas e bordado |
+| 5 | Pulseira VIP | Três estrelinhas douradas, contas e coração no pulso esquerdo |
+| 6 | Uniforme completo | Camisa, calça com filetes e tênis de sola em camadas; três peças por pessoa |
+
+A Gina apresenta os presentes depois do seu recado de fim do dia e antes do
+envelope. A prova 3D permite alternar entre os dois, girar e aproximar o
+detalhe. O uniforme tem girafinha no peito, gola e mangas creme, botões
+dourados e três estrelas com um coração nas costas.
+
+As peças vão diretamente para os dois guarda-roupas, sem vestir automaticamente
+nem ocupar a mochila. Crachá e apito são alternativas na vaga de acessório;
+colete e camisa, na de tronco. A pulseira também pode ser usada na piscina.
+As cores dos prêmios não entram no tingimento.
+
+A entrega usa a **melhor nota salva** e é registrada antes da apresentação.
+Quem já tinha três estrelas recebe ao voltar à guarita, sem precisar refazer
+o dia. Abrir um guarda-roupa também repõe essas peças para marcas antigas;
+a apresentação da Gina continua disponível uma vez. Recarregar não perde
+nem duplica presentes. O uniforme completo acrescenta uma entrada no diário.
+
+O selo do Bebito e a placa da semana inteira continuam como próximos passos.
+
 ## Publicação e validação
 
 `PORTARIA_NO_JOGO` continua **false**. O acesso permanece por `?portaria`,
@@ -132,6 +163,13 @@ com save separado; não se liga o minigame no fluxo normal do jogo.
   dias em 40 sementes, nas políticas de atender certo, barrar e deixar entrar.
 - `node scripts/portariaRevisao.mjs`: explicações dos erros dos seis dias,
   identidade, perguntas não feitas e casos que não geram erro.
+- `node scripts/portariaPremios.mjs`: seis presentes, nota mínima, entrega
+  para os dois, peças cosméticas, marcas antigas e entrega única.
+- `node scripts/portariaPremiosCena.mjs /tmp/premio`: prova dos seis modelos
+  nos dois personagens, frente/costas/detalhe, celular, toque cancelado,
+  persistência e ausência de prêmio abaixo de três estrelas.
+- `node scripts/portariaPremiosRoupas.mjs /tmp/premios-roupas`: guarda-roupa
+  real, pais das peças no rig, caminhada, calças sentadas no banco e reload.
 - `node scripts/portariaRevisaoCena.mjs /tmp/revisao`: erros pela interface,
   leitura do envelope em computador/celular, valores e estados sem revisão.
 - `node scripts/portariaAbertura.mjs /tmp/abertura`: os seis recados,

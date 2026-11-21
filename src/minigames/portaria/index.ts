@@ -10,3 +10,4 @@ export * from './consequencias';
 export * from './campos';
 export * from './expediente';
 export * from './memoria';
+export * from './premios';
