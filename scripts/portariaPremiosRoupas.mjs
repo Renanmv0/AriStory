@@ -12,12 +12,12 @@ async function vestir(ids){await p.evaluate(ids=>{const g=window.jogo;for(const 
 const roupas=['quepe-da-portaria','camisa-da-portaria','calca-da-portaria','tenis-da-portaria','pulseira-vip-da-portaria','apito-da-portaria'];
 try{
  await p.addInitScript(()=>{if(!sessionStorage.getItem('fixture')){const stats={};for(let n=1;n<=6;n++)stats[`portaria:dia:${n}:estrelas`]=3;localStorage.setItem('aristory.save.v1.portaria',JSON.stringify({version:1,stats,flags:{},memories:[]}));sessionStorage.setItem('fixture','1');}});
- await p.goto(BASE+'/?portaria&cena=villa-lobos&em=-4.2,15.6&olhar=0.7&semHalloween&semFundir',{waitUntil:'networkidle'});
+ await p.goto(BASE+'/?portaria&cena=villa-lobos&em=-4.2,15.6&olhar=0.7&semHalloween',{waitUntil:'networkidle'});
  await p.waitForFunction(()=>window.jogo?.current&&!window.jogo.transitioning);await pausa();
  // Marca antiga de três estrelas recebe as peças também sem voltar à guarita.
  await p.evaluate(()=>window.jogo.abrirGuardaRoupa());
  for(const quem of ['ari','renan'])assert.equal(await p.evaluate(quem=>window.jogo.wardrobeItems(quem).filter(i=>i.id.endsWith('-da-portaria')).length,quem),8);
- await p.keyboard.press('Escape');await vestir(roupas);
+ await p.keyboard.press('Escape');await p.locator('.armario.show').waitFor({state:'hidden'});await vestir(roupas);
  const onde=await p.evaluate(()=>[window.jogo.player,window.jogo.parceiro].map(q=>{const r=q.rig,pais={};r.group.traverse(o=>{if(!o.userData.roupa)return;const t=o.parent===r.head?'cabeca':o.parent===r.body?'corpo':[r.armL,r.armR].includes(o.parent)?'braco':[r.legL,r.legR].includes(o.parent)?'perna':'outro';(pais[o.userData.roupa]??=[]).push(t);});return{pais,pes:r.pes.map(p=>p.visible),maos:window.jogo.handItems(r.spec.id).map(i=>i?.id)};}));
  for(const q of onde){for(const [id,pai]of Object.entries({'quepe-da-portaria':'cabeca','camisa-da-portaria':'corpo','calca-da-portaria':'perna','tenis-da-portaria':'perna','pulseira-vip-da-portaria':'braco','apito-da-portaria':'corpo'}))assert.ok(q.pais[id].includes(pai),id);assert.ok(q.pais['camisa-da-portaria'].includes('braco'));assert.ok(q.pais['calca-da-portaria'].includes('corpo'));assert.deepEqual(q.pes,[false,false]);assert.ok(!q.maos.some(id=>roupas.includes(id)));}
  console.log('✓ seis vagas, mangas, quadril, pés substituídos e mochila sem roupa');
@@ -33,7 +33,7 @@ try{
  await p.waitForFunction(()=>!window.jogo.player.rig.sitting);
  for(const quem of ['ari','renan']){
   if(await p.evaluate(()=>window.jogo.playerId())!==quem)await p.evaluate(()=>window.jogo.swapCharacters());
-  await p.evaluate(()=>window.jogo.abrirGuardaRoupa());await foto(`armario-${quem}`);await p.evaluate(()=>window.jogo.previa.girar(Math.PI));await p.waitForFunction(()=>Math.abs(window.jogo.previa.giro-window.jogo.previa.alvo)<.01);await foto(`armario-${quem}-costas`);await p.keyboard.press('Escape');
+  await p.evaluate(()=>window.jogo.abrirGuardaRoupa());await p.locator('.armario.show').waitFor();await foto(`armario-${quem}`);await p.evaluate(()=>window.jogo.previa.girar(Math.PI));await p.waitForFunction(()=>Math.abs(window.jogo.previa.giro-window.jogo.previa.alvo)<.01);await foto(`armario-${quem}-costas`);await p.keyboard.press('Escape');await p.locator('.armario.show').waitFor({state:'hidden'});
  }
  console.log('✓ prova do guarda-roupa real de frente e costas');
  await vestir(['quepe-da-portaria','colete-da-portaria','cracha-da-portaria','pulseira-vip-da-portaria']);await foto('colete-cracha');
