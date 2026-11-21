@@ -89,6 +89,27 @@ Os personagens que já existiam no jogo partem do vínculo que já têm com a
 dupla. O Jean-Luc conserva seu roteiro de seis disfarces e sua memória de
 quando foi pego; esta camada não acrescenta falas de apresentação a ele.
 
+## Abertura com a Gina
+
+Antes de cada um dos seis dias, a câmera já está no banco de quem joga.
+A Gina vira para a dupla e apresenta a novidade em três recados curtos:
+boas-vindas, demonstração e lembrete das conferências anteriores.
+Quem joga avança no próprio ritmo ou usa **Pular explicação** (Escape no
+computador). O relógio e os atendimentos só começam depois da abertura.
+
+Os exemplos usam papéis 3D separados dos visitantes: deslizam da bancada da
+Gina e se erguem para leitura com o calendário ou a lista quando necessário.
+No dia 5, o exemplo de exame vencido recebe o carimbo amarelo. Os papéis e
+as ferramentas voltam ao lugar antes do primeiro atendimento, inclusive se
+a abertura for pulada no meio da animação. O exemplo não altera decisões,
+memória, pagamento nem a fila. Movimento reduzido remove os acenos e a
+interpolação dos enquadramentos.
+
+## Próximo passo
+
+Melhorar o retorno dos erros no envelope da Gina, explicando um ou dois
+casos concretos do expediente. Ainda não implementado nesta etapa.
+
 ## Publicação e validação
 
 `PORTARIA_NO_JOGO` continua **false**. O acesso permanece por `?portaria`,
@@ -98,6 +119,9 @@ com save separado; não se liga o minigame no fluxo normal do jogo.
 - `node scripts/portaria.mjs`: regras e consequências sem navegador.
 - `node scripts/portariaMemoria.mjs`: persistência, replays, retornos e seis
   dias em 40 sementes, nas políticas de atender certo, barrar e deixar entrar.
+- `node scripts/portariaAbertura.mjs /tmp/abertura`: os seis recados,
+  exemplos 3D, câmera do banco, celular, movimento reduzido e pulo durante
+  voos/carimbadas, sem cobrar tempo ou deixar exemplos na mesa.
 - `node scripts/portariaBancada.mjs /tmp/bancada`: cliques no canvas,
   computador/celular, entrega, leitura, comparação, carimbo e save isolado.
 - `SACOLA=1 DIA=5 node scripts/portariaBancada.mjs /tmp/sacola`: inspeção física.

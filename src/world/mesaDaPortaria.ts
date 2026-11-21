@@ -465,6 +465,19 @@ export class MesaDaPortaria {
     return Promise.all(promessas).then(() => undefined);
   }
 
+  /** Encerra a demonstração sem deixar papel ou carimbada no primeiro atendimento. */
+  limparDemonstracao(): void {
+    const b = this.batida;
+    this.batida = null;
+    if (b) { this.carimbos[b.qual].position.copy(this.casaDosCarimbos.get(b.qual)!); b.pronto(); }
+    for (const p of this.papeis.values()) {
+      const voo = p.voo;
+      p.voo = null; p.vaga = -1; p.doc = null; p.carimbo = null;
+      p.folha.visible = false; p.folha.rotation.set(0, 0, 0); p.folha.scale.setScalar(1);
+      voo?.pronto?.();
+    }
+  }
+
   // ================================================================ o resto da mesa
 
   tocarCampainha(): void {

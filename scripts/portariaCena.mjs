@@ -4,9 +4,8 @@
  *
  * O que este teste guarda:
  * - ESCONDIDA: sem a chave (`?semPortaria`), a cena devolve ao clube;
- * - a ABERTURA: a tomada de fora com os três lá dentro (a Gina, quem joga e o
- *   parceiro), o recado da Gina, e a primeira pessoa com a cabeça de quem joga
- *   escondida e o parceiro sentado na bancada;
+ * - a ABERTURA: a explicação da Gina em primeira pessoa, a demonstração com
+ *   os papéis e a passagem ao expediente, sem cobrar tempo de atendimento;
  * - o DIA PELA TELA: um robô toca a campainha, espera o visitante subir no
  *   elevador e os papéis entrarem, e confere pela conferência de verdade
  *   (`diferencas`): pergunta o que a pista pede, aponta cada diferença com a
@@ -85,7 +84,7 @@ if (!SO || SO === 'dia') {
   ok(await page.evaluate(() => !!window.portaria?.ex), 'a cena montou o expediente do dia');
   const saldoAntes = await page.evaluate(() => window.jogo.carteira());
 
-  // o recado da Gina na caixa de fala do jogo
+  // Os três recados da Gina, com tempo para os papéis da demonstração.
   for (let i = 0; i < 20 && !(await page.evaluate(() => window.portaria.comecou())); i++) {
     await page.keyboard.press('Space');
     await espera(400);
