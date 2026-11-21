@@ -11,6 +11,7 @@ import { apontar, assuntosDe, fichaDe, perguntar, proibidosNaSacola, type Difere
 import { avaliarAtendimento, dicaDoParceiro, fecharODia, type Atendimento, type AvaliacaoDoAtendimento, type FimDoDia } from './consequencias';
 import { chamarNaFila, montarDia, type DiaMontado } from './semana';
 import { RELOGIO, type Assunto, type Carimbo, type Fato, type ItemDaSacola, type Pista } from './tipos';
+import type { EncontroDaPortaria } from './memoria';
 
 /** uma linha da transcrição (a tirinha do caderninho) */
 export interface LinhaDaTranscricao {
@@ -49,8 +50,8 @@ export class Expediente {
   ajudas = AJUDAS_POR_DIA;
   private fim: FimDoDia | null = null;
 
-  constructor(readonly n: number, readonly semente: number, fatosDaSemana: ReadonlySet<Fato>) {
-    this.montado = montarDia(n, semente, fatosDaSemana);
+  constructor(readonly n: number, readonly semente: number, fatosDaSemana: ReadonlySet<Fato>, encontros: readonly EncontroDaPortaria[] = []) {
+    this.montado = montarDia(n, semente, fatosDaSemana, encontros);
     this.fila = [...this.montado.fila];
   }
 

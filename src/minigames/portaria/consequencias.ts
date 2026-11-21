@@ -9,6 +9,7 @@
  */
 import { carimboCerto, diferencas, fichaDe, proibidosNaSacola, type ContextoDoDia, type Diferenca, type Visitante } from './conferencia';
 import { DIAS, diaPorNumero, type DiaDaPortaria } from './semana';
+import { guardarEncontrosDoDia, lembrarAtendimento, type ArmazemDosEncontros, type EncontroDaPortaria } from './memoria';
 import { NOME_DO_ITEM, RELOGIO, VALOR, type Assunto, type Carimbo, type Fato, type ItemDaSacola, type Pista } from './tipos';
 
 // ================================================================ um atendimento
@@ -232,6 +233,7 @@ export interface ResumoDoDia {
 }
 
 export interface FimDoDia {
+  encontros: EncontroDaPortaria[];
   resumo: ResumoDoDia;
   /** o envelope da Gina, linha por linha */
   linhas: LinhaDoEnvelope[];
@@ -285,6 +287,7 @@ export function fecharODia(dia: DiaDaPortaria, atendimentos: readonly Atendiment
     .slice(0, 3);
   return {
     resumo, linhas, total: Math.max(0, soma), estrelas, fatos, boletim,
+    encontros: atendimentos.flatMap(a => { const e = a.carimbo === null ? null : lembrarAtendimento(dia.numero, a.visitante, a.carimbo); return e ? [e] : []; }),
     falaDaGina: estrelas === 3 ? dia.gina.fimBom : dia.gina.fimRuim,
   };
 }
@@ -375,7 +378,7 @@ export function falaDaSaida(v: Visitante, carimbo: Carimbo): readonly string[] {
 // ================================================================ o save
 
 /** o pedaço do `GameAPI` que o progresso usa (o mesmo do Mania) */
-export interface SaveDaPortaria {
+export interface SaveDaPortaria extends ArmazemDosEncontros {
   stat(key: string): number;
   bump(key: string, by?: number): number;
   flag(key: string): boolean;
@@ -436,6 +439,7 @@ export function registrarODia(s: SaveDaPortaria, n: number, fim: FimDoDia): Regi
   subirPara(s, CHAVE.estrelas(n), fim.estrelas);
   const recorde = subirPara(s, CHAVE.recorde(n), fim.total);
   for (const f of dia.fatos) s.setFlag(CHAVE.fato(n, f), fim.fatos.includes(f));
+  guardarEncontrosDoDia(s, n, fim.encontros);
   return {
     primeiraVezTres: fim.estrelas === 3 && !tinhaTres,
     abriu: diaPorNumero(n + 1) && !abertoAntes ? n + 1 : null,
