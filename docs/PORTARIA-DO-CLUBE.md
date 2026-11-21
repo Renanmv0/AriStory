@@ -604,6 +604,12 @@ acessório), o jeito vem com a espécie.
 
 ## §12 Prêmios
 
+A **cena de agradecimento da primeira semana** está implementada: ao concluir
+os dias 1–6, independentemente das estrelas, a Gina entrega um cartão na
+bancada e conversa com a dupla em primeira pessoa. É um marco da primeira
+semana, com espaço para dias futuros; não é o fim do minigame. Ver
+`PORTARIA-BANCADA.md` para gatilho, preview e testes.
+
 - **Reais** todo dia, no envelope (a carteira do casal).
 - **Três estrelas em cada dia**, presentes para os dois, **implementados**: o crachá da portaria
   (1), o apito dourado (2), o quepe de porteiro (3), o colete refletivo (4), a

@@ -17,6 +17,8 @@ import { apresentacaoDoVisitante } from '../eventos/portaria/apresentacaoDoVisit
 import { AberturaDaGina } from '../eventos/portaria/aberturaDaGina';
 import { concederPremiosDaGina } from '../eventos/portaria/premiosDaGina';
 import { PresenteDaGina } from '../ui/presenteDaGina';
+import { HomenagemDaGina } from '../eventos/portaria/homenagemDaGina';
+import { HOMENAGEM_DA_GINA, homenagemDaGinaPendente } from '../minigames/portaria/homenagem';
 import { MESA_DA_PORTARIA, MesaDaPortaria } from '../world/mesaDaPortaria';
 import { alturaDoElevador, ElevadorDoBalcao, modeloDoVisitante, type ModeloDeVisitante } from '../world/visitantesDaPortaria';
 import { arvore } from '../world/arvores';
@@ -223,6 +225,22 @@ function montarAPortaria(w: WorldBuilder): void {
   w.onUpdate(dt => sacola.update(dt * pressa));
   let ativa = true;
   let presente: PresenteDaGina | null = null;
+  let homenagem: HomenagemDaGina | null = null;
+  // Atalho de preview: não concede nem consome a homenagem do save.
+  let previaDaHomenagem = busca.has('homenagem');
+  const mostrarHomenagem = async (): Promise<void> => {
+    if (!ativa || !homenagemDaGinaPendente(g) && !previaDaHomenagem) return;
+    const previa = previaDaHomenagem; previaDaHomenagem = false;
+    painel.fechar();
+    homenagem = new HomenagemDaGina(g, w.root, gina,
+      (para, lente = 68) => { focoDeAbertura = para ? { para, lente } : null; },
+      quanto => g.rideCompanion(ancoraDoParceiro, new THREE.Vector3(), 1, .25 + (Math.PI / 2 - .25) * quanto));
+    const vista = await homenagem.pronta;
+    homenagem = null;
+    if (ativa && vista && !previa) g.setFlag(HOMENAGEM_DA_GINA);
+  };
+  w.onUpdate(dt => homenagem?.update(dt));
+  w.aoDesmontar(() => homenagem?.fechar());
   const mostrarPresentes = async (dias: readonly number[]): Promise<void> => {
     if (!dias.length || !ativa) return;
     presente = new PresenteDaGina(dias, n);
@@ -494,6 +512,9 @@ function montarAPortaria(w: WorldBuilder): void {
     await mostrarPresentes(novosPremios);
     if (!ativa) return;
     await painel.envelope(fim, { abriu: reg.abriu, recorde: reg.recorde });
+    if (!ativa) return;
+    await mostrarHomenagem();
+    if (!ativa) return;
     acabou = true;
     voltarAoClube();
   };
@@ -574,10 +595,13 @@ function montarAPortaria(w: WorldBuilder): void {
     (para, lente = 68) => { focoDeAbertura = para ? { para, lente } : null; }, qual => g.som(qual));
   w.onUpdate(dt => abertura.update(dt));
   w.aoDesmontar(() => abertura.fechar());
+  if (busca.has('homenagem') || homenagemDaGinaPendente(g)) abertura.fechar();
   void (async () => {
     await abertura.pronta;
     if (!ativa) return;
     await mostrarPresentes(concederPremiosDaGina(g));
+    if (!ativa) return;
+    await mostrarHomenagem();
     if (!ativa) return;
     abrirAMesa();
     desenhar();
@@ -587,7 +611,7 @@ function montarAPortaria(w: WorldBuilder): void {
   })();
   // o que o teste (`scripts/portariaCena.mjs`) lê: o expediente, a conferência e uma cópia limpa para jogar sem cena
   (window as unknown as { portaria?: unknown }).portaria = {
-    ex, mesa, painel, elevador, modelos, sacola, alvos, abertura, premiosDaGina: () => presente, n, semente, ocupado: () => ocupado, comecou: () => comecou, acabou: () => acabou,
+    ex, mesa, painel, elevador, modelos, sacola, alvos, abertura, homenagemDaGina: () => homenagem, premiosDaGina: () => presente, n, semente, ocupado: () => ocupado, comecou: () => comecou, acabou: () => acabou,
     conferir: () => {
       const j = ex.janela;
       if (!j) return null;
