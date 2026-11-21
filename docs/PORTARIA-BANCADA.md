@@ -152,6 +152,32 @@ nem duplica presentes. O uniforme completo acrescenta uma entrada no diário.
 
 O selo do Bebito e a placa da semana inteira continuam como próximos passos.
 
+## Agradecimento pela primeira semana
+
+Depois do envelope do último dos **seis primeiros dias concluídos**, a Gina
+se aproxima da dupla na guarita. A câmera permanece no banco de quem joga:
+acompanha a chegada, o cartão na boca, a entrega na bancada, o agradecimento
+e uma resposta de quem está no banco ao lado. No fim, ela volta caminhando
+ao posto. A homenagem celebra a companhia e o aprendizado, sem exigir três
+estrelas e sem dizer que o minigame terminou.
+
+O cartão tem papel dobrado que se abre e se sustenta no tampo, escudo do
+clube, margem dourada, coração e uma dedicatória para Ari e Renan. A Gina
+abaixa o pescoço, faz acenos e olha para a dupla; as orelhas e o sorriso
+acompanham a conversa. Uma luz de apoio sem sombras extras ilumina o rosto,
+como na abertura do expediente. Cada recado avança no ritmo de quem joga;
+**Pular cena** e Escape encerram a apresentação com limpeza dos objetos.
+
+A flag `portaria:homenagem:primeira-semana` só é gravada ao assistir ou pular.
+Interromper a cena antes disso permite vê-la depois, sem repetir pagamento.
+Saves com os seis dias já concluídos recebem a conversa na próxima visita à
+portaria. O marco é fixo nos dias 1–6, para continuar correto quando a escala
+ganhar dias novos. Notas, prêmios e histórico dos visitantes são preservados.
+
+Preview direto: `?portaria&cena=portaria&dia=6&homenagem`. Esse atalho mostra a
+cena sem concluir dias ou consumir a flag da homenagem. A portaria permanece
+no modo de teste. Selo, plaquinha e memória da semana continuam planejados.
+
 ## Publicação e validação
 
 `PORTARIA_NO_JOGO` continua **false**. O acesso permanece por `?portaria`,
@@ -170,6 +196,16 @@ com save separado; não se liga o minigame no fluxo normal do jogo.
   persistência e ausência de prêmio abaixo de três estrelas.
 - `node scripts/portariaPremiosRoupas.mjs /tmp/premios-roupas`: guarda-roupa
   real, pais das peças no rig, caminhada, calças sentadas no banco e reload.
+- `node scripts/portariaHomenagem.mjs`: seis dias concluídos, notas variadas,
+  apresentação única e marco fixo da primeira semana.
+- `node scripts/portariaHomenagemCena.mjs /tmp/homenagem`: computador,
+  celular, câmera em primeira pessoa, cartão físico, parceiro correto,
+  persistência, pulo, movimento reduzido e cancelamento sem consumir a cena.
+- `SO=dia DIA=6 CEL=1 SEMANA=1 node scripts/portariaCena.mjs /tmp/semana`:
+  dia seis completo, entrega do prêmio, envelope, homenagem e volta ao clube.
+- `SO=cartao-de-agradecimento-da-gina SEM_FUNDIR=1 node scripts/zfighting.mjs`:
+  a peça é arredondada e não contém caixas retas mensuráveis pelo detector;
+  a dobra, as faces e a colocação no tampo também são conferidas nas fotos.
 - `node scripts/portariaRevisaoCena.mjs /tmp/revisao`: erros pela interface,
   leitura do envelope em computador/celular, valores e estados sem revisão.
 - `node scripts/portariaAbertura.mjs /tmp/abertura`: os seis recados,

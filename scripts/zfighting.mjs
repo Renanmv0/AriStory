@@ -161,6 +161,8 @@ const PECAS = [
   ['portao-do-clube', 'clube'],
   ['guarita', 'clube'],
   ['mesa-da-portaria', 'portaria&portaria&dia=1'],
+  // Papel de quina arredondada e dobra móvel: conferir também as fotos.
+  ['cartao-de-agradecimento-da-gina', 'portaria&portaria&dia=6&homenagem'],
   ['sacola-da-portaria', 'portaria&portaria&dia=1'],
   ['cadeira-de-salva-vidas', 'clube'],
   ['sebe', 'clube'],

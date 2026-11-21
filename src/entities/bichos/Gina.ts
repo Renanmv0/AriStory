@@ -43,6 +43,15 @@ export interface PoseDaGinaNoCarrinho {
   esticar: number;
 }
 
+/** Camada optativa da homenagem, sem mudar a Gina fora dessa conversa. */
+export interface PoseDaGinaNaHomenagem {
+  olhar: number;
+  aceno: number;
+  contente: number;
+  falando: boolean;
+  menosMovimento: boolean;
+}
+
 export class Gina extends Bicho {
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Gina', cor: P.falaGina };
@@ -60,6 +69,8 @@ export class Gina extends Bicho {
 
   /** a pose no carrinho de golfe; `null` (o de sempre) é a Gina da guarita */
   noCarrinho: PoseDaGinaNoCarrinho | null = null;
+  naHomenagem: PoseDaGinaNaHomenagem | null = null;
+  private sorriso: THREE.Mesh | null = null;
 
   /** a cabeça (o carrinho pendura nela o carimbo, que ela segura na boca) */
   get cabecaDaGina(): THREE.Group {
@@ -278,6 +289,7 @@ export class Gina extends Bicho {
     const boca = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.girafaCasco));
     boca.scale.set(0.9, 0.16, 0.5);
     boca.position.set(0, -0.078, 0.2);
+    this.sorriso = boca;
     this.cabeca.add(boca);
 
     for (const lado of [-1, 1]) {
@@ -456,6 +468,23 @@ export class Gina extends Bicho {
     // no carinho ela aperta os olhos de contente
     const abertura = 1 - carinho * 0.8;
     for (const olho of this.olhos) olho.scale.y = Math.max(0.14, abertura);
+
+    const homenagem = this.naHomenagem;
+    this.cabeca.rotation.z = 0;
+    if (this.sorriso) this.sorriso.scale.y = .16;
+    if (homenagem) {
+      this.cabeca.rotation.y = homenagem.olhar;
+      // Ela conversa com quem está sentado: focinho apontado para a dupla,
+      // em vez de mostrar a parte de baixo do queixo à câmera do banco.
+      this.cabeca.rotation.x += .32 + homenagem.aceno * .13;
+      this.cabeca.rotation.z = homenagem.menosMovimento ? 0 : Math.sin(fase * 1.3) * .025 * homenagem.contente;
+      for (let i = 0; i < this.orelhas.length; i++) {
+        this.orelhas[i].rotation.z += (i === 0 ? -1 : 1) * homenagem.contente * .12;
+      }
+      if (this.sorriso && homenagem.falando && !homenagem.menosMovimento) {
+        this.sorriso.scale.y = .16 + Math.max(0, Math.sin(fase * 9)) * .065;
+      }
+    }
 
     /**
      * NO CARRINHO (só com a pose ligada; a Gina da guarita nunca entra aqui):

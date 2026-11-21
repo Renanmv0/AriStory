@@ -76,6 +76,10 @@ if (!SO || SO === 'dia') {
   await page.goto(`${BASE}/?portaria&cena=clube`, { waitUntil: 'networkidle' });
   await espera(2000);
   await page.evaluate(() => localStorage.removeItem('aristory.save.v1.portaria'));
+  if (process.env.SEMANA) await page.evaluate(() => {
+    const stats = {}; for (let n = 1; n <= 5; n++) stats[`portaria:dia:${n}:vezes`] = 1;
+    localStorage.setItem('aristory.save.v1.portaria', JSON.stringify({ version: 1, stats, flags: {}, memories: [] }));
+  });
   await page.goto(`${BASE}/?portaria&cena=portaria&dia=${DIA}&semente=${SEMENTE}&depressa`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.portaria?.ex, undefined, { timeout: 90000 });
   await desenho(false);
@@ -262,6 +266,13 @@ if (!SO || SO === 'dia') {
   const peso = await page.evaluate(() => window.jogo.renderer.info.render);
   console.log(`  peso da primeira pessoa no fim: ${peso.calls} desenhos, ${peso.triangles} triângulos`);
   await page.click('[data-env="ok"]');
+  if (process.env.SEMANA) {
+    await page.locator('.homenagem-gina').waitFor();
+    ok(await page.evaluate(() => !document.querySelector('.pt-envelope.show') && !!window.portaria.homenagemDaGina()), 'a homenagem começa depois de fechar o envelope');
+    await page.locator('.hg-pular').click();
+    await page.waitForFunction(() => window.jogo.flag('portaria:homenagem:primeira-semana'));
+    ok(true, 'concluir o sexto dia libera e grava a homenagem da primeira semana');
+  }
   await espera(4000);
   const depois = await page.evaluate((n) => ({
     vezes: window.jogo.stat(`portaria:dia:${n}:vezes`),

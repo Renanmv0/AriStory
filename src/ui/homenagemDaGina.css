@@ -1,0 +1,17 @@
+.homenagem-gina { position: fixed; inset: 0; z-index: 18; display: flex; flex-direction: column; justify-content: space-between; padding: max(18px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background: linear-gradient(0deg, #26463755, transparent 43%); color: #35473c; }
+.homenagem-gina header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.hg-marco { padding: 11px 16px; border: 1px solid #ddc88f; border-radius: 22px; background: #fff8eaf5; font-weight: 800; box-shadow: 0 3px 12px #18372b22; }
+.homenagem-gina button { font: inherit; min-height: 44px; cursor: pointer; touch-action: manipulation; }
+.hg-pular { padding: 10px 15px; color: #52694f; border: 1px solid #dfd5b6; border-radius: 22px; background: #fff9ecf5; }
+.hg-fala { width: min(600px, 100%); align-self: center; padding: 17px 23px; background: #fffaf0fa; border: 1px solid #dbc58d; border-radius: 24px; box-shadow: 0 8px 28px #18372b35; }
+.hg-etiqueta { display: flex; justify-content: space-between; align-items: center; color: #47795b; font-size: 14px; }
+.hg-etiqueta span { font-size: 12px; color: #8a816a; }
+.hg-fala h2 { margin: 7px 0; font-size: 21px; line-height: 1.2; }
+.hg-fala p { margin: 8px 0 14px; font-size: 16px; line-height: 1.5; }
+.hg-fala footer { display: flex; justify-content: flex-end; }
+.hg-proximo { border: 0; border-radius: 15px; padding: 10px 18px; background: #477c5e; color: #fff9ea; font-weight: 800 !important; }
+.hg-proximo:disabled { opacity: .55; cursor: wait; }
+.homenagem-gina button:focus-visible { outline: 3px solid #d2a94f; outline-offset: 2px; }
+body.portaria-em-homenagem #ui { visibility: hidden; }
+@media (max-width: 600px) { .homenagem-gina { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); } .hg-marco { padding: 10px 12px; font-size: 12px; } .hg-pular { padding: 8px 10px; font-size: 12px !important; } .hg-fala { padding: 14px 17px; border-radius: 21px; } .hg-fala h2 { font-size: 19px; } .hg-fala p { font-size: 15px; line-height: 1.45; } }
+@media (max-height: 500px) and (orientation: landscape) { .hg-fala { align-self: flex-start; max-width: 46%; padding: 10px 16px; } .hg-fala h2 { font-size: 17px; } .hg-fala p { font-size: 13px; margin: 5px 0; } }
