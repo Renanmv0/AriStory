@@ -261,6 +261,7 @@ function montarAPortaria(w: WorldBuilder): void {
   let ocupado = true;
   let comecou = false;
   let acabou = false;
+  let encerrando = false;
 
   // ---- os visitantes em 3D: a fila na rua, um por lugar
   const modelos = new Map<string, ModeloDeVisitante>();
@@ -339,6 +340,7 @@ function montarAPortaria(w: WorldBuilder): void {
       ocupado,
       podeChamar: !ex.fechou && ex.indice + 1 < ex.fila.length,
       podeTerminar: true,
+      podeSair: !encerrando && !acabou,
       fechou: ex.fechou,
     };
   };
@@ -349,7 +351,7 @@ function montarAPortaria(w: WorldBuilder): void {
   // ---- o relógio: anda com quem está na janela, e para com o balão aberto
   let horaMostrada = '';
   w.onUpdate((dt) => {
-    if (!comecou || acabou || !ex.janela || ocupado || painel.falando) return;
+    if (!comecou || acabou || !ex.janela || ocupado || painel.falando || painel.confirmandoSaida) return;
     ex.passar(dt);
     if (ex.hora !== horaMostrada) {
       horaMostrada = ex.hora;
@@ -502,6 +504,7 @@ function montarAPortaria(w: WorldBuilder): void {
 
   const terminar = async (): Promise<void> => {
     if (ocupado || ex.janela || acabou) return;
+    encerrando = true;
     ocupado = true;
     const fim = ex.terminar();
     const reg = registrarODia(g, n, fim);
@@ -534,7 +537,7 @@ function montarAPortaria(w: WorldBuilder): void {
 
   /** largar o dia no meio: nada se grava, nada se paga */
   const sair = async (): Promise<void> => {
-    if (acabou) return;
+    if (acabou || encerrando) return;
     acabou = true;
     ocupado = true;
     await painel.falar('Gina', ['Já vai? Tudo bem, eu seguro a guarita. O dia de hoje fica para outra vez.'], '🦒');
@@ -558,7 +561,7 @@ function montarAPortaria(w: WorldBuilder): void {
     ocupado = false; desenhar();
   };
   const alvos = alvosDaBancada(w, mesa, sacola, {
-    livre: () => ativa && comecou && !acabou && !ocupado && !painel.falando && painel.vista !== 'documento',
+    livre: () => ativa && comecou && !acabou && !ocupado && !painel.falando && !painel.confirmandoSaida && painel.vista !== 'documento',
     chamar: () => void chamar(),
     folha: tipo => { if (!ocupado) painel.abrirFolha(tipo); },
     lupa: () => painel.lupa(!painel.usandoLupa),

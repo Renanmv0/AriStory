@@ -9,6 +9,7 @@ import {
 } from '../minigames/portaria/tipos';
 import { diaDaSemana, pintarCalendario, pintarLista, pintarManual, pintarPapel, pintarRetrato, tamanhoDoPapel } from '../world/papeisDaPortaria';
 import { escapar } from './telaDeCartas';
+import './confirmarSaidaDaPortaria.css';
 
 /**
  * A MESA DA PORTARIA em DOM — a bancada de quem trabalha na guarita
@@ -71,6 +72,8 @@ export interface EstadoDaMesa {
   ocupado: boolean;
   podeChamar: boolean;
   podeTerminar: boolean;
+  /** falso depois que o fechamento começou: o dia já foi registrado */
+  podeSair?: boolean;
   /** passou das 17h */
   fechou: boolean;
 }
@@ -108,6 +111,8 @@ export interface PainelDaPortaria {
   readonly aberta: boolean;
   /** o balão está aberto (o relógio para) */
   readonly falando: boolean;
+  /** a decisão de abandonar o dia está aberta (o relógio também para) */
+  readonly confirmandoSaida: boolean;
   readonly vista: VistaDaPortaria;
   readonly usandoLupa: boolean;
   mudarVista(vista: VistaDaPortaria): void;
@@ -151,6 +156,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   falando = false;
   vista: VistaDaPortaria = 'bancada';
   get usandoLupa(): boolean { return this.modoLupa; }
+  get confirmandoSaida(): boolean { return this.confirmacaoDeSaida.open; }
   som?: (nome: SomNome) => void;
   /** abriu ou fechou (o HUD do jogo esconde os botões de toque) */
   aoMudar?: () => void;
@@ -163,7 +169,6 @@ export class MesaDaPortaria implements PainelDaPortaria {
   private filaDeFalas: Array<{ quem: string; fala: string; icone?: string; pronto?: () => void }> = [];
   private timerDoAviso = 0;
   private observador: ResizeObserver | null = null;
-  private sairPedido = 0;
   /** Zero ajusta a folha inteira; os demais valores controlam a ampliação com rolagem. */
   private zoomDaLista = 0;
 
@@ -180,6 +185,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   private readonly aviso: HTMLElement;
   private readonly flutuante: HTMLElement;
   private readonly envelopeEl: HTMLElement;
+  private readonly confirmacaoDeSaida: HTMLDialogElement;
 
   constructor(private readonly raiz: HTMLElement) {
     raiz.innerHTML = `
@@ -199,7 +205,16 @@ export class MesaDaPortaria implements PainelDaPortaria {
       <div class="pt-balao"></div>
       <div class="pt-aviso"></div>
       <div class="pt-flutuante"></div>
-      <div class="pt-envelope"></div>`;
+      <div class="pt-envelope"></div>
+      <dialog class="pt-confirmar-saida" aria-labelledby="pt-sair-titulo" aria-describedby="pt-sair-descricao">
+        <span class="pt-sair-icone" aria-hidden="true">🚪</span>
+        <h2 id="pt-sair-titulo">Sair do expediente?</h2>
+        <p id="pt-sair-descricao">O progresso deste dia não será salvo. As conquistas dos outros dias continuam guardadas.</p>
+        <div class="pt-sair-opcoes">
+          <button type="button" data-saida="continuar" autofocus>Continuar jogando</button>
+          <button type="button" data-saida="confirmar">Sair do expediente</button>
+        </div>
+      </dialog>`;
     const q = (s: string): HTMLElement => raiz.querySelector(s)!;
     this.vistas = q('.pt-vistas');
     this.comparacao = q('.pt-comparacao');
@@ -214,6 +229,17 @@ export class MesaDaPortaria implements PainelDaPortaria {
     this.aviso = q('.pt-aviso');
     this.flutuante = q('.pt-flutuante');
     this.envelopeEl = q('.pt-envelope');
+    this.confirmacaoDeSaida = q('.pt-confirmar-saida') as HTMLDialogElement;
+    this.confirmacaoDeSaida.addEventListener('cancel', ev => { ev.preventDefault(); this.cancelarSaida(); });
+    // O dialog nativo mantém foco e toques dentro da pergunta. As teclas não
+    // chegam ao manche/menu; Escape significa continuar a partida.
+    this.confirmacaoDeSaida.addEventListener('keydown', ev => ev.stopPropagation());
+    this.confirmacaoDeSaida.addEventListener('click', ev => {
+      ev.stopPropagation();
+      const acao = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-saida]')?.dataset.saida;
+      if (acao === 'continuar') this.cancelarSaida();
+      if (acao === 'confirmar') { this.cancelarSaida(); this.acoes?.sair(); }
+    });
 
     // UM ouvinte para a mesa inteira: cada botão diz o que é pelo `data-*`
     raiz.addEventListener('click', (ev) => this.clicou(ev));
@@ -240,6 +266,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   }
 
   fechar(): void {
+    this.cancelarSaida(false);
     this.aberta = false;
     this.acoes?.sacolaMudou?.(false);
     this.acoes = null;
@@ -341,7 +368,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
     this.topo.innerHTML = `
       <span class="pt-dia">📅 Dia ${e.dia.numero} · ${escapar(e.dia.nome)}</span>
       <span class="pt-hora${e.fechou ? ' fechou' : ''}">${e.semRelogio ? '♾️ Sem limite' : `🕘 ${e.hora}`}</span>
-      <button class="pt-sair" data-acao="sair" title="largar o dia">🚪</button>
+      <button class="pt-sair" data-acao="sair" title="largar o dia"${e.podeSair === false ? ' disabled' : ''}>🚪</button>
       <span class="pt-fila">👥 ${e.esperando}</span>
       <span class="pt-dicas" title="dicas do parceiro">💡 ${e.ajudas}</span>`;
   }
@@ -587,6 +614,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
   // ================================================================ o clique
 
   private clicou(ev: MouseEvent): void {
+    if (this.confirmandoSaida) return;
     const alvo = (ev.target as HTMLElement).closest<HTMLElement>('button');
     if (!alvo || !this.acoes || !this.estado) return;
     const d = alvo.dataset;
@@ -632,12 +660,7 @@ export class MesaDaPortaria implements PainelDaPortaria {
       case 'chamar': this.acoes.chamar(); break;
       case 'terminar': this.acoes.terminar(); break;
       case 'sair':
-        // dois toques: o primeiro avisa, o segundo (em três segundos) larga o dia
-        if (Date.now() - this.sairPedido < 3000) this.acoes.sair();
-        else {
-          this.sairPedido = Date.now();
-          this.avisar('🚪 Toque de novo para largar o dia (ele não conta).');
-        }
+        this.confirmacaoDeSaida.showModal();
         break;
       case 'oferta:sim': this.acoes.responderOferta(true); break;
       case 'oferta:nao': this.acoes.responderOferta(false); break;
@@ -648,6 +671,12 @@ export class MesaDaPortaria implements PainelDaPortaria {
           this.acoes.carimbar(d.acao.slice(8) as Carimbo);
         }
     }
+  }
+
+  private cancelarSaida(devolverFoco = true): void {
+    if (!this.confirmacaoDeSaida.open) return;
+    this.confirmacaoDeSaida.close();
+    if (devolverFoco && this.aberta) this.raiz.querySelector<HTMLButtonElement>('[data-acao="sair"]')?.focus({ preventScroll: true });
   }
 
   lupa(sim: boolean): void {
