@@ -196,6 +196,11 @@ try{
  const pcFixture=fixture({gina:true});pcFixture.scene='portaria';pcFixture.flags['portaria:liberada']=true;pcFixture.stats['portaria:dia:1:vezes']=1;
  const pc=await preparar(pcFixture);await pc.p.waitForFunction(()=>!!window.portaria?.ex);await abrirMesa(pc.p);await clicar(pc.p,'[data-acao="chamar"]');await livre(pc.p);await confirmarSaida(pc.p,'computador');await sair(pc.p);await pc.context.close();
  const fechamento=await preparar(pcFixture);await fechamento.p.waitForFunction(()=>!!window.portaria?.ex);await abrirMesa(fechamento.p);
+ // Avança só o relógio da fixture, atende quem já chegou e fecha às 17h.
+ await clicar(fechamento.p,'[data-acao="chamar"]');await livre(fechamento.p);
+ if(await fechamento.p.locator('[data-acao="oferta:nao"]').isVisible()){await clicar(fechamento.p,'[data-acao="oferta:nao"]');await livre(fechamento.p);}
+ const carimboFinal=await fechamento.p.evaluate(()=>{window.portaria.ex.passar(10000);return window.portaria.conferir().carimbo;});
+ await clicar(fechamento.p,`[data-acao="carimbo:${carimboFinal}"]`);await livre(fechamento.p);
  await clicar(fechamento.p,'[data-acao="terminar"]');assert.equal(await fechamento.p.locator('[data-acao="sair"]').isDisabled(),true);
  for(let i=0;i<150&&!await fechamento.p.locator('.pt-envelope.show').isVisible();i++){await fechamento.p.evaluate(()=>document.querySelector('.pt-balao.show')?.click());await fechamento.p.waitForTimeout(60);}
  await fechamento.p.locator('.pt-envelope.show').waitFor();assert.equal(await fechamento.p.locator('[data-acao="sair"]').isDisabled(),true);
