@@ -804,6 +804,17 @@ export function pintarRetrato(c: CanvasRenderingContext2D, x: number, y: number,
     c.beginPath(); c.ellipse(cx - rx * 0.08, cy - ry * 0.82, rx * 0.74, ry * 0.26, -0.15, 0, Math.PI * 2); pinta(P.azulFranca, true);
     el(cx - rx * 0.1, cy - ry * 1.06, rx * 0.06, rx * 0.06); pinta(P.azulFranca);
   }
+  if (e === 'retratoDoFotografo') {
+    c.beginPath(); c.ellipse(cx-rx*.1,cy-ry*.88,rx*.83,ry*.24,-.14,0,Math.PI*2); pinta(P.azulFranca,true);
+    for (const lado of [-1,1]) {
+      c.beginPath(); c.moveTo(cx,fy); c.quadraticCurveTo(cx+lado*rx*.27,fy+ry*.2,cx+lado*rx*.65,fy-ry*.19);
+      c.quadraticCurveTo(cx+lado*rx*.51,fy+ry*.3,cx,fy+ry*.08); pinta('#36282c');
+    }
+  }
+  if (e === 'floristaGastronomico') {
+    el(cx,cy-ry*.85,rx*.88,ry*.43); pinta('#e6b878',true);
+    el(cx,cy-ry*.68,rx*1.14,ry*.13); pinta('#dba95e',true);
+  }
   if (e === 'boneDeEntregador') {
     bone(0x3b6fd0);
     c.fillStyle = '#ffffff'; c.font = `bold ${Math.round(s * 0.06)}px ui-rounded, system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('CE', cx, cy - ry * 0.9);

@@ -28,17 +28,17 @@ const alp=P.montarDia(5,7,new Set()).fila.find(x=>x.ficha==='alpacina');const a6
 const noel=P.montarDia(1,7,new Set()).fila.find(x=>x.ficha==='noel');assert.equal(P.lembrarAtendimento(1,noel,'hojeNao'),null);const copiado=structuredClone(noel);P.recordarChegada(copiado,[{...mem,ficha:'noel',nome:'Noel'}],3);assert.deepEqual(copiado,noel);
 assert.deepEqual(P.normalizarEncontros([null,{}, {dia:99}, {...mem,rosto:null}]),[]);
 console.log('✓ replay, ordem cronológica, identidade dos gêmeos, penteados e conhecidos preservados');
-// Seis dias em três políticas e várias sementes: também cobre retornos de espécies nomeadas.
+// Duas semanas em três políticas e várias sementes: também cobre retornos de espécies nomeadas.
 let retornos=0;
 for(const politica of ['certo','barrar','entrar'])for(let seed=1;seed<=40;seed++){
- const arq=save();for(let n=1;n<=6;n++){
+ const arq=save();for(let n=1;n<=P.DIAS.length;n++){
   const e=novo(arq,n,seed),base=P.montarDia(n,seed,P.fatosAntesDoDia(arq,n));assert.equal(e.fila.length,base.fila.length);
   const tem=tipo=>e.fila.some(v=>v.docs.some(d=>d.tipo===tipo));if(n>=3){assert.ok(tem('carteirinha'));assert.ok(tem('convite'));}if(n>=4)assert.ok(tem('ordem'));if(n>=5)assert.ok(e.fila.some(v=>!v.querPiscina&&v.docs.some(d=>d.tipo==='convite')));
   const programados=new Set(base.fila.filter(v=>!v.id.startsWith('figurante')).map(P.identidadeDaPortaria));
   const atuais=new Set();for(const v of e.fila){assert.equal(P.carimboCerto(v,e.contexto),v.espera,`${n} ${seed} ${v.nome}`);if(v.id.startsWith('figurante')){const id=P.identidadeDaPortaria(v);assert.ok(!programados.has(id));assert.ok(!atuais.has(id));atuais.add(id);if(v.chegada?.[0]?.includes('não me deixaram'))retornos++;}}
   let v;while((v=e.proximo()))e.carimbar(politica==='certo'?certo(e,v):politica==='barrar'?'hojeNao':'entra');const fim=e.terminar();if(politica==='certo')assert.equal(fim.estrelas,3,`${n} ${seed}`);P.registrarODia(arq,n,fim);
-  const guardados=P.normalizarEncontros(arq.retomada(P.CHAVE_DOS_ENCONTROS));assert.ok(guardados.length<=144);assert.ok(guardados.every(x=>x.dia<=n));
+  const guardados=P.normalizarEncontros(arq.retomada(P.CHAVE_DOS_ENCONTROS));assert.ok(guardados.length<=288);assert.ok(guardados.every(x=>x.dia<=n));
  }
 }
-assert.ok(retornos>0);console.log(`✓ seis dias × 40 sementes × três políticas; ${retornos} retornos, sem perder mistura ou cenas`);
+assert.ok(retornos>0);console.log(`✓ doze dias × 40 sementes × três políticas; ${retornos} retornos, sem perder mistura ou cenas`);
 console.log('tudo certo');

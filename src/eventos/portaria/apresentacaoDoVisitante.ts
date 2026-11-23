@@ -6,6 +6,8 @@ import { FICHAS } from '../../minigames/portaria';
 import { alturaDoElevador, modeloDoVisitante, type ModeloDeVisitante } from '../../world/visitantesDaPortaria';
 import { fundir } from '../../world/fundir';
 import { macia } from '../../world/moveisDaBoutique';
+import { JeanLuc } from '../../entities/bichos/JeanLuc';
+import { vestirNaCantina } from '../../world/figurinosDaCantina';
 import { capaceteDoCapy } from '../../world/motoDoCapy';
 
 /** A pessoa que se compara é a mesma dos dados: disfarces, capacete e acompanhantes no mundo. */
@@ -30,6 +32,8 @@ export function apresentacaoDoVisitante(modelo: ModeloDeVisitante, v: Visitante)
     m.scale.set(r * 1.18, r * .7, r * 1.1);
   };
   const enfeite = v.rosto.enfeite;
+  const bicho = modelo.group.userData.bicho;
+  const figurino = bicho instanceof JeanLuc ? vestirNaCantina(bicho,enfeite) : null;
   if (enfeite === 'oculosComNariz') {
     for (const lado of [-1, 1]) {
       const lente = por(acessorio, new THREE.TorusGeometry(r * .28, r * .045, 8, 20), P.pneu, lado * r * .32, y, z + r * .05); lente.rotation.x = 0;
@@ -73,7 +77,9 @@ export function apresentacaoDoVisitante(modelo: ModeloDeVisitante, v: Visitante)
   const escondido = v.escondido ? acompanhar(v.escondido, 0, true) : null;
   let revelou = false, tirandoCapacete = false, tempoDoCapacete = 0;
   return {
+    atuar(acao: string): void { figurino?.atuar(acao); },
     update(dt: number): void {
+      figurino?.update(dt);
       for (const m of colegas) m.update(dt);
       if (tirandoCapacete && capacete.visible) {
         tempoDoCapacete += dt; const k = Math.min(1, tempoDoCapacete / .85), ease = k * k * (3 - 2 * k);
@@ -91,6 +97,7 @@ export function apresentacaoDoVisitante(modelo: ModeloDeVisitante, v: Visitante)
       }
     },
     dispose(): void {
+      figurino?.dispose();
       for (const m of colegas) m.dispose();
       for (const o of extras) { o.removeFromParent(); o.traverse(m => { if ((m as THREE.Mesh).isMesh) (m as THREE.Mesh).geometry.dispose(); }); }
     },

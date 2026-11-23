@@ -14,6 +14,8 @@ import { Gina } from '../entities/bichos/Gina';
 import { SacolaDaPortaria } from '../world/sacolaDaPortaria';
 import { alvosDaBancada } from '../eventos/portaria/alvosDaBancada';
 import { apresentacaoDoVisitante } from '../eventos/portaria/apresentacaoDoVisitante';
+import { AderecosDaCantina } from '../eventos/portaria/aderecosDaCantina';
+import { MangueiraDaGina } from '../eventos/portaria/mangueiraDaGina';
 import { AberturaDaGina } from '../eventos/portaria/aberturaDaGina';
 import { concederPremiosDaGina } from '../eventos/portaria/premiosDaGina';
 import { PresenteDaGina } from '../ui/presenteDaGina';
@@ -94,7 +96,8 @@ function montarAPortaria(w: WorldBuilder): void {
   const busca = new URLSearchParams(location.search);
 
   // ------------------------------------------------------------ o chão e o fundo
-  montarOFundo(w);
+  const diaEscolhido = diaDaPortariaPedido(g, busca);
+  montarOFundo(w, diaEscolhido >= 7);
 
   // ------------------------------------------------------------ a guarita e a mesa
   const guarita = new GuaritaDoClube();
@@ -151,6 +154,7 @@ function montarAPortaria(w: WorldBuilder): void {
   };
   let vista: VistaDaPortaria = 'bancada';
   let temTurmaNaJanela = false;
+  let trajeNaJanela = false;
   const olhoAtual = new THREE.Vector3(), alvoAtual = new THREE.Vector3();
   let cameraPronta = false;
   let lenteAtual = 66;
@@ -158,7 +162,7 @@ function montarAPortaria(w: WorldBuilder): void {
   let focoDeAbertura: { para: THREE.Vector3; lente: number } | null = null;
   const olhar = (dt = 1): void => {
     const o = focoDeAbertura ? { de: OLHO.de, ...focoDeAbertura } : vista === 'visitante'
-      ? { de: new THREE.Vector3(0, 1.72, .45), para: new THREE.Vector3(0, 1.74, 2.72), lente: emPe() ? (temTurmaNaJanela ? 90 : 52) : (temTurmaNaJanela ? 60 : 42) }
+      ? { de: new THREE.Vector3(0, 1.72, .45), para: new THREE.Vector3(trajeNaJanela && emPe() ? .085 : 0, 1.74, 2.72), lente: emPe() ? (temTurmaNaJanela ? 90 : trajeNaJanela ? 46 : 52) : (temTurmaNaJanela ? 60 : 42) }
       : vista === 'bancada'
         ? { de: new THREE.Vector3(0, emPe() ? 2.8 : 1.85, emPe() ? .5 : .2), para: new THREE.Vector3(0, emPe() ? 1.02 : 1.1, emPe() ? 1.45 : 1.65), lente: emPe() ? 90 : 66 }
         : emPe() ? OLHO_EM_PE : OLHO;
@@ -168,6 +172,8 @@ function montarAPortaria(w: WorldBuilder): void {
     g.setCameraOmbro(olhoAtual, alvoAtual, Number(busca.get('lente') ?? lenteAtual));
   };
   // (no quadro da montagem o motor ainda põe a isométrica de chegada: o olho entra no primeiro quadro da cena)
+  let mangueira: MangueiraDaGina | null = null;
+  w.aoDesmontar(() => mangueira?.fechar());
   let sentados = false;
   w.onUpdate((dt) => {
     if (!sentados) {
@@ -175,7 +181,7 @@ function montarAPortaria(w: WorldBuilder): void {
       g.setPlayerVisible(false);
       sentados = true;
     }
-    olhar(dt);
+    if (mangueira) mangueira.update(dt); else olhar(dt);
   });
   w.aoDesmontar(() => {
     g.setCameraOmbro(null);
@@ -217,9 +223,12 @@ function montarAPortaria(w: WorldBuilder): void {
   // ================================================================ O DIA
   // (`?depressa` é dos testes: a fila, o elevador e a mesa andam quatro vezes mais rápido; o relógio não)
   const pressa = busca.has('depressa') ? 4 : 1;
-  const n = diaDaPortariaPedido(g, busca);
+  const n = diaEscolhido;
+  const fatosAnteriores = fatosAntesDoDia(g, n);
+  const cantina = n >= 7 ? new AderecosDaCantina(w.root,n,fatosAnteriores) : null;
+  if(cantina){w.onUpdate(dt=>cantina.update(dt));w.aoDesmontar(()=>cantina.dispose());}
   const semente = Number(busca.get('semente') ?? Math.floor(Math.random() * 1e6));
-  const ex = new Expediente(n, semente, fatosAntesDoDia(g, n), encontrosAntesDoDia(g, n));
+  const ex = new Expediente(n, semente, fatosAnteriores, encontrosAntesDoDia(g, n));
   const painel = g.mesaDaPortaria();
   const sacola = new SacolaDaPortaria(); w.add(sacola.group);
   w.onUpdate(dt => sacola.update(dt * pressa));
@@ -241,6 +250,13 @@ function montarAPortaria(w: WorldBuilder): void {
   };
   w.onUpdate(dt => homenagem?.update(dt));
   w.aoDesmontar(() => homenagem?.fechar());
+  const usarMangueira = async (m: ModeloDeVisitante | null): Promise<boolean> => {
+    painel.fechar();
+    mangueira = new MangueiraDaGina(w.root,m,(de,para,lente)=>g.setCameraOmbro(de,para,lente));
+    const resultado = await mangueira.pronta;
+    mangueira = null; cameraPronta = false;
+    return resultado;
+  };
   const mostrarPresentes = async (dias: readonly number[]): Promise<void> => {
     if (!dias.length || !ativa) return;
     presente = new PresenteDaGina(dias, n);
@@ -313,6 +329,7 @@ function montarAPortaria(w: WorldBuilder): void {
   const estado = (): EstadoDaMesa => {
     const j = ex.janela;
     const v = j?.visitante;
+    trajeNaJanela = n >= 7 && v?.ficha === 'jeanluc';
     temTurmaNaJanela = !!v?.escondido || !!v?.grupo?.some(id => id !== 'netinho');
     return {
       dia: { numero: ex.dia.numero, nome: ex.dia.nome },
@@ -352,6 +369,7 @@ function montarAPortaria(w: WorldBuilder): void {
   let horaMostrada = '';
   w.onUpdate((dt) => {
     if (!comecou || acabou || !ex.janela || ocupado || painel.falando || painel.confirmandoSaida) return;
+    if(n === 9 && ex.janela.visitante.ficha === 'josefina' && !ex.janela.perguntas.includes('destino'))return;
     ex.passar(dt);
     if (ex.hora !== horaMostrada) {
       horaMostrada = ex.hora;
@@ -381,7 +399,16 @@ function montarAPortaria(w: WorldBuilder): void {
     m.encarar(M.janela.x, 0.3);
     await elevador.irPara(alturaDoElevador(m.group));
     const ficha = fichaDe(v);
+    if (n >= 7 && v.ficha === 'jeanluc') { painel.mudarVista('visitante'); apresentacoes.get(v.id)?.atuar('chegada'); }
+    const visitaComObjeto = cantina && (n === 7 && v.ficha === 'jeanluc' || n === 9 && v.ficha === 'josefina' || n === 10 && v.ficha === 'noel');
+    if (visitaComObjeto) {
+      m.gesticular(1.2); painel.mudarVista('bancada');
+      await cantina.receber(m.pontoDaEntrega()); if(!ativa)return;
+      if(n===7){await painel.falar(g.companionName(),['Até o distintivo tem uma mordida na borda.']);painel.mudarVista('visitante');}
+      if(n===10)await painel.falar(g.playerName(),['Noel… aqui diz “Suco de laranja, oito reais”. Você trouxe a ordem de entrega?']);
+    }
     await painel.falar(v.nome, v.chegada ?? ficha.chegada, ficha.icone);
+    if(visitaComObjeto)cantina.retirar();
     if (!ativa) return;
     m.gesticular(1.65 + v.docs.length * .24);
     await mesa.receber(v.docs, () => m.pontoDaEntrega());
@@ -472,10 +499,24 @@ function montarAPortaria(w: WorldBuilder): void {
     await mesa.devolver(() => m.pontoDaEntrega());
     await sacola.devolver(m.pontoDaEntrega());
     if (!ativa) return;
+    if (n >= 7 && v.ficha === 'jeanluc') { painel.mudarVista('visitante'); apresentacoes.get(v.id)?.atuar('carimbo'); }
     await painel.falar(v.nome, falaDaSaida(v, c), ficha.icone);
+    if (cantina && n === 9 && v.ficha === 'josefina' && c !== 'hojeNao') cantina.florir(true);
+    if (cantina && n === 12 && v.ficha === 'jeanluc' && c !== 'hojeNao') {
+      m.gesticular(1.2); painel.mudarVista('bancada');
+      await cantina.receber(m.pontoDaEntrega()); if(!ativa)return;
+      await painel.falar(g.companionName(),['Ele guardou um pedaço pra gente. Tá quentinho ainda.']);cantina.retirar();
+    }
     await elevador.irPara(0);
     noElevador = null;
     m.group.position.y = 0;
+    if (v.id === 'jeanluc-cantina-7' && c !== 'hojeNao') {
+      const recuperou = await usarMangueira(m);
+      if (!ativa) return;
+      const atendimento = ex.atendimentos[ex.atendimentos.length - 1];
+      atendimento.poteRecuperado = recuperou;
+      vista = 'bancada'; abrirAMesa(); desenhar();
+    }
     modelos.delete(v.id);
     indo.push(m);
     // quem entra segue pela cancela para dentro do clube; o barrado volta pelo portão
@@ -483,6 +524,16 @@ function montarAPortaria(w: WorldBuilder): void {
       ? [[-1.2, 2.95], [-4.9, 3.1], [-6.8, 3.6], [-11, 4.2]]
       : [[1.6, 3.0], [3.1, 3.55], [6.5, 3.9], [12, 6]];
     void (async () => {
+      if(n === 11 && c !== 'hojeNao' && (v.ficha === 'jeanluc' || v.nome === 'Tutu')){
+        abrirCancela=true;
+        await m.irPara(2.85,3.65,1.55); if(!ativa)return;
+        abrirCancela=false;
+        await m.irPara(v.ficha === 'jeanluc' ? -.56:.12,5.75,1.65);
+        if(!ativa)return;
+        m.encarar(v.ficha === 'jeanluc' ? .2:-.6,5.35);
+        if(v.ficha === 'jeanluc'){apresentacoes.get(v.id)?.atuar('reger');g.som('cantarolar');}
+        return;
+      }
       for (const [x, z] of saida) {
         if (c !== 'hojeNao' && x > 2.5) abrirCancela = true;
         await m.irPara(x, z, 1.5);
@@ -578,7 +629,7 @@ function montarAPortaria(w: WorldBuilder): void {
 
   // ---- o começo do dia: a Gina demonstra a novidade do lado de dentro da guarita
   const abrirAMesa = (): void => painel.abrir({
-    vistaMudou: v => { vista = v; },
+    vistaMudou: v => { vista = v; if(v === 'visitante' && ex.janela) apresentacoes.get(ex.janela.visitante.id)?.atuar('comparar'); },
     sacolaMudou: aberta => { if (aberta) void abrirSacola(); },
     chamar: () => void chamar(),
     perguntar: (a) => void perguntar(a),
@@ -606,6 +657,7 @@ function montarAPortaria(w: WorldBuilder): void {
     if (!ativa) return;
     await mostrarHomenagem();
     if (!ativa) return;
+    if(n === 7) { await usarMangueira(null); if(!ativa)return; }
     abrirAMesa();
     desenhar();
     comecou = true;
@@ -620,7 +672,7 @@ function montarAPortaria(w: WorldBuilder): void {
       if (!j) return null;
       return { diferencas: diferencas(j.visitante, ex.contexto), carimbo: carimboCerto(j.visitante, ex.contexto), proibidos: proibidosNaSacola(j.visitante, ex.contexto), id: j.visitante.id };
     },
-    expedienteLimpo: () => new Expediente(n, semente, fatosAntesDoDia(g, n), encontrosAntesDoDia(g, n)),
+    expedienteLimpo: () => new Expediente(n, semente, fatosAnteriores, encontrosAntesDoDia(g, n)),
     diferencas, carimboCerto, proibidosNaSacola,
   };
 }
@@ -631,7 +683,7 @@ function montarAPortaria(w: WorldBuilder): void {
  * calçada e a rua lá fora, as árvores e as sebes. Tudo é FUNDO (ninguém
  * procura pelo nome, ninguém toca): `fundirComoFundo` por vizinhança.
  */
-function montarOFundo(w: WorldBuilder): void {
+function montarOFundo(w: WorldBuilder, semanaDaCantina = false): void {
   w.ground({ width: 90, depth: 90, color: P.grass, z: 10, textura: tapeteDeGrama(9) });
   // o caminho de pedrinha: do portão até o balcão e do balcão até a cancela (e a soleira do portão)
   w.patch(-2.6, 3.9, 6.6, 2.4, P.concrete, 0, 0.026, calcadaDePedrinha());
@@ -660,7 +712,7 @@ function montarOFundo(w: WorldBuilder): void {
   dentro.add(w.place(arvore('florida', 0.9, 0.4), 7.5, 0, 7.4));
   dentro.add(w.place(sebe(6, 1.0), 1.0, 0, 8.2));
   dentro.add(w.place(sebe(5, 1.0), 8.8, 0, 6.5, Math.PI / 2));
-  dentro.add(w.place(lamp(), 1.6, 0, 4.9));
+  dentro.add(w.place(lamp(), semanaDaCantina ? 3.6 : 1.6, 0, 4.9));
   dentro.add(w.place(lamp(), -3.6, 0, 5.6));
   w.add(fundirComoFundo(dentro));
   // e lá fora, do outro lado da rua

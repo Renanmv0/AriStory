@@ -38,12 +38,12 @@ export function lembrarAtendimento(dia: number, v: Visitante, carimbo: Carimbo):
   };
 }
 
-/** Valida cópias de save antigo/incompleto e limita o registro aos seis dias. */
+/** Valida cópias de save antigo/incompleto e limita o registro às duas semanas. */
 export function normalizarEncontros(bruto: unknown): EncontroDaPortaria[] {
   if (!Array.isArray(bruto)) return [];
   const texto = (x: unknown): x is string => typeof x === 'string' && x.length > 0 && x.length < 160;
-  return bruto.slice(-144).filter((e): e is EncontroDaPortaria => {
-    if (!e || typeof e !== 'object' || !Number.isInteger(e.dia) || e.dia < 1 || e.dia > 6 || !NOVOS.has(e.ficha) || !texto(e.nome)) return false;
+  return bruto.slice(-288).filter((e): e is EncontroDaPortaria => {
+    if (!e || typeof e !== 'object' || !Number.isInteger(e.dia) || e.dia < 1 || e.dia > 12 || !NOVOS.has(e.ficha) || !texto(e.nome)) return false;
     if (!['entra', 'soClube', 'hojeNao'].includes(e.carimbo) || !['socio', 'convidado', 'entregador'].includes(e.papel)) return false;
     if (!e.rosto || e.rosto.especie !== FICHAS[e.ficha]?.retrato.especie || !texto(e.rosto.cor)) return false;
     if (e.rosto.marca !== null && e.rosto.marca !== undefined && !texto(e.rosto.marca)) return false;

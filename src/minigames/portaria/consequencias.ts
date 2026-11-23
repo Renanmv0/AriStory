@@ -27,6 +27,7 @@ export interface Atendimento {
   confiscados: readonly ItemDaSacola[];
   /** aceitou o agrado (a casquinha do Mano, a arepita da Tia Liz) */
   aceitouOferta?: boolean;
+  poteRecuperado?: boolean;
 }
 
 export type TipoDeErro = 'entrouQuemNaoPodia' | 'barrouQuemPodia' | 'carimboTrocado' | 'itemPassou' | 'agrado';
@@ -80,6 +81,10 @@ export function avaliarAtendimento(at: Atendimento, ctx: ContextoDoDia): Avaliac
     return { certo: false, carimboCerto: certo, linhas, erros, caro: false, fatos, achou: false };
   }
 
+  if (at.poteRecuperado) {
+    fatos.push('fiscal-molhado');
+    linhas.push({valor: 1,texto:'recuperou o pote de biscoitos da cantina'});
+  }
   // ---- o carimbo
   const passou = at.carimbo !== 'hojeNao';
   if (at.carimbo === certo) {
@@ -151,6 +156,8 @@ export interface Manchete {
 
 /** as manchetes que um FATO do dia pode dar (o Boletim do Clube, §9) */
 export const MANCHETES: Readonly<Record<Fato, Manchete>> = {
+  'fiscal-molhado': { titulo: 'VISTORIA A SECO É ADIADA', linha: 'A cantina recuperou os biscoitos. O quepe seca no varal.', tom: 'bom', peso: 3 },
+  'maestro-regeu': { titulo: 'BIS PARA A ORQUESTRA DE UMA COLHER', linha:'Tutu acertou as duas notas. O maestro pediu sobremesa.', tom:'bom', peso:2 },
   // ---- as ruins (consequência de erro)
   'hipolito-entrou-vencido': { titulo: 'SÓCIO COM CARTEIRINHA DE 1998 É VISTO NO TRAMPOLIM', linha: 'Seu Hipólito: "vencida não, madura".', tom: 'ruim', peso: 2 },
   'noel-barrado': { titulo: 'SUCO ATRASADO: NOEL BARRADO NA PRÓPRIA PORTARIA', linha: 'Três caixas de laranja esperaram na calçada.', tom: 'ruim' },
@@ -273,7 +280,8 @@ export function fecharODia(dia: DiaDaPortaria, atendimentos: readonly Atendiment
   const ruins = doDia.filter((m) => m.tom === 'ruim');
   const boas = doDia.filter((m) => m.tom === 'bom');
   const doResumo = manchetesDoResumo(resumo);
-  const boletim = [...ruins.slice(0, 2), ...boas, ...doResumo]
+  const alertas = dia.numero >= 7 ? doResumo.filter(m => m.tom === 'ruim') : [];
+  const boletim = [...ruins.slice(0, 2), ...alertas, ...boas, ...doResumo]
     .filter((m, i, todas) => todas.findIndex((x) => x.titulo === m.titulo) === i)
     .slice(0, 3);
   return {

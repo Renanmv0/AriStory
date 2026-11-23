@@ -1,3 +1,4 @@
+import { avisoDaCantina } from './semanaDaCantina';
 import { FICHAS } from './personagens';
 import { NOME_DO_CLUBE, data, type Data, type Documento } from './tipos';
 
@@ -62,6 +63,13 @@ export function recadoDaGina(n: number, hoje: Data): RecadoDaGina {
       papeis: [{ tipo: 'conviteColetivo', socio: 'Noel', numeroDoSocio: '0007', data: { ...hoje }, nomes: ['Estella', 'Josefina', 'Capy'] }], apoio: 'prancheta',
     },
   ];
+  const cantina = avisoDaCantina(n);
+  if (cantina) return { titulo:cantina[0], boasVindas:cantina[1],
+    exemplo:n === 9 ? 'Na ordem da muda diz Estufa da Josefina. Na janela, pergunte “Qual é o destino?”. As duas pistas devem combinar.'
+      : n === 7 ? 'Olhem a data do convite e o calendário. Depois vamos ao jardim testar a mangueira com meu patinho.' : 'Este convite vale para hoje. Confiram também quem convidou e o número na lista.',
+    lembrete:n === 12 ? 'Ouçam a música! A primeira fornada já está no forno.' : 'Quando vocês estiverem prontos, toquem a campainha.',
+    papeis:n === 9 ? [{ tipo:'ordem', empresa:'Estufa da Josefina', destino:'Estufa da Josefina', itens:['lavanda'] }] : [convite],
+    apoio:n === 9 ? 'manual' : 'calendario' };
   const recado = recados[n - 1];
   if (!recado) throw new Error(`não existe abertura para o dia ${n}`);
   return recado;

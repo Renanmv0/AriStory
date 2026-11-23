@@ -1,0 +1,6 @@
+.pt-jardim{position:fixed;inset:0;z-index:90;touch-action:none;user-select:none;display:flex;align-items:center;flex-direction:column;justify-content:space-between;font-family:inherit;color:#483c29}
+.pt-jardim header,.pt-jardim button{background:#fff5de;border:2px solid #dbb976;border-radius:20px;box-shadow:0 3px 10px #33240f39}
+.pt-jardim header{margin: max(14px,env(safe-area-inset-top)) 16px 0;padding:12px 18px;text-align:center;max-width:420px;pointer-events:none}
+.pt-jardim small{display:block;margin-top:4px}.pt-jardim footer{width:min(94%,480px);display:flex;justify-content:space-between;margin-bottom:max(24px,env(safe-area-inset-bottom))}
+.pt-jardim button{font:inherit;font-weight:bold;padding:12px 18px;min-height:46px;touch-action:none;color:#283f37}.pt-jardim>button{position:absolute;right:3%;bottom:90px;font-size:.85em}.pt-jardim footer button:last-child{background:#b9e9f5}
+body:has(.pt-jardim) #ui{visibility:hidden}

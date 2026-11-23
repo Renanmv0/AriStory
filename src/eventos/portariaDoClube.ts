@@ -101,13 +101,13 @@ export function pedirODiaDaPortaria(n: number): void {
   diaPedido = n;
 }
 export function diaDaPortariaPedido(g: GameAPI, busca: URLSearchParams): number {
-  const daUrl = Number(busca.get('dia'));
-  if (daUrl >= 1 && daUrl <= DIAS.length) return daUrl;
   if (diaPedido !== null) {
     const n = diaPedido;
     diaPedido = null;
     return n;
   }
+  const daUrl = Number(busca.get('dia'));
+  if (Number.isInteger(daUrl) && daUrl >= 1 && daUrl <= DIAS.length) return daUrl;
   let ultimo = 1;
   for (const d of DIAS) {
     if (!diaAberto(g, d.numero)) break;
@@ -129,7 +129,12 @@ export function portariaLiberada(g: GameAPI): boolean {
  * foi jogado mostra as melhores estrelas.
  */
 export async function convidarParaAPortaria(g: GameAPI): Promise<'foi' | 'conversar' | 'depois'> {
-  const abertos = DIAS.filter((d) => diaAberto(g, d.numero));
+  let abertos = DIAS.filter((d) => diaAberto(g, d.numero));
+  if (abertos.length > 6) {
+    const semana = await g.ask('Qual escala vamos abrir?', ['🥨 Festa da cantina · dias 7 a 12', '🛎️ Primeira semana · dias 1 a 6', '💬 Só conversar', 'Agora não'], 'Gina');
+    if (semana >= 2) return semana === 2 ? 'conversar' : 'depois';
+    abertos = abertos.filter(d => semana === 0 ? d.numero >= 7 : d.numero <= 6);
+  }
   const rotulos = abertos.map((d) => {
     const estrelas = g.stat(CHAVE_DA_PORTARIA.estrelas(d.numero));
     const marca = estrelas > 0 ? ` ${'⭐'.repeat(estrelas)}` : ' · novo';

@@ -9,6 +9,7 @@
  * salada na sexta. O que acontece no MESMO dia (o Noel de verdade chegando
  * atrás do falso) é um CHAMADO da fila (`Visitante.chama`) para uma reserva.
  */
+import { semanaDaCantina } from './semanaDaCantina';
 import type { ContextoDoDia, Ferramenta, Regra, Visitante } from './conferencia';
 import { identidadeDaPortaria, recordarChegada, ultimosEncontros, type EncontroDaPortaria } from './memoria';
 import {
@@ -24,12 +25,13 @@ import {
 /** os dias: a semana que vem do jogo (segunda, 23 de novembro de 2026, ao sábado) */
 export const HOJE: readonly Data[] = [
   data(23, 11, 2026), data(24, 11, 2026), data(25, 11, 2026), data(26, 11, 2026), data(27, 11, 2026), data(28, 11, 2026),
+  data(30, 11, 2026), ...[1, 2, 3, 4, 5].map(d => data(d, 12, 2026)),
 ];
 export const DIA_DA_SEMANA = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const;
 
 const VALIDA = data(31, 12, 2027);
 const VENCIDA = data(30, 6, 2026);
-const amanha = (n: number): Data => { const h = HOJE[n - 1]; return data(h.d + 1, h.m, h.a); };
+const amanha = (n: number): Data => { const h = HOJE[n - 1]; const d = new Date(Date.UTC(h.a, h.m - 1, h.d + 1)); return data(d.getUTCDate(), d.getUTCMonth() + 1, d.getUTCFullYear()); };
 
 // =========================================================== a lista de sócios
 
@@ -728,7 +730,7 @@ const DIA_6: DiaDaPortaria = {
   ],
 };
 
-export const DIAS: readonly DiaDaPortaria[] = [DIA_1, DIA_2, DIA_3, DIA_4, DIA_5, DIA_6];
+export const DIAS: readonly DiaDaPortaria[] = [DIA_1, DIA_2, DIA_3, DIA_4, DIA_5, DIA_6, ...semanaDaCantina(DIA_6)];
 
 export const diaPorNumero = (n: number): DiaDaPortaria | null => DIAS.find((d) => d.numero === n) ?? null;
 

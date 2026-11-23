@@ -142,6 +142,7 @@ export class JeanLuc extends Bicho {
     const peito = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), azul);
     peito.scale.set(0.162, 0.14, 0.158);
     peito.position.set(0, 0.328, 0.015);
+    peito.name = 'tecido-do-pato';
     this.corpo.add(peito);
 
     /**
@@ -231,6 +232,7 @@ export class JeanLuc extends Bicho {
       const manga = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), azul);
       manga.scale.set(0.042, 0.072, 0.118);
       manga.position.y = -0.045;
+      manga.name = 'tecido-do-pato';
       asa.add(manga);
       const punho = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), camisa);
       punho.scale.set(0.04, 0.016, 0.108);
@@ -308,10 +310,12 @@ export class JeanLuc extends Bicho {
      */
     const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.156, 0.098, 0.018), camisa);
     bandeira.position.set(0, 0.322, 0.168);
+    bandeira.name = 'bandeira-do-pato';
     this.corpo.add(bandeira);
     for (const [i, cor] of [azul, camisa, vermelho].entries()) {
       const tira = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.082, 0.016), cor);
       tira.position.set((i - 1) * 0.046, 0.322, 0.182);
+      tira.name = 'bandeira-do-pato';
       this.corpo.add(tira);
     }
 
@@ -389,6 +393,7 @@ export class JeanLuc extends Bicho {
       this.cabeca.add(bochecha);
     }
 
+    this.boina.name = 'boina-do-jean-luc';
     this.montarABoina();
     this.cabeca.add(this.boina);
     this.pescoco.add(this.cabeca);

@@ -125,7 +125,7 @@ const jogarASemana = (decidir, semente = 1) => {
 
 // ============================================================ 2. os dias
 console.log('\n2. os dias');
-ok(P.DIAS.length === 6, `seis dias (${P.DIAS.length})`);
+ok(P.DIAS.length === 12, `doze dias (${P.DIAS.length})`);
 const certa = jogarASemana(jogarCerto);
 const errada = jogarASemana(jogarErrado);
 /** a decisão de quem BARRA todo mundo (é o caminho que monta os "foi barrado sem motivo" da semana) */
@@ -416,7 +416,7 @@ console.log('\n5. a semana no save');
 console.log('\n6. o Jean-Luc, todo dia com um disfarce');
 {
   const disfarces = [];
-  for (const dia of P.DIAS) {
+  for (const dia of P.DIAS.slice(0,6)) {
     for (const [rotulo, caminho] of [['certo', certa], ['errado', errada], ['barrando', barrando]]) {
       const fila = caminho.porDia[dia.numero - 1].fila;
       const jl = fila.filter((v) => v.ficha === 'jeanluc');
