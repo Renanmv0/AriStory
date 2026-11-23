@@ -92,11 +92,13 @@ export function vestirNaCantina(pato:JeanLuc, traje:string|undefined) {
   const tampa=grupo(detalhe,0,.047,.012);
   const ponta=grupo(adereco,.041,.01,.17);
   const claridade=grupo(detalhe,-.055,.08,.022);
+  const quepe=grupo(cabeca);
   if(fiscal){
-    disco(cabeca,cor,0,.117,-.005,.117,.061,.104);
-    disco(cabeca,ouro,0,.095,-.005,.109,.009);
-    oval(cabeca,0x242937,0,.083,.087,.093,.009,.072);
-    biscoito(cabeca,0,.125,.115,.018);
+    quepe.name='quepe-do-fiscal';
+    disco(quepe,cor,0,.117,-.005,.117,.061,.104);
+    disco(quepe,ouro,0,.095,-.005,.109,.009);
+    oval(quepe,0x242937,0,.083,.087,.093,.009,.072);
+    biscoito(quepe,0,.125,.115,.018);
     biscoito(corpo,.067,.343,.168,.031);
     lente(adereco,.057,.034,.126,.038);
     fio(adereco,ouro,.003,[[.093,.035,.126],[.118,.028,.087],[.11,-.037,.071],[.098,-.062,.083]]);
@@ -157,6 +159,10 @@ export function vestirNaCantina(pato:JeanLuc, traje:string|undefined) {
     mao.position.set(fotografo?-.063:0,-.12+(fotografo?.175:.045)*gesto,.115+(fotografo?.044:0)*gesto);
     mao.rotation.z=maestro?.24+ritmo*.36:florista?-.13+.28*gesto:-.15;
     if(fiscal) {
+      const encharcado=modo==='banho'?Math.min(1,tempo*2):modo==='fugaMolhada'?1:0;
+      quepe.rotation.x=.46*encharcado;
+      quepe.position.y=-.023*encharcado;
+      if(modo==='fugaMolhada'){mao.position.y+=.18;mao.rotation.x=-.95;}
       adereco.rotation.z=.05*ritmo+.24*gesto;
       tampa.rotation.x=modo==='carimbo'?-1.7*gesto:0;
     }

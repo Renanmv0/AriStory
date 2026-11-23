@@ -1,10 +1,9 @@
 import * as T from 'three';
 import { toon } from '../../core/materials';
-import { duck, biscoitoDaEstella } from '../../world/props';
-import type { ModeloDeVisitante } from '../../world/visitantesDaPortaria';
+import { duck } from '../../world/props';
 import '../../ui/mangueiraDaGina.css';
 
-/** O treino e a recuperação usam a mesma mira e o mesmo percurso curto. */
+/** O treino da Gina, antes de abrir a guarita. */
 export class MangueiraDaGina {
   private readonly jardim=new T.Group();
   private readonly camera=new T.PerspectiveCamera(58,1,.01,80);
@@ -14,7 +13,6 @@ export class MangueiraDaGina {
   private readonly agua:T.Mesh[]=[];
   private readonly balde=new T.Group();
   private readonly alvo:T.Object3D;
-  private readonly pote=new T.Group();
   private readonly ui=document.createElement('section');
   private readonly dica=document.createElement('strong');
   private readonly teclas=new Set<string>();
@@ -33,7 +31,7 @@ export class MangueiraDaGina {
   private resolver!: (molhou:boolean)=>void;
   readonly pronta=new Promise<boolean>(resolve=>{this.resolver=resolve;});
 
-  constructor(raiz:T.Object3D, private fiscal:ModeloDeVisitante|null,
+  constructor(raiz:T.Object3D,
     private focar:(de:T.Vector3,para:T.Vector3,lente:number)=>void) {
     raiz.add(this.jardim);
     const peca=(p:T.Object3D,g:T.BufferGeometry,c:number,x:number,y:number,z:number)=>{
@@ -45,12 +43,9 @@ export class MangueiraDaGina {
       peca(p,new T.CylinderGeometry(r*.83,r*.83,.016,28),0x78cddc,0,h*.38,0);
     };
     latas(this.balde,0x399990,.29,.35); this.balde.position.set(2.04,.04,5.9);this.jardim.add(this.balde);
-    if(fiscal){
-      this.alvo=fiscal.group;
-      this.pote.position.set(.17,.29,.16);this.alvo.add(this.pote);latas(this.pote,0xd67a58,.11,.15);
-      const doce=biscoitoDaEstella();doce.scale.setScalar(.8);doce.position.y=.16;this.pote.add(doce);
-    }else{this.alvo=duck(0xffce52);this.alvo.rotation.y=2.3;
-      for(const s of [-1,1])peca(this.alvo,new T.SphereGeometry(.018,10,8),0x322d32,s*.079,.427,.222);this.jardim.add(this.alvo);}
+    this.alvo=duck(0xffce52);this.alvo.rotation.y=2.3;
+    for(const s of [-1,1])peca(this.alvo,new T.SphereGeometry(.018,10,8),0x322d32,s*.079,.427,.222);
+    this.jardim.add(this.alvo);
     this.alvo.position.set(2,.04,5.35);
     this.jardim.add(this.bico);
     peca(this.bico,new T.CylinderGeometry(.045,.063,.24,18),0x44826a,0,0,0).rotation.x=Math.PI/2;
@@ -61,12 +56,12 @@ export class MangueiraDaGina {
       gota.scale.set(.025,.023,.044);gota.visible=false;this.agua.push(gota);
     }
     this.ui.className='pt-jardim';
-    this.ui.setAttribute('aria-label',fiscal?'Recuperar os biscoitos':'Treino da mangueira');
-    this.dica.textContent=fiscal?'Jean-Luc pegou o pote! Aproxime-se e molhe o caminho dele.':'Gina: empurre o patinho até o balde com a água!';
+    this.ui.setAttribute('aria-label','Treino da mangueira');
+    this.dica.textContent='Gina: empurre o patinho até o balde com a água!';
     const instru=document.createElement('small');instru.textContent='Segure na cena para mirar e jogar água.';
     const andar=document.createElement('button');andar.textContent='👣 Andar';
     const jato=document.createElement('button');jato.textContent='💧 Jato';
-    const voltar=document.createElement('button');voltar.textContent=fiscal?'Voltar à guarita':'Pular treino';
+    const voltar=document.createElement('button');voltar.textContent='Pular treino';
     const topo=document.createElement('header'),rodape=document.createElement('footer');topo.append(this.dica,instru);rodape.append(andar,jato);
     this.ui.append(topo,voltar,rodape);document.body.append(this.ui);
     const segurar=(e:HTMLElement,acao:(on:boolean)=>void)=>{
@@ -110,16 +105,12 @@ export class MangueiraDaGina {
     this.olho.z=T.MathUtils.clamp(this.olho.z+avanco*dt*1.6,2.95,4.55);
     this.olho.x=T.MathUtils.clamp(this.olho.x+((this.andando?this.rumo.x:0)+Number(tem('KeyA','ArrowLeft'))-Number(tem('KeyD','ArrowRight')))*dt*1.5,1.3,2.9);
     const pos=this.alvo.position;
-    if(this.fiscal){
-      pos.y=.035+.028*Math.abs(Math.sin(this.tempo*5));
-      pos.x=2.07+Math.sin(this.tempo*1.3)*.43;pos.z=5.45+Math.min(1,this.tempo/18)*.68;
-      this.fiscal.encarar(this.olho.x+.65*Math.sin(this.tempo*1.3),this.olho.z);
-    }else {pos.z=5.35+.55*this.carga;pos.y=.055+.48*Math.sin(this.carga*Math.PI*.74);}
+    pos.z=5.35+.55*this.carga;pos.y=.055+.48*Math.sin(this.carga*Math.PI*.74);
     this.olhar.set(2.06,.32,5.65);this.focar(this.olho,this.olhar,58);
     this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.camera.position.copy(this.olho);
     this.camera.lookAt(this.olhar);this.camera.updateMatrixWorld();
     this.bico.position.copy(this.olho).add(new T.Vector3(.09,-.135,-.57).applyQuaternion(this.camera.quaternion));
-    const alvo=pos.clone();alvo.y+=this.fiscal ? .35:.21;
+    const alvo=pos.clone();alvo.y+=.21;
     if(this.teclado)this.acerto.copy(alvo);
     else {
       this.raio.setFromCamera(this.mira,this.camera);
@@ -133,16 +124,15 @@ export class MangueiraDaGina {
       g.position.copy(this.bico.position).lerp(this.acerto,t*(perto?1:.64));g.position.y+=.19*Math.sin(Math.PI*t);
     }
     if(jato&&!perto)this.dica.textContent='Chegue mais perto · segure 👣 Andar';
-    else if(!this.final&&this.iniciou)this.dica.textContent=this.fiscal?'Molhe o caminho do fiscal!':'Mire no patinho até ele cair no balde.';
+    else if(!this.final&&this.iniciou)this.dica.textContent='Mire no patinho até ele cair no balde.';
     if(jato&&perto&&this.acerto.distanceTo(alvo)<.48)this.carga=Math.min(1,this.carga+dt*.94);
-    if(this.carga>=1){this.final+=dt;this.dica.textContent=this.fiscal?'Pote recuperado! “Este tecido exige lavagem a seco!”':'Ploc! Gina: “Funcionou. Meu sapato também confirma.”';if(this.final>1.6)this.fechar(true);}
-    else if(this.fiscal&&this.tempo>22)this.fechar(false);
+    if(this.carga>=1){this.final+=dt;this.dica.textContent='Ploc! Gina: “Funcionou. Meu sapato também confirma.”';if(this.final>1.6)this.fechar(true);}
   }
   fechar(resultado=false){
     if(this.fechada)return;this.fechada=true;
     window.removeEventListener('keydown',this.tecla,true);window.removeEventListener('keyup',this.tecla,true);window.removeEventListener('blur',this.parar);
-    this.ui.remove();this.pote.removeFromParent();this.jardim.removeFromParent();
-    for(const g of [this.jardim,this.pote])g.traverse(o=>{if(o instanceof T.Mesh)o.geometry.dispose();});
+    this.ui.remove();this.jardim.removeFromParent();
+    this.jardim.traverse(o=>{if(o instanceof T.Mesh)o.geometry.dispose();});
     this.resolver(resultado);
   }
 }

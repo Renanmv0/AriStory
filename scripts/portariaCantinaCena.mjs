@@ -9,12 +9,14 @@ await mkdir(out,{recursive:true});
 const browser = await chromium.launch({executablePath:'/usr/bin/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
 const erros=[];
 try {
+  const desfecho=process.env.DESFECHO || 'recuperou';
   for(const dia of (process.env.DIAS || '7,8,9,10,11,12').split(',').map(Number)){
-    const p=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,reducedMotion:'reduce'});
+    const p=await browser.newPage({viewport:process.env.PC?{width:1100,height:800}:{width:390,height:844},hasTouch:!process.env.PC,reducedMotion:'reduce'});
     p.on('pageerror',e=>{erros.push(e.message);console.error(e.message);});
     await p.goto(base+'/?portaria&cena=portaria&dia='+dia+'&depressa&semente=7');
     await p.waitForFunction(()=>window.portaria?.ex);
     const foto=async(nome)=>{
+      if(desfecho!=='recuperou' && !(desfecho==='escapou' && nome==='corrida'))return;
       await p.evaluate(()=>{window.jogo.renderer.render=window.desenho;});
       await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
       await p.screenshot({path:out+'/dia-'+dia+'-'+nome+'.png'});
@@ -30,7 +32,11 @@ try {
       const j=await jato.boundingBox();await p.mouse.move(j.x+22,j.y+22);await p.mouse.down();
       await p.locator('.pt-jardim').waitFor({state:'hidden',timeout:22000});await p.mouse.up();
     }
-    if(dia===7){await p.locator('.pt-jardim').waitFor();await foto('treino');await molhar();}
+    if(dia===7){
+      await p.locator('.pt-jardim').waitFor();
+      if(desfecho==='recuperou'){await foto('treino');await molhar();}
+      else await p.getByRole('button',{name:'Pular treino'}).click();
+    }
     await p.waitForFunction(()=>window.portaria.comecou());
     const id=await p.evaluate(dia=>{
       const ex=window.portaria.ex;
@@ -50,15 +56,37 @@ try {
     await foto('comparacao');
     const carimbo=await p.evaluate(()=>window.portaria.conferir().carimbo);
     assert.equal(carimbo,[7,8,9].includes(dia)?'hojeNao':'entra');
-    await p.evaluate(c=>window.portaria.painel.acoes.carimbar(c),dia===7?'entra':carimbo);
+    await p.evaluate(c=>window.portaria.painel.acoes.carimbar(c),dia===7&&desfecho!=='recusou'?'entra':carimbo);
     await p.locator('.pt-balao.show').waitFor({timeout:35000});
     await foto('carimbo');
-    if(dia===7){
-      await p.waitForFunction(()=>{document.querySelector('.pt-balao.show')?.click();return !!document.querySelector('.pt-jardim');});
-      await foto('ocorrencia');await molhar();
-      assert.equal(await p.evaluate(()=>window.portaria.ex.atendimentos.at(-1).poteRecuperado),true);
+    if(dia===7 && desfecho!=='recusou'){
+      const hora=await p.evaluate(()=>window.portaria.ex.hora);
+      await p.waitForFunction(()=>{document.querySelector('.pt-balao.show')?.click();return document.querySelector('.pt-corrida')?.dataset.etapa==='aviso';});
+      await foto('flagrante');
+      await p.waitForFunction(()=>{document.querySelector('.dialogue.show')?.click();return document.querySelector('.pt-corrida')?.dataset.etapa==='corrida';});
+      assert.ok(await p.evaluate(()=>!window.jogo.camOmbro && !window.jogo.player.riding && !window.jogo.player.locked));
+      await foto('corrida');
+      if(desfecho==='recuperou'){
+        await p.keyboard.down('s');await p.keyboard.down('d');
+        const espantar=p.getByRole('button',{name:'💧 Espantar',exact:true});
+        await espantar.waitFor({timeout:9000});await p.keyboard.up('s');await p.keyboard.up('d');
+        if(process.env.PC)await p.keyboard.press('e');else await espantar.tap();
+        await p.waitForFunction(()=>document.querySelector('.pt-corrida')?.dataset.etapa==='banho');
+        await p.waitForTimeout(440);await foto('mangueirada');
+      }
+      await p.waitForFunction(()=>!document.querySelector('.pt-corrida'),null,{timeout:35000});
+      assert.equal(await p.evaluate(()=>window.portaria.ex.atendimentos.at(-1).poteRecuperado),desfecho==='recuperou');
+      assert.equal(await p.evaluate(()=>window.portaria.ex.hora),hora);
+      assert.ok(await p.evaluate(()=>window.jogo.player.riding && window.jogo.player.locked && !!window.jogo.camOmbro));
     }
-    await livre();assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),null);
+    await livre();
+    if(dia===7){
+      assert.equal(await p.locator('.pt-corrida').count(),0);
+      const antes=await p.evaluate(()=>window.portaria.ex.indice);
+      await p.evaluate(()=>window.portaria.painel.acoes.chamar());await livre();
+      assert.equal(await p.evaluate(()=>window.portaria.ex.indice),antes+1);
+    }
+    assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),null);
     console.log('Dia',dia,id,carimbo,'OK');await p.close();
   }
   assert.deepEqual(erros,[]);

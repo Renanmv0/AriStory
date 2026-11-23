@@ -35,7 +35,7 @@ function jean(q: Quadro): Visitante {
     v.docs = [{ tipo: 'convite', convidado: nome, socio: 'Noel', numeroDoSocio: '0007', data: data(1, 12, 2026) }];
     v.chegada = ['Fiscal de Crocância. É favor apresentar uma amostra. Talvez seis, dependendo da gravidade.'];
     v.barrado = ['Quero isso por escrito. Tenho uma divisória só para reclamações crocantes.'];
-    v.entra = ['A primeira amostra já avistei ali na cantina…'];
+    v.entra = ['Merci. Um excelente expediente para vocês.'];
     v.pego = ['Amanhã?! Mas a fornada é HOJE.'];
     v.fatos = { entrou: ['fiscal-entrou'], barrado: ['fiscal-barrado'] };
     v.espera = 'hojeNao';

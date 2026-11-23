@@ -15,6 +15,7 @@ import { SacolaDaPortaria } from '../world/sacolaDaPortaria';
 import { alvosDaBancada } from '../eventos/portaria/alvosDaBancada';
 import { apresentacaoDoVisitante } from '../eventos/portaria/apresentacaoDoVisitante';
 import { AderecosDaCantina } from '../eventos/portaria/aderecosDaCantina';
+import { PerseguicaoDoFiscal } from '../eventos/portaria/perseguicaoDoFiscal';
 import { MangueiraDaGina } from '../eventos/portaria/mangueiraDaGina';
 import { AberturaDaGina } from '../eventos/portaria/aberturaDaGina';
 import { concederPremiosDaGina } from '../eventos/portaria/premiosDaGina';
@@ -97,7 +98,7 @@ function montarAPortaria(w: WorldBuilder): void {
 
   // ------------------------------------------------------------ o chão e o fundo
   const diaEscolhido = diaDaPortariaPedido(g, busca);
-  montarOFundo(w, diaEscolhido >= 7);
+  montarOFundo(w, diaEscolhido);
 
   // ------------------------------------------------------------ a guarita e a mesa
   const guarita = new GuaritaDoClube();
@@ -174,6 +175,8 @@ function montarAPortaria(w: WorldBuilder): void {
   // (no quadro da montagem o motor ainda põe a isométrica de chegada: o olho entra no primeiro quadro da cena)
   let mangueira: MangueiraDaGina | null = null;
   w.aoDesmontar(() => mangueira?.fechar());
+  let perseguicao: PerseguicaoDoFiscal | null = null;
+  w.aoDesmontar(() => perseguicao?.fechar());
   let sentados = false;
   w.onUpdate((dt) => {
     if (!sentados) {
@@ -181,7 +184,7 @@ function montarAPortaria(w: WorldBuilder): void {
       g.setPlayerVisible(false);
       sentados = true;
     }
-    if (mangueira) mangueira.update(dt); else olhar(dt);
+    if (perseguicao) perseguicao.update(dt); else if (mangueira) mangueira.update(dt); else olhar(dt);
   });
   w.aoDesmontar(() => {
     g.setCameraOmbro(null);
@@ -250,9 +253,9 @@ function montarAPortaria(w: WorldBuilder): void {
   };
   w.onUpdate(dt => homenagem?.update(dt));
   w.aoDesmontar(() => homenagem?.fechar());
-  const usarMangueira = async (m: ModeloDeVisitante | null): Promise<boolean> => {
+  const treinarComMangueira = async (): Promise<boolean> => {
     painel.fechar();
-    mangueira = new MangueiraDaGina(w.root,m,(de,para,lente)=>g.setCameraOmbro(de,para,lente));
+    mangueira = new MangueiraDaGina(w.root,(de,para,lente)=>g.setCameraOmbro(de,para,lente));
     const resultado = await mangueira.pronta;
     mangueira = null; cameraPronta = false;
     return resultado;
@@ -286,7 +289,7 @@ function montarAPortaria(w: WorldBuilder): void {
   const indo: ModeloDeVisitante[] = [];
   const apresentacoes = new Map<string, ReturnType<typeof apresentacaoDoVisitante>>();
   w.onUpdate((dt) => {
-    for (const m of modelos.values()) m.update(dt * pressa);
+    for (const m of modelos.values()) m.update(dt * (perseguicao ? 1 : pressa));
     for (const m of indo) m.update(dt * pressa);
     if (noElevador) noElevador.group.position.y = elevador.altura;
     for (const a of apresentacoes.values()) a.update(dt * pressa);
@@ -510,12 +513,28 @@ function montarAPortaria(w: WorldBuilder): void {
     await elevador.irPara(0);
     noElevador = null;
     m.group.position.y = 0;
-    if (v.id === 'jeanluc-cantina-7' && c !== 'hojeNao') {
-      const recuperou = await usarMangueira(m);
+    const fiscalEntrou = v.id === 'jeanluc-cantina-7' && c !== 'hojeNao';
+    if (fiscalEntrou) {
+      painel.fechar();
+      perseguicao = new PerseguicaoDoFiscal(w,m,aberta => { abrirCancela=aberta; },acao=>apresentacoes.get(v.id)?.atuar(acao));
+      const recuperou = await perseguicao.pronta;
+      perseguicao = null;
       if (!ativa) return;
       const atendimento = ex.atendimentos[ex.atendimentos.length - 1];
       atendimento.poteRecuperado = recuperou;
-      vista = 'bancada'; abrirAMesa(); desenhar();
+      g.lockPlayer(true); sentarOsDois(); g.setPlayerVisible(false);
+      cameraPronta=false; vista='bancada'; olhar(); abrirAMesa(); desenhar();
+      if(recuperou){
+        const quepe = m.group.getObjectByName('quepe-do-fiscal');
+        if(quepe){
+          const achado=quepe.clone();
+          achado.position.set(-.61,M.topo-.086,1.03);
+          achado.rotation.set(.1,.4,-.12);achado.scale.setScalar(1.12);
+          w.add(achado);
+        }
+      }
+      await painel.falar('Gina',[recuperou?'O pote voltou inteiro! Vou deixar esse quepe secando nos achados.':'Ih, faltou um biscoito na contagem… Vamos chamar o próximo.'],'🦒');
+      if(!ativa)return;
     }
     modelos.delete(v.id);
     indo.push(m);
@@ -534,7 +553,7 @@ function montarAPortaria(w: WorldBuilder): void {
         if(v.ficha === 'jeanluc'){apresentacoes.get(v.id)?.atuar('reger');g.som('cantarolar');}
         return;
       }
-      for (const [x, z] of saida) {
+      for (const [x, z] of fiscalEntrou ? [] : saida) {
         if (c !== 'hojeNao' && x > 2.5) abrirCancela = true;
         await m.irPara(x, z, 1.5);
         if (c !== 'hojeNao' && x > 5) abrirCancela = false;
@@ -657,7 +676,7 @@ function montarAPortaria(w: WorldBuilder): void {
     if (!ativa) return;
     await mostrarHomenagem();
     if (!ativa) return;
-    if(n === 7) { await usarMangueira(null); if(!ativa)return; }
+    if(n === 7) { await treinarComMangueira(); if(!ativa)return; }
     abrirAMesa();
     desenhar();
     comecou = true;
@@ -683,7 +702,7 @@ function montarAPortaria(w: WorldBuilder): void {
  * calçada e a rua lá fora, as árvores e as sebes. Tudo é FUNDO (ninguém
  * procura pelo nome, ninguém toca): `fundirComoFundo` por vizinhança.
  */
-function montarOFundo(w: WorldBuilder, semanaDaCantina = false): void {
+function montarOFundo(w: WorldBuilder, dia: number): void {
   w.ground({ width: 90, depth: 90, color: P.grass, z: 10, textura: tapeteDeGrama(9) });
   // o caminho de pedrinha: do portão até o balcão e do balcão até a cancela (e a soleira do portão)
   w.patch(-2.6, 3.9, 6.6, 2.4, P.concrete, 0, 0.026, calcadaDePedrinha());
@@ -708,11 +727,14 @@ function montarOFundo(w: WorldBuilder, semanaDaCantina = false): void {
   const arvores: ReadonlyArray<readonly [number, number, number, number]> = [
     [5.5, 9.5, 1.15, 0.2], [-1.5, 12.5, 1.25, 0.6], [10.5, 3.5, 1.0, 0.8], [13, 11, 1.3, 0.35], [2.5, 16, 1.1, 0.9], [-4, 18, 1.2, 0.1],
   ];
-  for (const [x, z, s, sem] of arvores) dentro.add(w.place(arvore('redonda', s, sem), x, 0, z));
-  dentro.add(w.place(arvore('florida', 0.9, 0.4), 7.5, 0, 7.4));
+  for (const [x, z, s, sem] of arvores) {
+    const margem = dia === 7 && x >= 5;
+    dentro.add(w.place(arvore('redonda', s, sem), margem ? x + 6.5 : x, 0, margem ? z - 3.8 : z));
+  }
+  dentro.add(w.place(arvore('florida', 0.9, 0.4), dia === 7 ? -1.4 : 7.5, 0, 7.4));
   dentro.add(w.place(sebe(6, 1.0), 1.0, 0, 8.2));
-  dentro.add(w.place(sebe(5, 1.0), 8.8, 0, 6.5, Math.PI / 2));
-  dentro.add(w.place(lamp(), semanaDaCantina ? 3.6 : 1.6, 0, 4.9));
+  dentro.add(w.place(sebe(5, 1.0), dia === 7 ? 11.8 : 8.8, 0, 6.5, Math.PI / 2));
+  dentro.add(w.place(lamp(), dia === 7 ? 2.6 : dia >= 7 ? 3.6 : 1.6, 0, dia === 7 ? 1.9 : 4.9));
   dentro.add(w.place(lamp(), -3.6, 0, 5.6));
   w.add(fundirComoFundo(dentro));
   // e lá fora, do outro lado da rua
