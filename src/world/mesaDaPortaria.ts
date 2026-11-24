@@ -518,6 +518,14 @@ export class MesaDaPortaria {
           else if (t < .72) p.folha.position.lerpVectors(MesaDaPortaria.NA_CALHA, MesaDaPortaria.NA_BEIRA, suave((t - .5) / .22));
           else p.folha.position.lerpVectors(MesaDaPortaria.NA_BEIRA, v.para, suave((t - .72) / .28));
           p.folha.rotation.x = -.48 * (1 - suave(Math.min(1, t / .5)));
+          if (p.tipo === 'carteirinha') {
+            // Ao sair da calha, a borda dianteira inclina e o cartão assenta pelo próprio peso.
+            const queda = THREE.MathUtils.clamp((t - .72) / .28, 0, 1);
+            const inclinacao = Math.sin(Math.PI * queda) ** 2;
+            p.folha.rotation.x -= .13 * inclinacao;
+            p.folha.rotation.z = .055 * inclinacao;
+            p.folha.position.y += .017 * inclinacao;
+          }
         } else {
           if (t < .4) p.folha.position.lerpVectors(v.de, MesaDaPortaria.NA_BEIRA, suave(t / .4));
           else if (t < .7) p.folha.position.lerpVectors(MesaDaPortaria.NA_BEIRA, MesaDaPortaria.NA_CALHA, suave((t - .4) / .3));
@@ -540,7 +548,7 @@ export class MesaDaPortaria {
       p.folha.rotation.y = v.giroDe + (v.giroPara - v.giroDe) * k;
       if (v.t >= v.dur) {
         p.folha.position.copy(v.para);
-        p.folha.rotation.x = 0;
+        p.folha.rotation.x = p.folha.rotation.z = 0;
         p.voo = null;
         v.pronto?.();
       }

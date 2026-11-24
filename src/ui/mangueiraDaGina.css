@@ -8,3 +8,51 @@ body:has(.pt-jardim) #ui{visibility:hidden}
 .pt-corrida span,.pt-corrida button{background:#fff6de;border:2px solid #d3b078;border-radius:16px;padding:8px 13px;font:700 15px/1.3 system-ui;box-shadow:0 3px 10px #3828172b}
 .pt-corrida button:not([hidden]){pointer-events:auto;background:#c9efe6;min-height:44px;color:#245749}
 body:has(.pt-corrida:not([hidden])) :is(.hints,.hud,.side-actions,.menu-btn){visibility:hidden}
+
+/* A área de toque fica firme enquanto o miolo do botão ganha fôlego. */
+.pt-corrida button:not([hidden]) {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pt-corrida button strong {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  box-sizing: border-box;
+  border: 2px solid #60aa9a;
+  border-radius: 22px;
+  background: linear-gradient(#edfff7, #b9e8de);
+  box-shadow: inset 0 1px #fff, 0 3px 7px #214b4433;
+}
+.pt-corrida button:not([hidden]) strong {
+  animation: pt-espantar-alcance 540ms cubic-bezier(.32, 0, .24, 1) both;
+}
+.pt-corrida button:not([hidden])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid #9ce9de;
+  border-radius: 22px;
+  pointer-events: none;
+  animation: pt-espantar-onda 580ms ease-out both;
+}
+@keyframes pt-espantar-alcance {
+  0% { transform: scale(.96); }
+  35% { transform: scale(1.09); }
+  72% { transform: scale(.99); }
+  100% { transform: scale(1); }
+}
+@keyframes pt-espantar-onda {
+  0%, 10% { transform: scale(.98); opacity: .85; }
+  100% { transform: scale(1.22, 1.42); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-corrida button:not([hidden]) strong { animation: none; }
+  .pt-corrida button:not([hidden])::before { content: none; }
+}

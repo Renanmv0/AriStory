@@ -11,7 +11,7 @@ const erros=[];
 try {
   const desfecho=process.env.DESFECHO || 'recuperou';
   for(const dia of (process.env.DIAS || '7,8,9,10,11,12').split(',').map(Number)){
-    const p=await browser.newPage({viewport:process.env.PC?{width:1100,height:800}:{width:390,height:844},hasTouch:!process.env.PC,reducedMotion:'reduce'});
+    const p=await browser.newPage({viewport:process.env.PC?{width:1100,height:800}:{width:390,height:844},hasTouch:!process.env.PC,reducedMotion:process.env.ANIMACOES?'no-preference':'reduce'});
     p.on('pageerror',e=>{erros.push(e.message);console.error(e.message);});
     await p.goto(base+'/?portaria&cena=portaria&dia='+dia+'&depressa&semente=7');
     await p.waitForFunction(()=>window.portaria?.ex);
@@ -70,6 +70,20 @@ try {
         await p.keyboard.down('s');await p.keyboard.down('d');
         const espantar=p.getByRole('button',{name:'💧 Espantar',exact:true});
         await espantar.waitFor({timeout:9000});await p.keyboard.up('s');await p.keyboard.up('d');
+        const movimento = await espantar.locator('strong').evaluate(el=>getComputedStyle(el).animationName);
+        assert.equal(movimento,process.env.ANIMACOES?'pt-espantar-alcance':'none');
+        if(process.env.ANIMACOES){
+          const pausadas=await p.evaluateHandle(()=>{
+            const w=window.jogo.current.world, atualizar=w.updaters;
+            w.updaters=[];
+            for(const anim of document.querySelector('.pt-corrida button').getAnimations({subtree:true})){
+              anim.pause();anim.currentTime=180;
+            }
+            return atualizar;
+          });
+          await foto('espantar');await p.evaluate(fns=>{window.jogo.current.world.updaters=fns;},pausadas);
+          await pausadas.dispose();
+        }
         if(process.env.PC)await p.keyboard.press('e');else await espantar.tap();
         await p.waitForFunction(()=>document.querySelector('.pt-corrida')?.dataset.etapa==='banho');
         await p.waitForTimeout(440);await foto('mangueirada');

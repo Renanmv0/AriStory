@@ -12,6 +12,7 @@ import { fundir, fundirComoFundo } from '../world/fundir';
 import { GUARITA_DO_CLUBE, GuaritaDoClube } from '../world/guaritaDoClube';
 import { Gina } from '../entities/bichos/Gina';
 import { SacolaDaPortaria } from '../world/sacolaDaPortaria';
+import { setaDaCarteirinha } from '../eventos/portaria/setaDaCarteirinha';
 import { alvosDaBancada } from '../eventos/portaria/alvosDaBancada';
 import { apresentacaoDoVisitante } from '../eventos/portaria/apresentacaoDoVisitante';
 import { AderecosDaCantina } from '../eventos/portaria/aderecosDaCantina';
@@ -281,6 +282,9 @@ function montarAPortaria(w: WorldBuilder): void {
   let comecou = false;
   let acabou = false;
   let encerrando = false;
+  const dicaDoCartao = setaDaCarteirinha(mesa.group, mesa.papelDe('carteirinha'));
+  w.onUpdate(dt => dicaDoCartao.update(dt, painel.aberta && painel.vista === 'bancada' && !ocupado && !painel.confirmandoSaida));
+  w.aoDesmontar(dicaDoCartao.recolher);
 
   // ---- os visitantes em 3D: a fila na rua, um por lugar
   const modelos = new Map<string, ModeloDeVisitante>();
@@ -414,12 +418,16 @@ function montarAPortaria(w: WorldBuilder): void {
     if(visitaComObjeto)cantina.retirar();
     if (!ativa) return;
     m.gesticular(1.65 + v.docs.length * .24);
+    const temCarteirinha = v.docs.some(doc => doc.tipo === 'carteirinha');
+    if (temCarteirinha) painel.mudarVista('bancada');
     await mesa.receber(v.docs, () => m.pontoDaEntrega());
     if (!ativa) return;
     g.som('folhear');
     painel.mudarVista('bancada');
     if (v.oferta) await painel.falar(v.nome, v.oferta.fala, ficha.icone);
+    if (!ativa) return;
     ocupado = false;
+    if (temCarteirinha) dicaDoCartao.mostrar();
     desenhar();
   };
 

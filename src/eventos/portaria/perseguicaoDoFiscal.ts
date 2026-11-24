@@ -56,7 +56,9 @@ export class PerseguicaoDoFiscal {
     this.guia.hidden = true;
     this.botao.hidden = true;
     this.botao.type = 'button';
-    this.botao.textContent = '💧 Espantar';
+    const rotulo = document.createElement('strong');
+    rotulo.textContent = '💧 Espantar';
+    this.botao.append(rotulo);
     this.botao.onclick = () => this.espantar();
     document.body.append(this.guia);
     this.interacao = w.interact({id:'espantar-fiscal',x:0,z:0,radius:1.55,priority:100,
