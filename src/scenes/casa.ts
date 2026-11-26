@@ -20,6 +20,7 @@ import { paredeDaRuaPorDentro } from '../world/paredeDaRua';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { granito, tramaDeTecido, veioDeMadeira } from '../world/texturasDeCasa';
 import { ARI, RENAN } from '../characters/cast';
+import { montarNatalNaSala } from '../eventos/natal/naSala';
 import { montarHalloweenNaCasa } from '../eventos/halloween/naCasa';
 
 /**
@@ -285,6 +286,8 @@ export const casa: SceneDef = {
       // ligada, a tela mostra o show (o palco, o holofote e o piano, em canvas)
       tela.material = ligada ? telaDeTvLigada() : toon(P.tvTelaApagada);
     };
+
+    montarNatalNaSala(w);
 
     // O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): uma camada por cima da
     // casa. Sem o `?halloween` na URL, ele não monta nada e o sofá é o de sempre.

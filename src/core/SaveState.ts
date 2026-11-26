@@ -21,6 +21,7 @@ function normalizarVagaLumesSoltos(bruto: unknown): VagaLumesSoltosNoSave[] {
 import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
+import { TESTE_DE_NATAL } from '../eventos/Natal';
 import { EDICAO_DO_HALLOWEEN, HALLOWEEN_NO_JOGO } from '../eventos/Halloween';
 import type { ParteDaTinta, TintaDaPeca } from '../world/tintas';
 import { copiarFicha, normalizarFicha, type FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
@@ -396,7 +397,7 @@ const NO_BEBITO = !NO_TESTE && typeof location !== 'undefined' && new URLSearchP
  */
 const KEY_DA_PORTARIA = 'aristory.save.v1.portaria';
 const NO_PORTARIA = !NO_TESTE && !NO_BEBITO && typeof location !== 'undefined' && new URLSearchParams(location.search).has('portaria');
-const KEY = NO_TESTE ? KEY_DO_TESTE : NO_BEBITO ? KEY_DO_BEBITO : NO_PORTARIA ? KEY_DA_PORTARIA : KEY_DO_JOGO;
+const KEY = TESTE_DE_NATAL ? 'aristory.save.v1.natal-2026' : NO_TESTE ? KEY_DO_TESTE : NO_BEBITO ? KEY_DO_BEBITO : NO_PORTARIA ? KEY_DA_PORTARIA : KEY_DO_JOGO;
 
 /**
  * A EDIÇÃO DO HALLOWEEN no save de verdade (`eventos/Halloween.ts`).
@@ -524,7 +525,7 @@ export class SaveState {
   private static read(): SaveData {
     try {
       // o save de teste começa do progresso de verdade, na primeira vez
-      const raw = localStorage.getItem(KEY) ?? (NO_TESTE || NO_BEBITO || NO_PORTARIA ? localStorage.getItem(KEY_DO_JOGO) : null);
+      const raw = localStorage.getItem(KEY) ?? (!TESTE_DE_NATAL && (NO_TESTE || NO_BEBITO || NO_PORTARIA) ? localStorage.getItem(KEY_DO_JOGO) : null);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
       // `loadouts` era o guarda-roupa paralelo; hoje ele so serve de entrada
