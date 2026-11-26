@@ -1,3 +1,4 @@
+import { natalNoQuarto } from '../eventos/natal/encomenda';
 import { montarHalloweenNoQuarto } from '../eventos/halloween/noQuarto';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
@@ -104,6 +105,7 @@ export const quarto: SceneDef = {
 
   build(w) {
     const g0 = w.game;
+    natalNoQuarto(w, ARMARIO.x, ARMARIO.z);
 
     /** Vai e volta de falas, com o nome certo em cada balão. */
     const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {

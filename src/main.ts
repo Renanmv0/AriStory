@@ -1,3 +1,5 @@
+import { CAMPAINHA } from './eventos/natal/encomenda';
+import { NATAL_NO_JOGO, TESTE_DE_NATAL } from './eventos/Natal';
 import type * as THREE from 'three';
 import type { WorldBuilder } from './world/WorldBuilder';
 import './ui/style.css';
@@ -42,7 +44,7 @@ import { depuracaoDaViagem } from './scenes/viagemDeCarro';
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
 
-const game = new Game(root, SCENES, DUPLA, CENA_INICIAL);
+const game = new Game(root, SCENES, DUPLA, TESTE_DE_NATAL ? 'quarto' : CENA_INICIAL);
 
 // ?bebito&licoes=10 conclui as lições 1 a 10 da apostila (3 estrelas) NO SAVE DE
 // TESTE do Bebito Mobile (o `?bebito` usa um save à parte, `aristory.save.v1.bebito`):
@@ -63,7 +65,7 @@ const LICOES_EM_ORDEM = [
 
 // ?cena=villa-lobos&entrada=roda abre direto num ponto do cenario, util pra testar
 const params = new URLSearchParams(location.search);
-const pedida = params.get('cena') ?? undefined;
+const pedida = params.get('cena') ?? ((TESTE_DE_NATAL || NATAL_NO_JOGO) && !game.flag(CAMPAINHA) ? 'quarto' : undefined);
 // ?cena=viagem-de-carro&viagem=ida,renan,7 abre a estrada direto: o sentido
 // (ida ou volta), quem dirige e a semente da rota. É depuração: no jogo quem
 // faz o pedido é a porta do carro (`eventos/bebitoMobile/partida.ts`).

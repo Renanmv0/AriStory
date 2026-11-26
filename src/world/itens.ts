@@ -1,3 +1,4 @@
+import { PECAS_DE_NATAL } from './figurinosDeNatal';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { HoldPose, ItemDef } from '../core/types';
@@ -82,6 +83,7 @@ import { CHAVE_DA_CACA, mapinhaDaEstella, pistasDaCaca } from './halloween/mapin
 
 /** so para nao escrever a mesma string em quatro lugares */
 export const ITENS = {
+  ...PECAS_DE_NATAL,
   sorveteMorango: {
     id: 'sorvete-morango',
     nome: 'Sorvete de morango',

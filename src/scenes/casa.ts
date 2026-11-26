@@ -1,3 +1,4 @@
+import { entregaNaSala } from '../eventos/natal/encomenda';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
@@ -288,6 +289,7 @@ export const casa: SceneDef = {
     };
 
     montarNatalNaSala(w);
+    entregaNaSala(w);
 
     // O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): uma camada por cima da
     // casa. Sem o `?halloween` na URL, ele não monta nada e o sofá é o de sempre.
