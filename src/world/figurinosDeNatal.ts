@@ -1,7 +1,8 @@
 import * as T from 'three';
 import type { ItemDef, MedidasCorpo } from '../core/types';
 import { toon } from '../core/materials';
-import { corpete, naPele, veludo } from './roupasDaBoutique';
+import { fundir } from './fundir';
+import { veludo } from './roupasDaBoutique';
 import { estrela } from './uniformeDosGatitos';
 import { calcaListrada, sapatoDeVerniz } from './fantasias';
 
@@ -58,42 +59,115 @@ function tiaraDeRena(m:MedidasCorpo) {
   return g;
 }
 
-function casaco(m:MedidasCorpo,ari:boolean) {
-  const g=new T.Group(),h=m.h, y=(t:number)=>m.legH+m.torsoH*t;
-  const folga=1.085;
-  g.add(new T.Mesh(corpete(m,{baixo:y(-.06),decote:()=>y(.94),folga}),toon(ari?CEREJA:PINHO,{mapa:veludo(),doubleSide:true})));
-  // Bordado contínuo; acompanha o contorno inclusive quando visto pelas costas.
-  for(const [altura,esp,cor] of [[.15,.007,OURO],[.19,.012,MARFIM],[.27,.006,OURO],[.84,.014,MARFIM]]){
-    const aro=Array.from({length:41},(_,j)=>naPele(m,j*Math.PI/20,y(altura),folga+.02));
-    cordao(g,aro,esp*h,cor);
+// Perfil em unidades da peça: altura no tronco/braço e raio relativo à largura do molde.
+// A dobra para dentro no começo fecha a parte de baixo da barra.
+type Perfil = ReadonlyArray<readonly [number, number]>;
+function malhaDeTrico(perfil: Perfil, altura: number, largura: number, cor: number, profundidade = 1) {
+  const pontos = perfil.map(([y, r]) => new T.Vector2(r * largura, y * altura));
+  const geo = new T.LatheGeometry(pontos, 40);
+  const mesh = new T.Mesh(geo, toon(cor, { mapa: veludo(), doubleSide: true }));
+  mesh.scale.z = profundidade;
+  return mesh;
+}
+
+const CORPO: Perfil = [
+  [-.135, .99], [-.14, 1.10], [-.117, 1.15], [-.039, 1.17],
+  [-.010, 1.18], [.045, 1.29], [.16, 1.32], [.42, 1.30],
+  [.65, 1.25], [.80, 1.21], [.89, 1.12], [.946, .90], [.98, .70],
+];
+const CREME = 0xffe5ba, FRAMBOESA = 0x843449, SALVIA = 0x49776a;
+
+function casaco(m: MedidasCorpo, ari: boolean) {
+  const g = new T.Group();
+  const h = m.h, r = h * .105 * m.w, altura = m.torsoH;
+  const cor = ari ? CEREJA : PINHO;
+  const base = malhaDeTrico(CORPO, altura, r, cor, .90);
+  g.position.y = m.legH;
+  g.add(base);
+
+  // O bordado e os bolsos assentam no volume da malha, inclusive nas laterais.
+  function superficie(a: number, y: number, relevo = 0) {
+    const i = CORPO.findIndex(([nivel], indice) => indice >= 2 && nivel >= y);
+    const [baixo, r0] = CORPO[i - 1], [alto, r1] = CORPO[i];
+    const raio = r * T.MathUtils.lerp(r0, r1, (y - baixo) / (alto - baixo)) + relevo;
+    return v(Math.sin(a) * raio, y * altura, Math.cos(a) * raio * .90);
   }
-  for(let i=0;i<14;i++){
-    const a=i*Math.PI/7;
-    const ponto=estrela(h*.013,i%2?MARFIM:OURO);ponto.position.copy(naPele(m,a,y(.38),folga+.04));ponto.rotation.y=a;g.add(ponto);
+  function debrum(y: number, corLinha: number, esp: number) {
+    const aro = Array.from({length: 49}, (_,i) => superficie(i * Math.PI / 24, y, .001*h));
+    cordao(g, aro, esp * h, corLinha);
   }
-  const centro=naPele(m,0,y(.65),folga+.06);
+  debrum(-.095, CREME, .0035);
+  debrum(-.050, OURO, .0025);
+  for (let i=0; i<32; i++) {
+    const a=i*Math.PI/16;
+    cordao(g,[superficie(a,-.087,.002*h),superficie(a,-.067,.003*h),superficie(a,-.055,.002*h)],.0017*h,ari?0xca6876:0x689383);
+  }
+
+  // Uma faixa de pequenas estrelas percorre também as costas.
+  for(let i=0; i<15; i++){
+    const a=(i+.5)*2*Math.PI/15;
+    const bordado=estrela(h*.011, i%2 ? CREME : OURO);
+    bordado.rotation.y=a;
+    bordado.position.copy(superficie(a,.12,.002*h));
+    g.add(bordado);
+  }
+
+  // Bolso acolchoado com a boca aberta e o aplique costurado na face externa.
+  const bolso=new T.Group();
+  bolso.position.copy(superficie(0,.43));bolso.scale.setScalar(h);g.add(bolso);
+  const feltro=ari ? FRAMBOESA : SALVIA;
+  bola(bolso,feltro,0,-.003,0,.076,.053,.024);
+  cordao(bolso,[v(-.068,.021,.006),v(0,.013,.023),v(.068,.021,.006)],.0045,ari?0xe19399:0xa1b99a);
   if(ari){
-    const medalhao=estrela(.046*h,OURO);medalhao.position.copy(centro);g.add(medalhao);
-    const miolo=estrela(.026*h,MARFIM);miolo.position.copy(centro);miolo.position.z+=.013*h;g.add(miolo);
+    const estrelaDoBolso=estrela(.041,OURO);
+    estrelaDoBolso.position.set(0,-.009,.024);bolso.add(estrelaDoBolso);
+    for(const lado of [-1,1]){
+      bola(bolso,0x603a33,lado*.009,-.008,.035,.003,.004,.0025);
+      bola(bolso,0xe69a8e,lado*.015,-.015,.034,.004,.0025,.002);
+    }
+    // Gola de duas pétalas, com fecho e dois pompons em alturas diferentes.
+    for(const lado of [-1,1]){
+      const petala=bola(g,CREME,lado*.043*h,.85*altura,.081*h,.055*h,.032*h,.025*h);
+      petala.rotation.z=lado*.26;
+      const fim=superficie(lado*.19,.63+(lado+1)*.034,.006*h);
+      cordao(g,[superficie(0,.85,.004*h),superficie(lado*.12,.77,.008*h),fim],.003*h,OURO);
+      bola(g,MARFIM,fim.x,fim.y,fim.z,.012*h,.014*h,.012*h);
+    }
   }else{
-    const laco=new T.Group();laco.position.copy(centro);laco.scale.setScalar(h);g.add(laco);
-    for(const s of [-1,1]){const l=bola(laco,CEREJA,s*.035,.014,0,.038,.022,.013);l.rotation.z=s*.34;}
-    bola(laco,OURO,0,-.008,.01,.021,.024,.02);
+    // Uma rena de feltro com o focinho e as orelhas em relevo.
+    for(const lado of [-1,1]){
+      cordao(bolso,[v(lado*.013,.002,.024),v(lado*.021,.018,.023),v(lado*.023,.029,.020)],.0034,CANELA);
+      cordao(bolso,[v(lado*.020,.016,.023),v(lado*.031,.018,.022),v(lado*.034,.022,.021)],.0028,CANELA);
+      const orelha=bola(bolso,CANELA,lado*.025,.001,.025,.012,.006,.005);orelha.rotation.z=lado*.4;
+    }
+    bola(bolso,0xc99368,0,-.010,.026,.028,.022,.008);
+    for(const lado of [-1,1])bola(bolso,0x48312a,lado*.011,-.007,.034,.003,.0036,.0025);
+    bola(bolso,CEREJA,0,-.017,.035,.008,.006,.005);
+    // Gola dobrada e cachecol curto jogado para um lado.
+    g.add(malhaDeTrico([[.79,1.17],[.81,1.21],[.88,1.16],[.94,1.03],[.95,.93]],altura,r,FRAMBOESA,.94));
+    const ponta=new T.Group();ponta.position.copy(superficie(.56,.69,.012*h));ponta.rotation.y=.5;ponta.rotation.z=.19;g.add(ponta);
+    bola(ponta,FRAMBOESA,0,0,0,.024*h,.059*h,.014*h);
+    for(const faixa of [-.035,-.027])cordao(ponta,[v(-.018*h,faixa*h,.004*h),v(0,faixa*h,.013*h),v(.018*h,faixa*h,.004*h)],.0027*h,OURO);
+    for(const lado of [-1,0,1])bola(ponta,FRAMBOESA,lado*.009*h,-.053*h,.002*h,.003*h,.013*h,.003*h);
   }
-  return g;
+  return fundir(g);
 }
-function punho(m:MedidasCorpo){
-  const g=new T.Group(),r=m.h*.042*m.w;
-  for(const [y,raio,cor] of [[-.69,1.1,MARFIM],[-.61,1.06,OURO]]){
-    const faixa=new T.Mesh(new T.CylinderGeometry(r*raio,r*raio,m.h*.017,18),toon(cor));faixa.position.y=m.armLen*y;g.add(faixa);
-  }return g;
+
+function manga(m: MedidasCorpo, cor: number) {
+  const g=new T.Group(), raio=m.h*.038*m.w, altura=m.armLen;
+  // Manga caída no ombro, fofa no antebraço e franzida antes do punho.
+  g.add(malhaDeTrico([[-.80,.88],[-.77,1.11],[-.66,1.18],[-.61,1.35],[-.40,1.40],[-.17,1.45],[-.05,1.33],[.03,1.02],[.07,.58],[.077,.1]],altura,raio,cor));
+  g.add(malhaDeTrico([[-.82,.86],[-.81,1.10],[-.78,1.16],[-.69,1.22],[-.673,1.16]],altura,raio,CREME));
+  g.add(malhaDeTrico([[-.755,1.19],[-.735,1.20]],altura,raio,OURO));
+  return fundir(g);
 }
+
 const comum={tipo:'vestivel',nota:'Do pedido de Natal do Renan · Papita Delivery'} as const;
 export const PECAS_DE_NATAL = {
   gorroEstrela:{...comum,id:'natal-gorro-estrela',nome:'Touquinha da Estrela',icone:'🎅',slot:'cabeca',amostra:CEREJA,extra:touquinha},
   tiaraRena:{...comum,id:'natal-tiara-rena',nome:'Galhinhos de Rena',icone:'🦌',slot:'cabeca',amostra:CANELA,extra:tiaraDeRena},
-  casacoEstrela:{...comum,id:'natal-casaco-estrela',nome:'Casaco Noite de Estrelas',icone:'🌟',slot:'tronco',cor:CEREJA,corDetalhe:CEREJA,extra:(m:MedidasCorpo)=>casaco(m,true),extraBraco:punho},
-  casacoRena:{...comum,id:'natal-casaco-rena',nome:'Casaco Rena do Bosque',icone:'🎄',slot:'tronco',cor:PINHO,corDetalhe:PINHO,extra:(m:MedidasCorpo)=>casaco(m,false),extraBraco:punho},
+  casacoEstrela:{...comum,id:'natal-casaco-estrela',nome:'Casaco Noite de Estrelas',icone:'🌟',slot:'tronco',cor:CEREJA,corDetalhe:CEREJA,extra:(m:MedidasCorpo)=>casaco(m,true),extraBraco:(m:MedidasCorpo)=>manga(m,CEREJA)},
+  casacoRena:{...comum,id:'natal-casaco-rena',nome:'Casaco Rena do Bosque',icone:'🎄',slot:'tronco',cor:PINHO,corDetalhe:PINHO,extra:(m:MedidasCorpo)=>casaco(m,false),extraBraco:(m:MedidasCorpo)=>manga(m,PINHO)},
   meiasEstrela:{...comum,id:'natal-meias-estrela',nome:'Listras de bengalinha',icone:'🍬',slot:'pernas',cor:0x83334b,corDetalhe:0xe6b0a4,extra:calcaListrada},
   meiasRena:{...comum,id:'natal-meias-rena',nome:'Tricô da floresta',icone:'🧶',slot:'pernas',cor:0x34494a,corDetalhe:0x53756b,extra:calcaListrada},
   botas:{...comum,id:'natal-botinas',nome:'Botinas de fivela dourada',icone:'🥾',slot:'pes',cor:0x653e36,corDetalhe:OURO,substituiPe:true,extra:sapatoDeVerniz},

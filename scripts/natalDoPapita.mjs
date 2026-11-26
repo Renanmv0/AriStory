@@ -52,6 +52,12 @@ try {
   await p.getByRole('button',{name:'Vamos provar'}).click();
   await p.waitForFunction(()=>window.jogo.flag('natal:2026:vestiram-os-presentes')&&window.jogo.emDialogo());
   await foto('fantasias-de-natal');
+  await p.evaluate(()=>{
+    const g=window.jogo, origem=g.player.position.clone(), alvo=origem.clone();
+    // Três quartos mostra a profundidade dos bolsos e a manga no pivô do braço.
+    g.setCameraOmbro(origem.set(-.17,1.18,1.16),alvo.set(1.43,.83,-1.2),60);
+  });
+  await foto('casacos-de-tres-quartos');
   await falasAte('natal:2026:vestiram-os-presentes');await p.reload();await pronta();
   const vestem=await p.evaluate(()=>['ari','renan'].map(id=>window.jogo.wearables(id).filter(Boolean).map(i=>i.id)));
   assert.ok(vestem[0].includes('natal-gorro-estrela')&&vestem[1].includes('natal-tiara-rena'));
