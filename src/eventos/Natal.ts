@@ -1,3 +1,13 @@
+import type { GameAPI } from '../core/types';
+
 // A data de lançamento será escolhida pelo Renan. O calendário do aparelho não ativa o especial.
 export const NATAL_NO_JOGO = false;
 export const TESTE_DE_NATAL = typeof location !== 'undefined' && new URLSearchParams(location.search).has('natal');
+
+export const ARVORE_ACESA = 'natal:2026:luzes-acesas';
+export const VESTIRAM = 'natal:2026:vestiram-os-presentes';
+export const CONVITE = 'natal:2026:convite-da-gina';
+
+export function pelusaEspiaANeve(g:GameAPI):boolean {
+  return (NATAL_NO_JOGO || TESTE_DE_NATAL) && g.flag(VESTIRAM) && g.flag(ARVORE_ACESA) && !g.flag(CONVITE);
+}

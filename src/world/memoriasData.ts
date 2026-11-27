@@ -1,3 +1,4 @@
+import { conviteDaGina } from '../eventos/natal/conviteDaGina';
 /**
  * As memorias penduradas no quadro do quarto do Ari.
  *
@@ -2410,4 +2411,5 @@ export const MEMORIAS: readonly MemoriaPintada[] = [
     trava: 'halloween:foto-da-festa',
     pintar: rainhaEReiDaFesta,
   },
+  conviteDaGina,
 ];

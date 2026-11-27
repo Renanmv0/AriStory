@@ -1,3 +1,5 @@
+import { neveBatida } from '../world/texturasDeGelo';
+import { neveNoQuintal, quintalNevado } from '../eventos/natal/primeiraNeve';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { Collider, SceneDef } from '../core/types';
@@ -109,7 +111,8 @@ export const frenteDaCasa: SceneDef = {
     };
 
     // ------------------------------------------------------------------ o chão
-    w.ground({ width: 120, depth: 90, color: P.grass, textura: tapeteDeGrama(9) });
+    const nevado=quintalNevado(g);
+    w.ground({ width: 120, depth: 90, color: nevado ? 0xe1edef : P.grass, textura: nevado ? neveBatida(5) : tapeteDeGrama(9) });
     w.setBounds(GAR.x0 - 6, CASA.z - 0.2, JARDIM.x1 + 9, CALCADA.z1 - 0.3);
     // a rua, a calçada e a guia (a rua atravessa a cena inteira: some nas duas pontas)
     w.patch(0, (CALCADA.z0 + CALCADA.z1) / 2, RUA.comprimento, CALCADA.z1 - CALCADA.z0, P.concrete, 0, 0.014, calcadaDePedrinha());
@@ -181,6 +184,7 @@ export const frenteDaCasa: SceneDef = {
     pilar(JARDIM.x1, zMuro);
     // (por dentro do muro da frente corre o portão da garagem quando abre: ninguém anda nessa faixa)
     w.blockBox((X_DO_PILAR_DA_GARAGEM + xPilarE) / 2, zMuro - 0.28, (xPilarE - X_DO_PILAR_DA_GARAGEM) / 2, 0.14);
+    neveNoQuintal(w,CASA,xPilarD,zMuro,MURO.alto);
     // o interfone e a boca de cartas, no pilar da direita do portão
     jardim.add(w.place(painelDoPortao(), xPilarD, 1.22, zMuro + meioPilar + 0.001));
     // a hera também desce da parede do fundo da garagem, por cima do carro

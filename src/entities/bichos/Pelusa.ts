@@ -17,6 +17,9 @@ export class Pelusa extends Bicho {
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Pelusa', cor: P.falaPelusa };
 
+  private toqueNoVidro = 0;
+  tocarNoVidro(): void { this.toqueNoVidro = 1; }
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly rabo = new THREE.Group();
@@ -221,6 +224,15 @@ export class Pelusa extends Bicho {
     // cabeca: olha em volta parado, e sobe encostando na mao no carinho
     this.cabeca.rotation.y = andando ? 0 : Math.sin(fase * 0.6) * 0.34;
     this.cabeca.rotation.x = -carinho * 0.22 + Math.sin(fase * 1.9) * 0.02;
+
+    if (this.toqueNoVidro > 0) {
+      this.toqueNoVidro = Math.max(0, this.toqueNoVidro - dt / 1.12);
+      const alcance = Math.sin(Math.PI * this.toqueNoVidro) ** 2;
+      this.patas[0].position.y = .072 + .14 * alcance;
+      this.patas[0].position.z = .092 + .10 * alcance;
+      this.patas[0].rotation.x = -.85 * alcance;
+      this.cabeca.rotation.x -= .22 * alcance;
+    }
 
     // orelhas mexendo, e no carinho elas abrem mais
     for (let i = 0; i < this.orelhas.length; i++) {

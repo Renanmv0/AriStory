@@ -288,7 +288,7 @@ export const casa: SceneDef = {
       tela.material = ligada ? telaDeTvLigada() : toon(P.tvTelaApagada);
     };
 
-    montarNatalNaSala(w);
+    montarNatalNaSala(w,JANELAS_DA_RUA[0].x,zPorta);
     entregaNaSala(w);
 
     // O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): uma camada por cima da

@@ -1,15 +1,15 @@
+import { neveNaJanela } from './primeiraNeve';
 import * as T from 'three';
 import { toon } from '../../core/materials';
 import { arvore } from '../../world/arvores';
 import { estrela } from '../../world/uniformeDosGatitos';
 import type { WorldBuilder } from '../../world/WorldBuilder';
-import { NATAL_NO_JOGO, TESTE_DE_NATAL } from '../Natal';
+import { NATAL_NO_JOGO, TESTE_DE_NATAL, ARVORE_ACESA } from '../Natal';
 
-const ACESA = 'natal:2026:luzes-acesas';
 const COLORIDA = 'natal:2026:luzes-coloridas';
 const MEMORIA = 'natal-2026-primeiras-luzes';
 
-export function montarNatalNaSala(w: WorldBuilder) {
+export function montarNatalNaSala(w: WorldBuilder, xJanela: number, zJanela: number) {
   if (!NATAL_NO_JOGO && !TESTE_DE_NATAL) return;
   const g = w.game;
   const x = 2.55, z = 2.52;
@@ -59,7 +59,8 @@ export function montarNatalNaSala(w: WorldBuilder) {
   const cores = [0xff9a8c,0x91e2bf,0xffdd85,0x9fcaff].map(c=>new T.Color(c));
   const tinta = new T.Color();
   const reduzir = matchMedia('(prefers-reduced-motion: reduce)');
-  let acesa = g.flag(ACESA), colorida = g.flag(COLORIDA);
+  let acesa = g.flag(ARVORE_ACESA), colorida = g.flag(COLORIDA);
+  neveNaJanela(w,xJanela,zJanela,()=>acesa);
   let tempo = acesa ? 1 : 0;
   function pintar() {
     for(let i=0;i<lampadas.count;i++){
@@ -82,7 +83,7 @@ export function montarNatalNaSala(w: WorldBuilder) {
       if(escolha!==0 && escolha!==1)return;
       const primeira=!acesa;
       colorida=escolha===1;
-      jogo.setFlag(COLORIDA,colorida); jogo.setFlag(ACESA);
+      jogo.setFlag(COLORIDA,colorida); jogo.setFlag(ARVORE_ACESA);
       acesa=true; tempo=0; pintar();
       interacao.label='Ver as luzes de Natal';
       jogo.som('clique');

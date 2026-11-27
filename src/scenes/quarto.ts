@@ -1,3 +1,4 @@
+import { pelusaEspiaANeve } from '../eventos/Natal';
 import { natalNoQuarto } from '../eventos/natal/encomenda';
 import { montarHalloweenNoQuarto } from '../eventos/halloween/noQuarto';
 import * as THREE from 'three';
@@ -391,9 +392,12 @@ export const quarto: SceneDef = {
       },
     });
 
+    const gatoNaSala=pelusaEspiaANeve(g0);
+    if(gatoNaSala){pelusa.group.visible=false;carinho.enabled=false;}
     // o prompt anda junto com ele — sem isto o balão fica onde ele estava
     // quando a cena foi montada, e o carinho vira um ponto morto no chão
     w.onUpdate((dt) => {
+      if(gatoNaSala)return;
       pelusa.update(dt);
       carinho.moveTo(pelusa.x, pelusa.z);
     });

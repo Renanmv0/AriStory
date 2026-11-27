@@ -4,11 +4,10 @@ import { caixaDeEncomenda } from '../../world/quintal';
 import { modeloDoVisitante } from '../../world/visitantesDaPortaria';
 import { FICHAS } from '../../minigames/portaria/personagens';
 import { NATAL_DO_ARI, NATAL_DO_RENAN, PECAS_DE_NATAL } from '../../world/figurinosDeNatal';
-import { NATAL_NO_JOGO, TESTE_DE_NATAL } from '../Natal';
+import { NATAL_NO_JOGO, TESTE_DE_NATAL, VESTIRAM } from '../Natal';
 
 export const CAMPAINHA = 'natal:2026:ouviu-a-campainha';
 const ENTREGUE = 'natal:2026:recebeu-do-tata';
-const VESTIRAM = 'natal:2026:vestiram-os-presentes';
 
 export function natalNoQuarto(w: WorldBuilder, xArmario:number, zArmario:number) {
   if (!NATAL_NO_JOGO && !TESTE_DE_NATAL) return;
