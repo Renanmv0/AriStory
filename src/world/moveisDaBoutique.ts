@@ -966,7 +966,7 @@ export function provadoresDaBoutique(quantas = 3, larg = 1.2): THREE.Group {
  *
  * Frente em `+Z` (de onde o cliente chega); a Estella fica do lado de `−Z`.
  */
-export function balcaoDaBoutique(largura = 2.4): THREE.Group {
+export function balcaoDaBoutique(largura = 2.4, paraCostura = false): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'balcao-da-loja';
   const L = largura;
@@ -1026,6 +1026,8 @@ export function balcaoDaBoutique(largura = 2.4): THREE.Group {
     const alca = new THREE.TorusGeometry(0.055, 0.006, 5, 14, Math.PI);
     por(g, alca, P.boutiqueVinho, xm - 0.06, 0.525 + 0.26, dz * 0.9);
   }
+
+  if (paraCostura) return acabar(g, [[P.boutiqueMarmore, marmore()], [P.boutiqueCarvalho, veioDeMadeira()]]);
 
   // ------------------------------------------ em cima do balcão
   const sobre = TOPO + 0.05;

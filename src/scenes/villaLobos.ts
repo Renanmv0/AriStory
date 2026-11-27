@@ -1,3 +1,4 @@
+import { estellaEsperaNaBoutique } from '../eventos/Natal';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../palette';
@@ -2548,7 +2549,7 @@ export const villaLobos: SceneDef = {
     w.door({
       x: -34.9, z: -16.5, radius: 1.8,
       to: 'lojinha', entry: 'da-calcada',
-      label: 'Entrar na lojinha', icon: '👗',
+      label: estellaEsperaNaBoutique(g) ? 'Buscar a toalha na boutique' : 'Entrar na lojinha', icon: '👗',
     });
 
     const XADREZ = { x: ESTELLA.x - 0.15, z: ESTELLA.z - 2.2 };
@@ -2597,6 +2598,10 @@ export const villaLobos: SceneDef = {
         estella.encarar(eu.x, eu.z);
         estella.receberCarinho();
         api.som('balido');
+        if (estellaEsperaNaBoutique(api)) {
+          await api.say('A Gina mandou vocês? Entrem, cariños! Vou atender vocês no balcão.', E);
+          return;
+        }
         if (!api.flag('estella-conhecida')) {
           api.setFlag('estella-conhecida');
           await conversa([

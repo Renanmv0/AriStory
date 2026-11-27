@@ -1,3 +1,5 @@
+import { estellaEsperaNaBoutique } from '../eventos/Natal';
+import { prepararToalhaDaCeia } from '../eventos/natal/toalhaDaCeia';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { falarDoPremio } from '../world/falasDePremio';
@@ -203,6 +205,7 @@ export const lojinha: SceneDef = {
 
   build(w) {
     const g = w.game;
+    const esperaPelaToalha = estellaEsperaNaBoutique(g);
     const A = ARI.name;
     const R = RENAN.name;
     const E = 'Estella';
@@ -368,7 +371,7 @@ export const lojinha: SceneDef = {
      * dentro, como vitrine.
      */
     const CAIXA = { x: 4.3, z: -1.7 };
-    peca(terreo, balcaoDaBoutique(2.4), CAIXA.x, 0, CAIXA.z);
+    const balcao = peca(terreo, balcaoDaBoutique(2.4, esperaPelaToalha), CAIXA.x, 0, CAIXA.z);
     w.blockBox(CAIXA.x, CAIXA.z, 1.25, 0.42);
     for (const [x, semente] of [[3.6, 11], [5.45, 29]] as const) {
       peca(terreo, estanteEmArco(1.8, semente), x, 0, z0 + INTERNA + 0.45);
@@ -986,18 +989,20 @@ export const lojinha: SceneDef = {
         ]);
       },
     }));
-    doTerreo.push(w.interact({
+    const pontoDoBalcao = w.interact({
       id: 'lojinha:caixa',
       x: CAIXA.x, z: CAIXA.z + 1.1, radius: 1.4,
       label: 'Olhar o balcão', icon: '🧾',
       onInteract: async () => {
+        if (costurar) { await costurar(); return; }
         await conversa([
           [A, 'Tem uma vitrininha de bijuteria aqui no canto do balcão.'],
           [R, 'E as sacolinhas da loja embaixo, todas dobradas.'],
           [A, 'Ela pensou em tudo.'],
         ]);
       },
-    }));
+    });
+    doTerreo.push(pontoDoBalcao);
 
     /* ==================================================================
      *                        A ESTELLA NO SALÃO
@@ -1009,17 +1014,18 @@ export const lojinha: SceneDef = {
      * que cortou a loja na diagonal, passando por dentro do pufe, enquanto todos
      * os trechos da lista estavam limpos.
      */
-    const INICIO = RONDA[RONDA.length - 1];
+    const paradaInicial = esperaPelaToalha ? 4 : RONDA.length - 1;
+    const INICIO = RONDA[paradaInicial];
     const estella = new Estella({
       minX: INICIO.x, maxX: INICIO.x,
       minZ: INICIO.z, maxZ: INICIO.z,
     });
-    estella.group.rotation.y = Math.PI;
+    estella.group.rotation.y = esperaPelaToalha ? 0 : Math.PI;
     estella.entrarEmServico();
     por(terreo, estella.group);
     estella.aoSoar = () => g.som('balido');
 
-    let atual = RONDA.length - 1;
+    let atual = paradaInicial;
     let passo = -1;
     let andando = false;
     let espera = 1.2;
@@ -1028,9 +1034,28 @@ export const lojinha: SceneDef = {
     let ultimaFala = '';
     let conversando = false;
     /** a cena marcada do Halloween segura a ronda e as falas soltas dela */
-    let pausada = false;
+    let pausada = esperaPelaToalha;
     /** a conversa do evento, quando há (ela fala no lugar das de sempre) */
     let conversaDoEvento: ((api: GameAPI) => Promise<boolean>) | null = null;
+
+    let costurar: (() => Promise<void>) | null = null;
+    if (esperaPelaToalha) {
+      pontoDoBalcao.label = 'Bordar a toalha da ceia';
+      pontoDoBalcao.icon = '🧵';
+      conversaDoEvento = async api => {
+        await api.say('Meus amores, venham deste lado do balcão. Guardei o último cantinho da toalha pra vocês!', E);
+        return true;
+      };
+      costurar = prepararToalhaDaCeia(w, terreo, CAIXA, () => {
+        costurar = null;
+        conversaDoEvento = null;
+        pausada = false;
+        pontoDoBalcao.label = 'Olhar o balcão';
+        pontoDoBalcao.icon = '🧾';
+        balcao.visible = false;
+        peca(terreo, balcaoDaBoutique(), CAIXA.x, 0, CAIXA.z);
+      });
+    }
 
     const DENTRO_DA_LOJA = [
       'Meus queridos! Essa arara chegou hoje. Hoje mesmo, ainda tá quentinha.',

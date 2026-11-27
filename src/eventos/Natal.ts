@@ -11,3 +11,10 @@ export const CONVITE = 'natal:2026:convite-da-gina';
 export function pelusaEspiaANeve(g:GameAPI):boolean {
   return (NATAL_NO_JOGO || TESTE_DE_NATAL) && g.flag(VESTIRAM) && g.flag(ARVORE_ACESA) && !g.flag(CONVITE);
 }
+
+export const TOALHA = 'natal:2026:toalha-da-ceia';
+export const FLOCO_NA_TOALHA = 'natal:2026:floco-na-toalha';
+
+export function estellaEsperaNaBoutique(g: GameAPI): boolean {
+  return (NATAL_NO_JOGO || TESTE_DE_NATAL) && g.flag(CONVITE) && !g.flag(TOALHA);
+}
