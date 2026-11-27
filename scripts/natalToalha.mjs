@@ -57,6 +57,7 @@ try {
   await p.evaluate(()=>window.jogo.setFlag('natal:2026:convite-da-gina'));
   const antes=await p.evaluate(()=>localStorage.getItem('aristory.save.v1.natal-2026'));
   await abrir('?natal&cena=villa-lobos');
+  assert.equal(await p.evaluate(()=>window.jogo.current.world.interactables.some(i=>i.id==='natal:sobremesa')),false);
   await usar('Buscar a toalha na boutique');
   await p.waitForFunction(()=>window.jogo.current.def.id==='lojinha'&&!window.jogo.transitioning);
   await usar(acao);await escolher('Voltar depois');
@@ -78,7 +79,28 @@ try {
     const ids=await p.evaluate(()=>window.jogo.current.world.interactables.map(i=>i.label));
     assert.ok(ids.includes('Olhar o balcão')&&!ids.includes(acao));
     assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('aristory.save.v1.natal-2026')).memories.filter(m=>m.id==='natal-2026-toalha').length),1);
+    await usar('Voltar pra calçada');
+    await p.waitForFunction(()=>window.jogo.current.def.id==='villa-lobos'&&!window.jogo.transitioning);
+    const surpresa='Abrir a surpresa do Mano', sobremesa='natal:2026:globo-do-mano';
+    if(motivo) {
+      await usar(surpresa); await escolher('Decidir depois');
+      assert.equal(await p.evaluate(flag=>window.jogo.flag(flag),sobremesa),false);
+    }
+    await usar(surpresa);
+    await passarAte(motivo?'Você fez até o floco':'Olha a estrela');
+    await escolher(motivo?'🍓 Morango do Ari':'💛 Maracujá do Renan');
+    await passarAte(motivo?'Uma pista de morango':'Ficou parecendo o sol');
+    await foto(motivo?'globo-morango':'globo-maracuja');
+    await passarAte('Globo de neve pronto!');
+    if(motivo)await foto('mano-na-sorveteria');
+    await p.waitForFunction(flag=>{document.querySelector('.dialogue.show')?.click();return window.jogo.flag(flag);},sobremesa);
+    await abrir('?natal&cena=villa-lobos');
+    await usar('Rever a sobremesa da ceia');
+    await passarAte(motivo?'calda de morango':'calda de maracujá');
+    await p.waitForFunction(()=>{document.querySelector('.dialogue.show')?.click();return !window.jogo.camOmbro;});
+    assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('aristory.save.v1.natal-2026')).memories.filter(m=>m.id==='natal-2026-globo').length),1);
+
   }
   assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),save);
-  assert.deepEqual(erros,[]);console.log('Porta do parque, convite obrigatório, adiamento, dois bordados, movimento reduzido, recarga, balcão e save oficial OK.');
+  assert.deepEqual(erros,[]);console.log('Porta do parque, convite obrigatório, adiamento, dois bordados, movimento reduzido, recarga, balcão, sobremesa dos dois sabores, revisão e save oficial OK.');
 } finally {await browser.close();}

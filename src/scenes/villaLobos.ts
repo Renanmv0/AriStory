@@ -1,3 +1,4 @@
+import { montarGloboDoMano } from '../eventos/natal/globoDoMano';
 import { estellaEsperaNaBoutique } from '../eventos/Natal';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -2171,6 +2172,7 @@ export const villaLobos: SceneDef = {
     mano.group.rotation.y = 0;
     w.add(mano.group);
     mano.aoSoar = () => g.som('pinguim');
+    montarGloboDoMano(w, SORVETERIA, mano, () => deServico('mano'));
 
     /**
      * O POSTO DE CIMA — onde o Mano fica enquanto a dupla está na roda gigante.
