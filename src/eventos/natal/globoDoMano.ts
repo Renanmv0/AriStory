@@ -9,6 +9,13 @@ import { FLOCO_NA_TOALHA, NATAL_NO_JOGO, TESTE_DE_NATAL, TOALHA } from '../Natal
 
 const SOBREMESA = 'natal:2026:globo-do-mano';
 const MARACUJA = 'natal:2026:calda-de-maracuja';
+const MANGA = 'natal:2026:calda-de-manga';
+const SABORES = [
+  { nome:'morango', opcao:'🍓 Morango do Ari', cor:0xb93853, fala:'Uma pista de morango pros pinguins! Ari, se um deles escorregar, a culpa é minha. Eu encerei.' },
+  { nome:'maracujá', opcao:'💛 Maracujá do Renan', cor:0xeea72c, fala:'Ficou parecendo o sol dando uma volta no Polo Sul. Renan, você pode voltar pra cozinha amanhã.' },
+  { nome:'manga', opcao:'🥭 Manga do Mano', cor:0xff8533, fala:'Os cubinhos são de manga. Agora, quem deixou essas duas pegadinhas na calda? Eu tava aqui o tempo todo!' },
+] as const;
+type Sabor = typeof SABORES[number];
 const creme = 0xffeed6, ouro = 0xe7b665, verde = 0x21605a, cereja = 0xa7314b;
 const chocolate = 0x463038, casquinha = 0xcb915b;
 const v = (x:number, y:number, z:number) => new T.Vector3(x,y,z);
@@ -90,9 +97,25 @@ function cartela() {
   return new T.MeshBasicMaterial({map:mapa});
 }
 
-function frutas(maracuja:boolean) {
+function frutas(sabor:Sabor) {
   const g=new T.Group();
-  if(maracuja){
+  if(sabor.nome==='manga'){
+    // Bochecha de manga virada ao avesso: os cubos se abrem em leque sobre a casca.
+    const casca=bola(g,0x809344,0,.025,0,.072,.048,.027);
+    casca.rotation.z=-.24;
+    const borda=bola(g,0xf5a13e,0,.026,.011,.071,.045,.024);
+    borda.rotation.z=-.24;
+    for(let coluna=-2;coluna<=2;coluna++){
+      const linhas=Math.abs(coluna)===2?2:3;
+      for(let j=0;j<linhas;j++){
+        const linha=j-(linhas-1)/2;
+        const c=por(g,new RoundedBoxGeometry(.023,.022,.027,2,.004),
+          (coluna+j)%2===0?0xffad36:0xffc24a,
+          coluna*.026,.026+linha*.025-coluna*.005,.044-.004*(coluna*coluna+linha*linha));
+        c.rotation.set(-linha*.23,coluna*.20,-.17);
+      }
+    }
+  }else if(sabor.nome==='maracujá'){
     // Meio maracujá em pé, com casca escura, albedo claro e sementes na polpa.
     bola(g,0x793b52,0,.024,0,.056,.055,.034);
     bola(g,creme,0,.026,.020,.052,.049,.019);
@@ -241,11 +264,17 @@ function carrinho(floco:boolean) {
   calda.scale.y=.60; calda.visible=false;
   calda.removeFromParent(); // móvel: mantém a geometria própria para revelar a calda ponto a ponto
 
-  const guarnicoes=[false,true].map(maracuja=>{
+  const guarnicoes=SABORES.map(sabor=>{
     const conjunto=new T.Group();
     for(const [x,z,angulo] of [[-.174,.211,.4],[.228,.119,-.40],[.19,-.156,.8]]){
-      const fruta=frutas(maracuja);
+      const fruta=frutas(sabor);
       fruta.position.set(x,.888,z); fruta.rotation.set(-.24,angulo,.16); conjunto.add(fruta);
+    }
+    if(sabor.nome==='manga'){
+      for(const lado of [-1,1]){
+        const pe=bola(conjunto,0xea9335,lado*.035,.902,.206-lado*.014,.020,.010,.037);
+        pe.rotation.y=lado*.28;
+      }
     }
     fundir(conjunto); conjunto.visible=false; return conjunto;
   });
@@ -289,12 +318,13 @@ export function montarGloboDoMano(w:WorldBuilder, posto:{x:number;z:number}, man
   w.add(w.place(base,x,0,z)); w.blockBox(x,z,.65,.39);
   let pronta=g.flag(SOBREMESA), ativa=true, animar:((dt:number)=>void)|null=null;
   const breve=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function sabor(maracuja:boolean, comFrutas:boolean) {
-    guarnicoes.forEach((grupo,i)=>{grupo.visible=comFrutas && i===Number(maracuja);});
-    const tinta=toon(maracuja?0xeea72c:0xb93853);
+  const daCeia=()=>g.flag(MANGA)?SABORES[2]:g.flag(MARACUJA)?SABORES[1]:SABORES[0];
+  function mostrarSabor(sabor:Sabor, comFrutas:boolean) {
+    guarnicoes.forEach((grupo,i)=>{grupo.visible=comFrutas && SABORES[i]===sabor;});
+    const tinta=toon(sabor.cor);
     calda.material=tinta; porcao.material=tinta;
   }
-  sabor(g.flag(MARACUJA),pronta); calda.visible=pronta;
+  mostrarSabor(daCeia(),pronta); calda.visible=pronta;
   w.aoDesmontar(()=>{ativa=false; vidro.dispose(); esmalte.map?.dispose(); esmalte.dispose();});
   async function animacao(dur:number, desenhar:(t:number)=>void) {
     if(breve){desenhar(1);return;}
@@ -324,16 +354,24 @@ export function montarGloboDoMano(w:WorldBuilder, posto:{x:number;z:number}, man
         await animacao(.8,t=>{tampa.rotation.x=-1.67*T.MathUtils.smoothstep(t,0,1);});
         if(!ativa)return;
         if(pronta){
-          await g.say('Dois pinguins, uma árvore e calda de '+(g.flag(MARACUJA)?'maracujá':'morango')+'. Eu conto os dois pinguins toda vez que o Jean-Luc passa aqui.', 'Mano');
+          await g.say('Dois pinguins, uma árvore e calda de '+daCeia().nome+'. Eu conto os dois pinguins toda vez que o Jean-Luc passa aqui.', 'Mano');
+          if(ativa && daCeia().nome!=='manga'){
+            const provar=await g.ask('Querem espiar a receita especial do Mano?', ['🥭 Ver o globo de manga','Voltar ao parque']);
+            if(ativa && provar===0){
+              mostrarSabor(SABORES[2],true);
+              await g.say(SABORES[2].fala,'Mano');
+            }
+          }
           return;
         }
         await g.say(floco?'Você fez até o floco da nossa toalha! E aquele pinguinzinho de gorro… sou eu?':'Olha a estrela da nossa toalha lá no pinheiro! E aquele pinguinzinho de gorro… sou eu?', 'Ari');
         if(!ativa)return;
         await g.say('E eu de rena! Ele fez as hastes de casquinha.', 'Renan');
         if(!ativa)return;
-        const escolha=await g.ask('Qual calda vai contornar a neve de baunilha?', ['🍓 Morango do Ari','💛 Maracujá do Renan','Decidir depois']);
-        if(!ativa || (escolha!==0 && escolha!==1))return;
-        const maracuja=escolha===1; sabor(maracuja,false);
+        const escolha=await g.ask('Qual calda vai contornar a neve de baunilha?', [...SABORES.map(s=>s.opcao),'Decidir depois']);
+        const escolhido=SABORES[escolha];
+        if(!ativa || !escolhido)return;
+        mostrarSabor(escolhido,false);
         // O traço cresce ao redor do prato e acompanha a colher.
         const geo=calda.geometry, total=geo.index!.count;
         calda.visible=true; colher.visible=!breve;
@@ -345,22 +383,22 @@ export function montarGloboDoMano(w:WorldBuilder, posto:{x:number;z:number}, man
           geo.setDrawRange(0,Math.floor(total*t/3)*3);
         });
         if(!ativa)return;
-        colher.visible=false; sabor(maracuja,true);
-        await g.say(maracuja?'Ficou parecendo o sol dando uma volta no Polo Sul. Renan, você pode voltar pra cozinha amanhã.':'Uma pista de morango pros pinguins! Ari, se um deles escorregar, a culpa é minha. Eu encerei.', 'Mano');
+        colher.visible=false; mostrarSabor(escolhido,true);
+        await g.say(escolhido.fala,'Mano');
         if(!ativa)return;
         await animacao(.65,t=>{tampa.rotation.x=-1.67*(1-T.MathUtils.smoothstep(t,0,1));});
         if(!ativa)return;
         enquadrar(false); mano.dancar(breve ? .32 : 1.65); g.som('pinguim');
         await g.say('Globo de neve pronto! Eu levo pra ceia, de nadadeira em nadadeira. E vão ver o Cookie na bilheteria. Pedi papel de presente e o Jean-Luc mandou embrulhar a máquina de bilhete.', 'Mano');
         if(!ativa)return;
-        g.setFlag(MARACUJA,maracuja); g.setFlag(SOBREMESA);
+        g.setFlag(MANGA,escolhido.nome==='manga'); g.setFlag(MARACUJA,escolhido.nome==='maracujá'); g.setFlag(SOBREMESA);
         g.unlock({id:'natal-2026-globo',title:'Neve de colher',place:'Sorveteria do Mano',icon:'🍨',
-          note:'O Mano fez Ari e Renan de pinguins de chocolate. A árvore levou '+(floco?'o floco':'a estrela')+' da toalha da Estella e a dupla terminou o globo com calda de '+(maracuja?'maracujá.':'morango.')});
+          note:'O Mano fez Ari e Renan de pinguins de chocolate. A árvore levou '+(floco?'o floco':'a estrela')+' da toalha da Estella e a dupla terminou o globo com calda de '+escolhido.nome+'.'});
         pronta=true; it.label=rever;
       } finally {
         animar=null;
         if(ativa){
-          tampa.rotation.x=0; sabor(g.flag(MARACUJA),pronta); calda.visible=pronta; colher.visible=false;
+          tampa.rotation.x=0; mostrarSabor(daCeia(),pronta); calda.visible=pronta; colher.visible=false;
           g.setCameraOmbro(null); g.setPlayerVisible(true); g.setCompanionVisible(true); g.lockPlayer(false);
         }
       }

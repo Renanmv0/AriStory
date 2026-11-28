@@ -97,6 +97,12 @@ try {
     await abrir('?natal&cena=villa-lobos');
     await usar('Rever a sobremesa da ceia');
     await passarAte(motivo?'calda de morango':'calda de maracujá');
+    if(motivo){
+      await escolher('🥭 Ver o globo de manga'); await passarAte('Os cubinhos');
+      assert.equal(await p.evaluate(()=>window.jogo.flag('natal:2026:calda-de-manga')),false);
+    }else{
+      await escolher('Voltar ao parque');
+    }
     await p.waitForFunction(()=>{document.querySelector('.dialogue.show')?.click();return !window.jogo.camOmbro;});
     assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('aristory.save.v1.natal-2026')).memories.filter(m=>m.id==='natal-2026-globo').length),1);
 
