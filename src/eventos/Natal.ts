@@ -22,3 +22,4 @@ export function estellaEsperaNaBoutique(g: GameAPI): boolean {
 export const SOBREMESA = 'natal:2026:globo-do-mano';
 export const MAQUINA_ABERTA = 'natal:2026:maquina-desembrulhada';
 export const PRESENTE_COOKIE = 'natal:2026:presente-cookie';
+export const PRESENTE_MANO = 'natal:2026:presente-mano';

@@ -112,6 +112,14 @@ try {
       await abrir('?natal&cena=villa-lobos'); await usar('Ver a dedicatória do Cookie');
       await passarAte('Deixei o meu'); await p.waitForFunction(()=>{document.querySelector('.dialogue.show')?.click();return !window.jogo.camOmbro;});
       assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('aristory.save.v1.natal-2026')).memories.filter(m=>m.id==='natal-2026-presente-cookie').length),1);
+      await usar('Ajustar a colher do Mano'); await escolher('🍒 Vermelho-cereja'); await escolher('Guardar para depois');
+      await abrir('?natal&cena=villa-lobos');
+      await usar('Dar a colher ao Mano'); await escolher('🎁 Entregar o presente');
+      await passarAte('Uma bola de morango'); await foto('mano-com-a-colher');
+      await passarAte('Essa primeira é pra vocês'); await foto('sorvete-servido');
+      await p.waitForFunction(()=>{document.querySelector('.dialogue.show')?.click();return !window.jogo.camOmbro;});
+      assert.ok(await p.evaluate(()=>window.jogo.flag('natal:2026:presente-mano')));
+
     }
     await abrir('?natal&cena=villa-lobos');
     await usar('Rever a sobremesa da ceia');

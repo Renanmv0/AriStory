@@ -1,3 +1,4 @@
+import { presenteDoMano } from '../eventos/natal/presenteDoMano';
 import { natalNaBilheteria } from '../eventos/natal/naBilheteria';
 import { montarGloboDoMano } from '../eventos/natal/globoDoMano';
 import { estellaEsperaNaBoutique, SOBREMESA, PRESENTE_COOKIE } from '../eventos/Natal';
@@ -2174,6 +2175,7 @@ export const villaLobos: SceneDef = {
     w.add(mano.group);
     mano.aoSoar = () => g.som('pinguim');
     montarGloboDoMano(w, SORVETERIA, mano, () => deServico('mano'));
+    presenteDoMano(w, SORVETERIA, mano, () => deServico('mano'));
 
     /**
      * O POSTO DE CIMA — onde o Mano fica enquanto a dupla está na roda gigante.

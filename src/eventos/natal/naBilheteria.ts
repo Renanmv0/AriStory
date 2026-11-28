@@ -4,7 +4,7 @@ import { toon } from '../../core/materials';
 import type { WorldBuilder } from '../../world/WorldBuilder';
 import type { Cookie } from '../../entities/bichos/Cookie';
 import type { Interactable } from '../../world/Interactable';
-import { MAQUINA_ABERTA, NATAL_NO_JOGO, PRESENTE_COOKIE, SOBREMESA, TESTE_DE_NATAL } from '../Natal';
+import { PRESENTE_MANO, MAQUINA_ABERTA, NATAL_NO_JOGO, PRESENTE_COOKIE, SOBREMESA, TESTE_DE_NATAL } from '../Natal';
 
 const vinho=0xa73549, mel=0xe1af61, pinho=0x28584f, creme=0xf8e6c1;
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
@@ -18,7 +18,7 @@ function cordao(g:T.Group, pontos:T.Vector3[], r:number, cor:number){
   const m=new T.Mesh(new T.TubeGeometry(curva,26,r,7,false),toon(cor));g.add(m);return m;
 }
 type Papel = 'embrulho' | 'cookie' | 'mano';
-function papel(tipo:Papel){
+export function papelDaBilheteria(tipo:Papel){
   const tela=document.createElement('canvas');tela.width=640;tela.height=320;
   const c=tela.getContext('2d')!;
   c.fillStyle=tipo==='embrulho'?'#a4364c':'#fff0d0';c.fillRect(0,0,640,320);
@@ -51,7 +51,7 @@ function papel(tipo:Papel){
 }
 function prensa(){
   const raiz=new T.Group(), maquina=new T.Group(), pacote=new T.Group(), alavanca=new T.Group();
-  const estampa=papel('embrulho'), dedicacao=papel('cookie'), etiqueta=papel('mano');
+  const estampa=papelDaBilheteria('embrulho'), dedicacao=papelDaBilheteria('cookie'), etiqueta=papelDaBilheteria('mano');
   raiz.add(maquina,pacote);
   bloco(maquina,0,.027,0,.61,.054,.35,mel);
   bloco(maquina,0,.16,0,.56,.25,.30,pinho,.035);
@@ -130,7 +130,7 @@ export function natalNaBilheteria(w:WorldBuilder, local:{x:number;z:number}, gui
     let mostrandoCookie=false;
     try{
       if(g.flag(PRESENTE_COOKIE)){
-        await g.say('Deixei o meu aqui na janela. A etiqueta do Mano é de vocês. Uma colher com alça seria boa, né? Já viu ele tentando pegar colher com nadadeira?', 'Cookie');
+        await g.say(g.flag(PRESENTE_MANO) ? 'O Mano me mostrou a colher nova. Contou que agora consegue servir até quando a nadadeira tá gelada!' : 'Deixei o meu aqui na janela. Levem a etiqueta até a mesinha ao lado da sorveteria. Dá para montar lá a colher do Mano.', 'Cookie');
         return true;
       }
       if(!g.flag(MAQUINA_ABERTA)){

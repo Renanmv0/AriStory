@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { toon } from '../../core/materials';
 import { fundir } from '../../world/fundir';
 import { estrela } from '../../world/uniformeDosGatitos';
+import type { GameAPI } from '../../core/types';
 import type { Mano } from '../../entities/bichos/Mano';
 import type { WorldBuilder } from '../../world/WorldBuilder';
 import { FLOCO_NA_TOALHA, NATAL_NO_JOGO, TESTE_DE_NATAL, TOALHA, SOBREMESA } from '../Natal';
@@ -15,6 +16,9 @@ const SABORES = [
   { nome:'manga', opcao:'🥭 Manga do Mano', cor:0xff8533, fala:'Os cubinhos são de manga. Agora, quem deixou essas duas pegadinhas na calda? Eu tava aqui o tempo todo!' },
 ] as const;
 type Sabor = typeof SABORES[number];
+export function saborDaCeia(g:GameAPI):Sabor {
+  return g.flag(MANGA)?SABORES[2]:g.flag(MARACUJA)?SABORES[1]:SABORES[0];
+}
 const creme = 0xffeed6, ouro = 0xe7b665, verde = 0x21605a, cereja = 0xa7314b;
 const chocolate = 0x463038, casquinha = 0xcb915b;
 const v = (x:number, y:number, z:number) => new T.Vector3(x,y,z);
@@ -317,7 +321,7 @@ export function montarGloboDoMano(w:WorldBuilder, posto:{x:number;z:number}, man
   w.add(w.place(base,x,0,z)); w.blockBox(x,z,.65,.39);
   let pronta=g.flag(SOBREMESA), ativa=true, animar:((dt:number)=>void)|null=null;
   const breve=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const daCeia=()=>g.flag(MANGA)?SABORES[2]:g.flag(MARACUJA)?SABORES[1]:SABORES[0];
+  const daCeia=()=>saborDaCeia(g);
   function mostrarSabor(sabor:Sabor, comFrutas:boolean) {
     guarnicoes.forEach((grupo,i)=>{grupo.visible=comFrutas && SABORES[i]===sabor;});
     const tinta=toon(sabor.cor);

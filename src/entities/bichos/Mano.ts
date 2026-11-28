@@ -42,7 +42,16 @@ import type { VozDaFala } from '../../core/types';
  * ombro, que é a parte que mais aparece nesse ângulo.
  */
 export class Mano extends Bicho {
-  override get membroDeEntrega(): THREE.Object3D | null { return this.asas[0] ?? null; }
+  override get membroDeEntrega(): THREE.Object3D { return this.asas[0]; }
+  private anguloDaColher: THREE.Vector2 | null = null;
+
+  posarComColher(inclinacao:number, abertura:number):void {
+    this.anguloDaColher ??= new THREE.Vector2();
+    this.anguloDaColher.set(inclinacao, abertura);
+    this.asas[0].rotation.set(inclinacao,0,abertura);
+  }
+
+  soltarColher():void { this.anguloDaColher=null; }
 
   /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
   static readonly voz: VozDaFala = { nome: 'Mano', cor: P.falaMano };
@@ -496,6 +505,10 @@ export class Mano extends Bicho {
     const bater = dancando ? (0.55 + Math.sin(this.fasa * 12) * 0.55) * mistura : 0;
     const abertoNoCarinho = carinho * 0.5;
     for (const [i, asa] of this.asas.entries()) {
+      if (i === 0 && this.anguloDaColher) {
+        asa.rotation.set(this.anguloDaColher.x,0,this.anguloDaColher.y);
+        continue;
+      }
       const lado = i === 0 ? -1 : 1;
       const balancoDoPasso = andando ? Math.sin(fase * 7) * 0.12 : 0;
       const alvo = lado * (0.14 + bater + abertoNoCarinho) + balancoDoPasso;
