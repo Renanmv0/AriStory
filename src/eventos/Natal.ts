@@ -18,3 +18,7 @@ export const FLOCO_NA_TOALHA = 'natal:2026:floco-na-toalha';
 export function estellaEsperaNaBoutique(g: GameAPI): boolean {
   return (NATAL_NO_JOGO || TESTE_DE_NATAL) && g.flag(CONVITE) && !g.flag(TOALHA);
 }
+
+export const SOBREMESA = 'natal:2026:globo-do-mano';
+export const MAQUINA_ABERTA = 'natal:2026:maquina-desembrulhada';
+export const PRESENTE_COOKIE = 'natal:2026:presente-cookie';

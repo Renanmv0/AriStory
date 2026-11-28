@@ -5,9 +5,8 @@ import { fundir } from '../../world/fundir';
 import { estrela } from '../../world/uniformeDosGatitos';
 import type { Mano } from '../../entities/bichos/Mano';
 import type { WorldBuilder } from '../../world/WorldBuilder';
-import { FLOCO_NA_TOALHA, NATAL_NO_JOGO, TESTE_DE_NATAL, TOALHA } from '../Natal';
+import { FLOCO_NA_TOALHA, NATAL_NO_JOGO, TESTE_DE_NATAL, TOALHA, SOBREMESA } from '../Natal';
 
-const SOBREMESA = 'natal:2026:globo-do-mano';
 const MARACUJA = 'natal:2026:calda-de-maracuja';
 const MANGA = 'natal:2026:calda-de-manga';
 const SABORES = [

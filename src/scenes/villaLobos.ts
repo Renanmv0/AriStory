@@ -1,5 +1,6 @@
+import { natalNaBilheteria } from '../eventos/natal/naBilheteria';
 import { montarGloboDoMano } from '../eventos/natal/globoDoMano';
-import { estellaEsperaNaBoutique } from '../eventos/Natal';
+import { estellaEsperaNaBoutique, SOBREMESA, PRESENTE_COOKIE } from '../eventos/Natal';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../palette';
@@ -7375,6 +7376,10 @@ export const villaLobos: SceneDef = {
         cookie.encarar(eu.x, eu.z);
         api.lockPlayer(true);
         try {
+          if (verEmbrulho && api.flag(SOBREMESA) && !api.flag(PRESENTE_COOKIE) && !deServico('cookie')) {
+            const escolha = await api.ask('Vieram ver o que o Jean-Luc deixou no guichê?', ['🎁 Ver a máquina', '🎟️ Falar dos bilhetes'], C);
+            if (escolha === 0 && await verEmbrulho()) return;
+          }
           if (!api.flag('cookie-apresentado')) {
             api.setFlag('cookie-apresentado');
             await conversa([
@@ -7515,12 +7520,13 @@ export const villaLobos: SceneDef = {
      * o Cookie: quem anda até o guichê tem que descobrir alguma coisa ali, e
      * não bater numa parede muda.
      */
-    w.interact({
+    const guiche = w.interact({
       id: 'parque:bilheteria',
       x: BILHETERIA.x, z: BILHETERIA.z + 2.1, radius: 2.0,
       label: 'Guichê', icon: '🎟️',
       highlight: bilheteria,
       onInteract: async (api) => {
+        if (verEmbrulho && await verEmbrulho()) return;
         await conversa([
           [A, 'Não tem ninguém na janelinha.'],
           [R, 'Tem sim. Olha do lado.'],
@@ -7528,6 +7534,8 @@ export const villaLobos: SceneDef = {
         api.toast('Quem vende é o Cookie, do lado da cabine', '🐘');
       },
     });
+
+    const verEmbrulho = natalNaBilheteria(w, BILHETERIA, guiche, () => deServico('cookie'), cookie, sim => { cookieConversando = sim; });
 
     // ---------------------------------------------------- a roda gigante
     let voltaAtual: { resolve: () => void; de: number; voltas: number } | null = null;

@@ -58,6 +58,7 @@ try {
   const antes=await p.evaluate(()=>localStorage.getItem('aristory.save.v1.natal-2026'));
   await abrir('?natal&cena=villa-lobos');
   assert.equal(await p.evaluate(()=>window.jogo.current.world.interactables.some(i=>i.id==='natal:sobremesa')),false);
+  assert.ok(await p.evaluate(()=>window.jogo.current.world.interactables.some(i=>i.id==='parque:bilheteria' && i.label==='Guichê')));
   await usar('Buscar a toalha na boutique');
   await p.waitForFunction(()=>window.jogo.current.def.id==='lojinha'&&!window.jogo.transitioning);
   await usar(acao);await escolher('Voltar depois');
@@ -94,6 +95,24 @@ try {
     await passarAte('Globo de neve pronto!');
     if(motivo)await foto('mano-na-sorveteria');
     await p.waitForFunction(flag=>{document.querySelector('.dialogue.show')?.click();return window.jogo.flag(flag);},sobremesa);
+    if(motivo){
+      // A sobremesa foi concluída nesta instância do parque: o guichê precisa acordar agora.
+      const abrirLaco='Desatar o laço do guichê', imprimir='Imprimir o presente do Cookie';
+      const entregue='natal:2026:presente-cookie';
+      await usar(abrirLaco);
+      await passarAte('O Jean-Luc perguntou'); await foto('maquina-embrulhada');
+      await escolher('Deixar para depois');
+      await usar('Falar com o Cookie'); await escolher('🎁 Ver a máquina');
+      await escolher('🎀 Puxar a fita dourada'); await escolher('Guardar para depois');
+      await abrir('?natal&cena=villa-lobos');
+      await usar(imprimir); await escolher('🎟️ Girar a manivela');
+      await passarAte('Para o Cookie'); await foto('bilhete-do-cookie');
+      await passarAte('Eu sempre rasgo'); await foto('cookie-de-natal');
+      await p.waitForFunction(flag=>{document.querySelector('.dialogue.show')?.click();return window.jogo.flag(flag);},entregue);
+      await abrir('?natal&cena=villa-lobos'); await usar('Ver a dedicatória do Cookie');
+      await passarAte('Deixei o meu'); await p.waitForFunction(()=>{document.querySelector('.dialogue.show')?.click();return !window.jogo.camOmbro;});
+      assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('aristory.save.v1.natal-2026')).memories.filter(m=>m.id==='natal-2026-presente-cookie').length),1);
+    }
     await abrir('?natal&cena=villa-lobos');
     await usar('Rever a sobremesa da ceia');
     await passarAte(motivo?'calda de morango':'calda de maracujá');
@@ -108,5 +127,5 @@ try {
 
   }
   assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),save);
-  assert.deepEqual(erros,[]);console.log('Porta do parque, convite obrigatório, adiamento, dois bordados, movimento reduzido, recarga, balcão, sobremesa dos dois sabores, revisão e save oficial OK.');
+  assert.deepEqual(erros,[]);console.log('Porta do parque, convite obrigatório, adiamento, dois bordados, movimento reduzido, recarga, balcão, sobremesa, bilheteria após o Mano, retomada do embrulho, dedicatória única e save oficial OK.');
 } finally {await browser.close();}
